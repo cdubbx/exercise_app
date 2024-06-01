@@ -1,10 +1,11 @@
-import {View, SafeAreaView, TextInput, TouchableOpacity, Alert} from 'react-native';
-import {Stack, VStack, Text, HStack, Divider} from '@react-native-material/core';
+import {View, SafeAreaView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView} from 'react-native';
+import {Stack, VStack, Text, HStack, Divider, Spacer} from '@react-native-material/core';
 import React, {useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useRegister} from '../hooks/auth';
+import LinearGradient from 'react-native-linear-gradient';
 
 type RootStackParamList = {
   Tabs: undefined;
@@ -36,6 +37,12 @@ export default function Register(): React.JSX.Element {
 
   return (
     <SafeAreaView >
+      <LinearGradient
+        colors={['rgba(67,67,101,1)', 'rgba(32,31,66,1)', 'rgba(2,0,36,1)']}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 0}}>
+      <KeyboardAvoidingView behavior="padding" >
+      
       <Stack mt={80}>
         <Stack justify="center" items="center" pb={40}>
           <Text style={{fontSize: 30, fontWeight: 700}} >Exercise+</Text>
@@ -44,10 +51,12 @@ export default function Register(): React.JSX.Element {
           justify="center"
           items="center"
           mt={5}
+          ml={8}
+          mr={8}
           spacing={0}
           direction="column">
           <TextInput
-            style={{margin: 16, width: 300, backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
+            style={{marginLeft: 16, marginHorizontal: 16, width: '100%', backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
             placeholder="Email"
             onChangeText={text => {
               setEmail(text);
@@ -55,7 +64,7 @@ export default function Register(): React.JSX.Element {
             }}
           />
           <TextInput
-            style={{margin: 16, width: 300, backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
+            style={{margin: 16, width: '100%', backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
             placeholder="Password"
             secureTextEntry={true}
             onChangeText={text => {
@@ -64,21 +73,25 @@ export default function Register(): React.JSX.Element {
             }}
           />
         </Stack>
-        <HStack mt={15} pb={15} items={'center'}justify="center">
-          <TouchableOpacity activeOpacity={1} onPress={onSubmit}>
-            <Text>Sign up</Text>
-          </TouchableOpacity>
-        </HStack>
-<Divider/>
-        <HStack mt={15} items={'center'} justify="center">
-          <Text>Have an account? </Text>
-          <TouchableOpacity onPress={() => {
-            navigation.navigate('Login')
-          }}>
-          <Text>Login</Text>
-          </TouchableOpacity>
-        </HStack>
-      </Stack>
+       
+     
+
+      <HStack ml={8}mt={70} mr={8}items={'center'} justify="space-between">
+         
+         <TouchableOpacity onPress={() => {
+           navigation.navigate('Login')
+         }}>
+            <Text style={{fontWeight:'normal'}} >Have an account?</Text>
+         </TouchableOpacity>
+         <TouchableOpacity activeOpacity={1} onPress={onSubmit}>
+           <Text style={{fontWeight: "bold",backgroundColor:"#dedede", overflow:"hidden",borderRadius: 15,padding: 7}}  >Sign up</Text>
+         </TouchableOpacity>
+
+       </HStack>
+
+       </Stack>
+      </KeyboardAvoidingView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
