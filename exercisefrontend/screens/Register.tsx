@@ -1,5 +1,5 @@
 import {View, SafeAreaView, TextInput, TouchableOpacity, Alert} from 'react-native';
-import {Stack, VStack, Text, HStack} from '@react-native-material/core';
+import {Stack, VStack, Text, HStack, Divider} from '@react-native-material/core';
 import React, {useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
@@ -35,27 +35,27 @@ export default function Register(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView>
+    <SafeAreaView >
       <Stack mt={80}>
         <Stack justify="center" items="center" pb={40}>
-          <Text>Execise App</Text>
+          <Text style={{fontSize: 30, fontWeight: 700}} >Exercise+</Text>
         </Stack>
         <Stack
           justify="center"
           items="center"
-          mt={20}
-          spacing={5}
+          mt={5}
+          spacing={0}
           direction="column">
           <TextInput
-            style={{margin: 16, width: 300, backgroundColor: '#f0f0f0'}}
-            placeholder="email"
+            style={{margin: 16, width: 300, backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
+            placeholder="Email"
             onChangeText={text => {
               setEmail(text);
               console.log(text);
             }}
           />
           <TextInput
-            style={{margin: 16, width: 300, backgroundColor: '#f0f0f0'}}
+            style={{margin: 16, width: 300, backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
             placeholder="Password"
             secureTextEntry={true}
             onChangeText={text => {
@@ -64,14 +64,14 @@ export default function Register(): React.JSX.Element {
             }}
           />
         </Stack>
-        <HStack mt={-30} items={'center'} p={40} justify="center">
+        <HStack mt={15} pb={15} items={'center'}justify="center">
           <TouchableOpacity activeOpacity={1} onPress={onSubmit}>
             <Text>Sign up</Text>
           </TouchableOpacity>
         </HStack>
-
-        <HStack>
-          <Text>Already a user</Text>
+<Divider/>
+        <HStack mt={15} items={'center'} justify="center">
+          <Text>Have an account? </Text>
           <TouchableOpacity onPress={() => {
             navigation.navigate('Login')
           }}>
