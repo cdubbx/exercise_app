@@ -36,61 +36,62 @@ export default function Register(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView >
+    <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
-        colors={['rgba(67,67,101,1)', 'rgba(32,31,66,1)', 'rgba(2,0,36,1)']}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
-      <KeyboardAvoidingView behavior="padding" >
-      
-      <Stack mt={80}>
-        <Stack justify="center" items="center" pb={40}>
-          <Text style={{fontSize: 30, fontWeight: 700}} >Exercise+</Text>
-        </Stack>
-        <Stack
-          justify="center"
-          items="center"
-          mt={5}
-          ml={8}
-          mr={8}
-          spacing={0}
-          direction="column">
-          <TextInput
-            style={{marginLeft: 16, marginHorizontal: 16, width: '100%', backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
-            placeholder="Email"
-            onChangeText={text => {
-              setEmail(text);
-              console.log(text);
-            }}
-          />
-          <TextInput
-            style={{margin: 16, width: '100%', backgroundColor: '#dedede', borderRadius: 25, padding: 13}}
-            placeholder="Password"
-            secureTextEntry={true}
-            onChangeText={text => {
-              setPassword(text);
-              console.log(text);
-            }}
-          />
-        </Stack>
-       
-     
-
-      <HStack ml={8}mt={70} mr={8}items={'center'} justify="space-between">
-         
-         <TouchableOpacity onPress={() => {
-           navigation.navigate('Login')
-         }}>
-            <Text style={{fontWeight:'normal'}} >Have an account?</Text>
-         </TouchableOpacity>
-         <TouchableOpacity activeOpacity={1} onPress={onSubmit}>
-           <Text style={{fontWeight: "bold",backgroundColor:"#dedede", overflow:"hidden",borderRadius: 15,padding: 7}}  >Sign up</Text>
-         </TouchableOpacity>
-
-       </HStack>
-
-       </Stack>
-      </KeyboardAvoidingView>
+          colors={['rgba(67,67,101,1)', 'rgba(46,45,83,1)', 'rgba(32,31,66,1)', 'rgba(20,18,51,1)', 'rgba(2,0,36,1)']}
+          start={{ x: 0.4, y: 0.3 }}
+          end={{ x: 0.3, y: 2 }}
+          style={{ flex: 1 }}
+      >
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+          <View style={{ flex: 1, justifyContent: 'space-between', marginTop: 80 }}>
+            <View style={{ alignItems: 'center', paddingBottom: 40 }}>
+              <Text style={{ color:"white",fontSize: 25, fontWeight: '700' }}>Create your account</Text>
+            </View>
+            <View style={{ alignItems: 'center', marginHorizontal: 15 }}>
+              
+              <TextInput
+                style={{ paddingBottom:10,color:"white", marginLeft: 16, marginHorizontal: 16, width: '100%'}}
+                placeholder="Email"
+                borderBottomColor={"#e3e3e3"}
+                borderBottomWidth={1}
+                placeholderTextColor={"#e3e3e3"}
+                onChangeText={text => {
+                  setEmail(text);
+                  console.log(text);
+                }}
+              />
+              <TextInput
+                paddingTop={20}
+                style={{ paddingBottom:10, color:"white",margin: 16, width: '100%' }}
+                placeholder="Password"
+                placeholderTextColor={"#e3e3e3"}
+                secureTextEntry={true}
+                borderBottomColor={"#e3e3e3"}
+                borderBottomWidth={1}
+                onChangeText={text => {
+                  setPassword(text);
+                  console.log(text);
+                }}
+              />
+              
+            </View>
+            
+            <View style={{ flex: 1 }} />
+            <Divider color='#e2e2e2'></Divider>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 8, marginTop:10, marginBottom: 30 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <HStack spacing={7}>
+                  <Text style={{ fontSize: 14, fontWeight: 'normal', color: "#e3e3e3"}}>Have an account?</Text>
+                  <Text style={{ fontSize: 14, fontWeight: 'normal', color: "white"}}>Login</Text>
+                </HStack>
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={1} onPress={onSubmit}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', backgroundColor: 'white', overflow: 'hidden', borderRadius: 16, padding: 7 }}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
   );

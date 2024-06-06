@@ -85,7 +85,7 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
         start={{x: 0, y: 0}}
         end={{x: 1, y: 0}}>
         <ScrollView>
-          <HStack justify="between" items="center" m={10} mb={-3} mr={10}>
+          <HStack justify="between" items="center" m={10}  mr={10}>
             <Avatar
               image={{
                 uri: 'https://miro.medium.com/v2/resize:fit:720/format:webp/1*W35QUSvGpcLuxPo3SRTH4w.png',
@@ -96,18 +96,10 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
               onPress={() => {
                 navigation.navigate('Register');
               }}>
-              <FontAwesome name="bell" size={24} color={'white'} />
+              <FontAwesome name="sign-out" size={24} color={'white'} />
             </TouchableOpacity>
           </HStack>
 
-          <HStack m={13} mb={20} justify="start">
-            //@ts-ignore
-            <Text
-              color="white"
-              style={{fontWeight: 'bold', fontFamily: 'Arial'}}>
-              Welcome User
-            </Text>
-          </HStack>
           {Object.entries(imageCard).map(([key, card]) => (
             <TouchableOpacity
               key={key}
@@ -122,7 +114,6 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
                 p={10}
                 style={{
                   borderColor: '#494949',
-                  borderWidth: 1,
                   borderRadius: 10,
                   height: 200,
                 }}>
