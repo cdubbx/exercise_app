@@ -5,16 +5,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useRegister} from '../hooks/auth';
+import { AuthStackParamList } from '../types/screentypes';
 
-type RootStackParamList = {
-  Tabs: undefined;
-  Login: undefined;
-};
+
 
 export default function Register(): React.JSX.Element {
-  const [email, setEmail] = useState<String>('');
-  const [password, setPassword] = useState<String>('');
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 
   const {register} = useRegister();
 
@@ -26,7 +24,9 @@ export default function Register(): React.JSX.Element {
       };
 
       await register(userData);
-      navigation.navigate('Tabs');
+      navigation.navigate('OTP', {
+        email:email
+      });
     } catch (error:any) {
       console.log(error);
       Alert.alert('Registration Error', error.message);  // Display the error message to the user

@@ -33,41 +33,15 @@ import BodyPart from './screens/BodyPart';
 import ExerciseCard from './cards/ExerciseCard';
 import CalendarCard from './screens/Calendar';
 import SavedWorkOuts from './screens/SavedWorkOuts';
+import OTPScreen from './screens/OTP';
+import { AuthStackParamList, BottomTabParamList, ExploreStackParamList, HomeStackParamList, ProfileStackParamList } from './types/screentypes';
 
 
 export default function App(): React.JSX.Element {
   
   const {isAuthenticated} = useAuth()
   
-  type AuthStackParamList = {
-    Login: undefined;
-    Register: undefined;
-    Home: undefined;
-    Tabs: undefined
-  };
 
-  type ExploreStackParamList = {
-    Explore: undefined;
-  }
-
-  type ProfileStackParamList = {
-    Profile: undefined;
-    SavedWorkouts: { exercises: any[] };
-  }
-  type HomeStackParamList = {
-    Home: undefined;
-    BodyPart: {bodyParts: string}, 
-    ExerciseCard: {item: string}
-    Register: undefined
-  }
-
-
-  type BottomTabParamList = {
-    Home1: undefined;
-    Profile1: undefined;
-    Explore1: undefined;
-    Calendar: undefined;
-  }
 
 
   const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -92,7 +66,7 @@ export default function App(): React.JSX.Element {
         <AuthStack.Screen name='Login' component={Login} />
         <AuthStack.Screen name='Register' component={Register} />
         <AuthStack.Screen name='Tabs' component = {TabNavigator} />
-  
+        <AuthStack.Screen name = 'OTP' component={OTPScreen} />
       </AuthStack.Navigator>
     );
   }

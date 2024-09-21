@@ -1,10 +1,11 @@
 import {useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {RegisterRequest, RegisterResponse} from '../types/types';
 
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setLoading] = useState<boolean>(true);
-  const { verifyToken } = useVerifyToken();
+  const {verifyToken} = useVerifyToken();
 
   useEffect(() => {
     const checkToken = async () => {
@@ -40,7 +41,7 @@ export function useAuth() {
     checkToken();
   }, []);
 
-  return { isAuthenticated, isLoading };
+  return {isAuthenticated, isLoading};
 }
 async function refreshAccessToken(refreshToken: string): Promise<boolean> {
   try {
@@ -49,7 +50,7 @@ async function refreshAccessToken(refreshToken: string): Promise<boolean> {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refresh: refreshToken }),
+      body: JSON.stringify({refresh: refreshToken}),
     });
 
     if (!response.ok) {
@@ -69,7 +70,7 @@ async function refreshAccessToken(refreshToken: string): Promise<boolean> {
 export const useVerifyToken = () => {
   const [loading, setLoading] = useState(false);
 
-  const verifyToken = async (token:string) => {
+  const verifyToken = async (token: string) => {
     try {
       setLoading(true);
 
@@ -78,24 +79,24 @@ export const useVerifyToken = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token }),  // Pass the token in the body
+        body: JSON.stringify({token}), // Pass the token in the body
       });
 
       setLoading(false);
 
       if (!response.ok) {
-        return false;  // Token is not valid
+        return false; // Token is not valid
       }
 
-      return true;  // Token is valid
-    } catch (error:any) {
+      return true; // Token is valid
+    } catch (error: any) {
       console.error('Token verification error:', error.message);
       setLoading(false);
       return false;
     }
   };
 
-  return { verifyToken, loading };
+  return {verifyToken, loading};
 };
 
 export const useLogout = () => {
@@ -110,7 +111,7 @@ export const useLogout = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,  // Adjusted for JWT Authentication
+          Authorization: `Bearer ${token}`, // Adjusted for JWT Authentication
         },
       });
 
@@ -129,14 +130,14 @@ export const useLogout = () => {
     }
   };
 
-  return { logout, loading };
+  return {logout, loading};
 };
-
 
 export const useRegister = () => {
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
-  const register = async (userData:object) => {
+  const register = async (userData: RegisterRequest) => {
     try {
       setLoading(true);
 
@@ -148,30 +149,36 @@ export const useRegister = () => {
         body: JSON.stringify(userData),
       });
 
-      if (!response.ok) {
-        const errorText = await response.json();
-        throw new Error(errorText.error || 'Network error');
-      }
+      const data: RegisterResponse = await response.json();
 
-      const data = await response.json();
-      await AsyncStorage.setItem('access', data.access);
-      await AsyncStorage.setItem('refresh', data.refresh);
+      if (!response.ok) {
+        throw new Error(data.error || 'Network error');
+      }
+      if (data.message && data.message.includes('OTP sent')) {
+        setOtpSent(true);
+        setLoading(false);
+        return;
+      }
+      if (data.user && data.refresh && data.access) {
+        await AsyncStorage.setItem('access', data.access);
+        await AsyncStorage.setItem('refresh', data.refresh);
+      }
 
       setLoading(false);
     } catch (error) {
-      console.log('Error:', error); // Debugging line
+      console.log('Error:', error);
       setLoading(false);
-      throw error
+      throw error;
     }
   };
 
-  return { register, loading };
+  return {register, loading, otpSent};
 };
 
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
 
-  const login = async (email:string, password:string) => {
+  const login = async (email: string, password: string) => {
     try {
       setLoading(true);
 
@@ -180,7 +187,7 @@ export const useLogin = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({email, password}),
       });
 
       console.log('Login response status:', response.status);
@@ -196,13 +203,13 @@ export const useLogin = () => {
       await AsyncStorage.setItem('refresh', data.refresh);
 
       setLoading(false);
-      return true;  // Indicate success
-    } catch (error:any) {
+      return true; // Indicate success
+    } catch (error: any) {
       console.error('Error:', error.message);
       setLoading(false);
-      throw error;  // Rethrow the error to be caught in onSubmit
+      throw error; // Rethrow the error to be caught in onSubmit
     }
   };
 
-  return { login, loading };
+  return {login, loading};
 };

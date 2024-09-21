@@ -11,7 +11,7 @@ class User(AbstractUser):
     password = models.CharField(max_length = 255)
     username = models.CharField(max_length=255, unique=True, null=True, blank=True)  # Make username optional
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    otp = models.CharField(null=True, blank=True, max_length=255)
     REQUIRED_FIELDS = []
     USERNAME_FIELD = 'email'
 

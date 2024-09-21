@@ -5,12 +5,13 @@ from .serializers import ExerciseSerializer, UserSerializer, SavedWorkoutSeriali
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import get_authorization_header, TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
-from django.http import JsonResponse
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
+from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from uuid import uuid4
+from .utils.utils import send_otp, generate_otp
 import logging
 logger = logging.getLogger(__name__)
 
@@ -32,17 +33,32 @@ class RegisterAPIView(APIView):
         try:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            user = serializer.save()
-
-            refresh = RefreshToken.for_user(user)
-            access = refresh.access_token
-
-            return Response({
-                'user': serializer.data,
-                'refresh': str(refresh),
-                'access': str(access),
-            })
-
+            email = serializer.validated_data.get('email')
+            if 'otp' in request.data:
+                otp = request.data.get('otp')
+                cached_otp = cache.get(f'otp_{email}')
+                if cached_otp and cached_otp == otp:
+                    user = serializer.save()
+                    refresh = RefreshToken.for_user(user)
+                    access = refresh.access_token            
+                    return Response({
+                        'user': serializer.data,
+                        'refresh': str(refresh),
+                        'access': str(access),
+                    })
+                else:
+                    raise ValidationError({'otp': 'Invalid or expired OTP.'})
+                
+                
+            otp = generate_otp()
+            cache.set(f'otp_{email}', otp, timeout=300)
+            email_status = send_otp(email, otp)
+            print(email_status)
+            
+            return Response({'message': ' OTP sent to email. Please verifiy to complete registration'})
+        except ValidationError as ve:
+            logger.warning('Validation error occurred during registration', exc_info=True)
+            return Response({'error': ve.detail}, status=400)
         except Exception as e:
             logger.error('An unexpected error occurred in RegisterAPIView', exc_info=True)
             return Response({'error': str(e)}, status=500)
@@ -53,9 +69,6 @@ class LoginAPIView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-
-        logger.debug('Received email: %s', email)
-        logger.debug('Received password: %s', password)
 
         user = User.objects.filter(email=email).first()
 
