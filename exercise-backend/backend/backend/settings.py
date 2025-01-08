@@ -29,8 +29,7 @@ SECRET_KEY = 'django-insecure-(@&^ci%yw$1736u24yroz+4k!j8!%5%c6^b2m5xqkf9yjgoeli
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.0.13', '0.0.0.0']
 
 # Application definition
 
@@ -44,7 +43,8 @@ INSTALLED_APPS = [
     'backend1',
     'corsheaders',
     'rest_framework',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'social_django'
 ]
 
 MIDDLEWARE = [
@@ -101,6 +101,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8081',  # Adjust with your React Native app's origin
+    'http://192.168.0.13:8081'
 ]
 
 
@@ -128,6 +129,18 @@ EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'clwantong@gmail.com'
 EMAIL_HOST_PASSWORD = 'hyjp gfmc guuy kjkk'
+
+
+SOCIAL_AUTH_APPLE_PRIVATE_KEY ='''-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgWdXsArONZIAIbpQd
+bzhpHZWIvFkQLeElqiftlCSFvCWgCgYIKoZIzj0DAQehRANCAASsu0qxwgdQV3XD
+05bRuqCCFaXVWOpunktP+3wI9V9I0tDgsaSpupQz1MVL/ftYfnb7raYAyRUfYV6K
+JuWzjfVM
+-----END PRIVATE KEY-----'''
+
+SOCIAL_AUTH_APPLE_TEAM_ID = "8Q66V476N4"
+SOCIAL_AUTH_APPLE_CLIENT_ID = "org.reactjs.native.example.exercisefrontend"
+SOCIAL_AUTH_APPLE_KEY_ID = "R9B4NFVU9X"
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=15),

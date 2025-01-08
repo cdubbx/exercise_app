@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .managers import CustomerUserManager
 from django.conf import settings
+import random 
+import string
 
 from uuid import uuid4
 import uuid
@@ -12,13 +14,16 @@ class User(AbstractUser):
     username = models.CharField(max_length=255, unique=True, null=True, blank=True)  # Make username optional
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     otp = models.CharField(null=True, blank=True, max_length=255)
+    is_social_authenticated = models.BooleanField(default=False, help_text="Indicates if the user logged socially.", blank=True, null=True)   
     REQUIRED_FIELDS = []
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="Adding the create at field")
     USERNAME_FIELD = 'email'
-
-    
 
     def __str__(self) -> str:
         return self.email
+    def make_random_password(self, length=8, allowed_chars=string.ascii_letters + string.digits):
+        """Custom password generator"""
+        return ''.join(random.choice(allowed_chars) for _ in range(length))
 
 class Exercise(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)

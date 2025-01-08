@@ -12,7 +12,7 @@ export const useExercises = () => {
       try {
         const token = await AsyncStorage.getItem('token');
 
-        const response = await fetch('http://localhost:8000/api/exercises/', {
+        const response = await fetch('http://192.168.0.13:8000/api/exercises/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ export const useMuscleExercise = (bodyPart: String) => {
     const fetchExercises = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await fetch('http://localhost:8000/api/exercises/', {
+        const response = await fetch('http://192.168.0.13:8000/api/exercises/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export const useSaveWorkOuts = () => {
       }
 
 
-      const response = await fetch('http://localhost:8000/api/saveWorkOuts', {
+      const response = await fetch('http://192.168.0.13:8000/api/saveWorkOuts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +124,7 @@ export const useSavePlannedWorkouts = () => {
       if (!token) {
         throw new Error('No access token found');
       }
-      const response = await fetch('http://localhost:8000/api/plannedWorkouts/', {
+      const response = await fetch('http://192.168.0.13:8000/api/plannedWorkouts/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ export const useFetchedSavedWorkOuts = () => {
         setLoading(true);
         const token = await AsyncStorage.getItem('access');
         const response = await fetch(
-          'http://localhost:8000/api/userSavedWorkouts/',
+          'http://192.168.0.13:8000/api/userSavedWorkouts/',
           {
             method: 'GET',
             headers: {
@@ -203,7 +203,7 @@ export const useFetchedPlanedWorkouts = () => {
       try{
           setLoading(true)
           const token = await AsyncStorage.getItem('access');
-          const response = await fetch('http://localhost:8000/api/plannedWorkouts/', {
+          const response = await fetch('http://192.168.0.13:8000/api/plannedWorkouts/', {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json', 

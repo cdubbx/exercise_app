@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ExerciseViewSet, LoginAPIView, RegisterAPIView, UserView, LogoutView, SaveWorkOutView, ValidateTokenView, UserPlannedWorkoutsView, UserSavedWorkoutsView
+from .views import ExerciseViewSet, LoginAPIView, RegisterAPIView, UserView, LogoutView, SaveWorkOutView, ValidateTokenView, UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 # Using `router.register(r'exercises', ExerciseViewSet)` registers the `ExerciseViewSet` with the router,
@@ -17,6 +17,8 @@ urlpatterns = [
     path('saveWorkOuts', SaveWorkOutView.as_view(), name = 'saveWorkout'),
     path('login/', LoginAPIView.as_view()),
     path('user/', UserView.as_view()),
+    path('verify-otp/', VerifyOTPAPIView.as_view(), name='verify-otp'),
+    path('social-login/', SigninWIthApple.as_view(), name='social-login'),
     path('logout/', LogoutView.as_view()),
     path('validate-token/', ValidateTokenView.as_view(), name='validate_token'),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

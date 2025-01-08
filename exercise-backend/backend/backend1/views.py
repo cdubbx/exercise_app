@@ -12,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from uuid import uuid4
 from .utils.utils import send_otp, generate_otp
+from .backends import AppleAuthenticationBackend
 import logging
 logger = logging.getLogger(__name__)
 
@@ -33,36 +34,67 @@ class RegisterAPIView(APIView):
         try:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            email = serializer.validated_data.get('email')
-            if 'otp' in request.data:
-                otp = request.data.get('otp')
-                cached_otp = cache.get(f'otp_{email}')
-                if cached_otp and cached_otp == otp:
-                    user = serializer.save()
-                    refresh = RefreshToken.for_user(user)
-                    access = refresh.access_token            
-                    return Response({
-                        'user': serializer.data,
-                        'refresh': str(refresh),
-                        'access': str(access),
-                    })
-                else:
-                    raise ValidationError({'otp': 'Invalid or expired OTP.'})
-                
-                
+            
+            # Save the user as inactive
+            user = serializer.save(is_active=False)
+            
+            # Generate and send OTP
+            email = serializer.validated_data['email']
             otp = generate_otp()
             cache.set(f'otp_{email}', otp, timeout=300)
-            email_status = send_otp(email, otp)
-            print(email_status)
+            send_otp(email, otp)
             
-            return Response({'message': ' OTP sent to email. Please verifiy to complete registration'})
+            return Response({'message': 'Account created. Verify OTP to activate.'})
         except ValidationError as ve:
-            logger.warning('Validation error occurred during registration', exc_info=True)
             return Response({'error': ve.detail}, status=400)
         except Exception as e:
-            logger.error('An unexpected error occurred in RegisterAPIView', exc_info=True)
             return Response({'error': str(e)}, status=500)
         
+class VerifyOTPAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            otp = request.data.get('otp')
+            
+            # Validate required fields
+            if not email or not otp:
+                raise ValidationError({'error': 'Email and OTP are required.'})
+            
+            # Retrieve cached OTP
+            cached_otp = cache.get(f'otp_{email}')
+            if not cached_otp or cached_otp != otp:
+                raise ValidationError({'otp': 'Invalid or expired OTP.'})
+            
+            # OTP is valid: Activate the user
+            user = User.objects.get(email=email)
+            if not user.is_active:  # Check if the user is inactive
+                user.is_active = True  # Activate the user
+                user.save()
+            else:
+                return Response({'message': 'User is already activated.'})
+            
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            access = refresh.access_token
+            
+            # Serialize user data for response
+            user_data = UserSerializer(user).data
+
+            return Response({
+                'message': 'Account successfully verified and activated.',
+                'user': user_data,
+                'refresh': str(refresh),
+                'access': str(access),
+            })
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=404)
+        except ValidationError as ve:
+            return Response({'error': ve.detail}, status=400)
+        except Exception as e:
+            logger.error('Unexpected error occurred in VerifyOTPAPIView', exc_info=True)
+            return Response({'error': str(e)}, status=500)
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]  # Allow any user to access this view
 
@@ -255,3 +287,30 @@ class CheckAuthenticationView(APIView):
             # The user is not authenticated; with IsAuthenticated, you would typically not get to this point,
             # as an unauthenticated request would be rejected before hitting the view logic.
             return Response({"authenticated": False}, status=401)
+
+class SigninWIthApple(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            id_token = request.data.get('id_token')
+            if not id_token:
+                return Response({'error': 'Missing id token'}, status=400)
+            
+            backend = AppleAuthenticationBackend()
+            user = backend.authenticate(request, id_token)
+            if user:
+                refresh = RefreshToken.for_user(user)
+                access = refresh.access_token
+                return Response({
+                        'refresh': str(refresh),
+                        'access': str(access),
+                    }, status=200)
+            else:
+                return Response({"error": "Authentication failed"}, status=401)
+        except Exception as e:
+            print(f"An error has occured {e}")
+            return Response({"error": "Internal server error"})
+        
+
+       
