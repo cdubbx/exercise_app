@@ -12,20 +12,21 @@ interface OTPScreenProps {
   navigation: NavigationProp<AuthStackParamList, 'OTP'>;
 }
 
-const OTPScreen: React.FC<OTPScreenProps> = ({route}) => {
+const OTPScreen: React.FC<OTPScreenProps> = ({route, navigation}) => {
   const {email} = route.params;
-  const {register} = useRegister();
+  const {verifyOTP} = useRegister();
   const [otp, setOtp] = useState<string>('');
 
-  const userData: RegisterRequest = {
+  const userData = {
     email: email, 
-    password: '', 
     otp: otp, 
   };
 
   const handleSubmit = () => {
     if (otp.length === 4) {
-        register(userData)
+      verifyOTP(userData)
+      navigation.navigate('Tabs')
+
     } else {
       Alert.alert('Invalid OTP', 'Please enter a 6-digit OTP.');
     }
