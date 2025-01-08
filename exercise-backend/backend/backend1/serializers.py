@@ -11,7 +11,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'username', 'otp']
+        fields = ['id', 'email', 'password', 'username']
 
         extra_kwargs = {
             'password': {'write_only': True},
@@ -24,6 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         if password is not None:
             instance.set_password(password)
+        # instance.is_active = False
         instance.save()
         return instance
         

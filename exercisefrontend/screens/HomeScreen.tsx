@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import React, {useEffect} from 'react';
-import {useAuth} from '../hooks/auth';
+import {useAuth, useLogout} from '../hooks/auth';
 import LinearGradient from 'react-native-linear-gradient';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -70,6 +70,7 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
   // const navigation = useNavigation<HomeScreenNavigationProp>()
 
   const {exercises, loading} = useExercises();
+  const {logout} = useLogout()
 
   if (loading) {
     return <Text>Loading</Text>;
@@ -93,8 +94,9 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
               size={30}
             />
             <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('Register');
+              onPress={async () => {
+                  await logout()
+                  navigation.navigate('Register')
               }}>
               <FontAwesome name="bell" size={24} color={'white'} />
             </TouchableOpacity>
