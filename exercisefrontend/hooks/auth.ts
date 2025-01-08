@@ -45,7 +45,7 @@ export function useAuth() {
 }
 async function refreshAccessToken(refreshToken: string): Promise<boolean> {
   try {
-    const response = await fetch('http://localhost:8000/api/token/refresh/', {
+    const response = await fetch('http://192.168.0.13:8000/api/token/refresh/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export const useVerifyToken = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:8000/api/token/verify/', {
+      const response = await fetch('http://192.168.0.13:8000/api/token/verify/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,23 +105,8 @@ export const useLogout = () => {
   const logout = async () => {
     try {
       setLoading(true);
-      const token = await AsyncStorage.getItem('token');
-
-      const response = await fetch('http://localhost:8000/api/logout/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Adjusted for JWT Authentication
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('Error response:', errorText); // Debugging line
-        throw new Error('Network error');
-      }
-
-      await AsyncStorage.removeItem('token'); // Clear the token from AsyncStorage
+      await AsyncStorage.removeItem('access'); // Clear the token from AsyncStorage
+      await AsyncStorage.removeItem('refresh');
 
       setLoading(false);
     } catch (error) {
@@ -141,7 +126,7 @@ export const useRegister = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:8000/api/register/', {
+      const response = await fetch('http://192.168.0.13:8000/api/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,15 +139,15 @@ export const useRegister = () => {
       if (!response.ok) {
         throw new Error(data.error || 'Network error');
       }
-      if (data.message && data.message.includes('OTP sent')) {
+      if (data.message && data.message.includes('Verify OTP')) {
         setOtpSent(true);
         setLoading(false);
         return;
       }
-      if (data.user && data.refresh && data.access) {
-        await AsyncStorage.setItem('access', data.access);
-        await AsyncStorage.setItem('refresh', data.refresh);
-      }
+      // if (data.user && data.refresh && data.access) {
+      //   await AsyncStorage.setItem('access', data.access);
+      //   await AsyncStorage.setItem('refresh', data.refresh);
+      // }
 
       setLoading(false);
     } catch (error) {
@@ -172,17 +157,72 @@ export const useRegister = () => {
     }
   };
 
-  return {register, loading, otpSent};
+  const verifyOTP = async (userdata:any) => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://192.168.0.13:8000/api/verify-otp/', {
+        method:'POST', 
+        headers: {
+          'Content-Type':'application/json'
+        }, 
+        body:JSON.stringify(userdata)
+      })
+
+      const data = await response.json()
+      if(!response.ok){
+        throw new Error(data.error || 'Network error');
+      }
+        if (data.user && data.refresh && data.access) {
+        await AsyncStorage.setItem('access', data.access);
+        await AsyncStorage.setItem('refresh', data.refresh);
+      }
+      setLoading(false);
+
+    } catch (error) {
+      console.log('Error:', error);
+      setLoading(false);
+    }
+  }
+  return {register, loading, otpSent, verifyOTP};
 };
+
+
 
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
+
+  const appleLogin = async (appleObject: any) => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://192.168.0.13:8000/api/social-login/', {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify(appleObject),
+      });
+        
+      const data = await response.json();
+      if (!response.ok) {
+        console.log(data.error || 'There is a network error');
+        throw new Error(data.error || 'There is a network error');
+      }
+      await AsyncStorage.setItem('access', data.access);
+      await AsyncStorage.setItem('refresh', data.refresh);
+
+      return true;
+    } catch (error: any) {
+      console.error('Error:', error.message);
+      setLoading(false);
+      return false;
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:8000/api/login/', {
+      const response = await fetch('http://192.168.0.13:8000/api/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -211,5 +251,5 @@ export const useLogin = () => {
     }
   };
 
-  return {login, loading};
+  return {login, loading, appleLogin};
 };

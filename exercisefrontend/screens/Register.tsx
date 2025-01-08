@@ -1,20 +1,25 @@
-import {View, SafeAreaView, TextInput, TouchableOpacity, Alert} from 'react-native';
+import {View, SafeAreaView, TextInput, TouchableOpacity, Alert, StyleSheet} from 'react-native';
 import {Stack, VStack, Text, HStack} from '@react-native-material/core';
 import React, {useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useRegister} from '../hooks/auth';
+import {useLogin, useRegister} from '../hooks/auth';
 import { AuthStackParamList } from '../types/screentypes';
+import {appleAuth, AppleButton} from '@invertase/react-native-apple-authentication';
 
 
+interface RegisterScreenProps {
+  navigation: NavigationProp<AuthStackParamList, 'Register'>
+}
 
-export default function Register(): React.JSX.Element {
+
+const Register: React.FC<RegisterScreenProps> = ({navigation}) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 
   const {register} = useRegister();
+  const {appleLogin} = useLogin()
 
   const onSubmit = async () => {
     try {
@@ -33,6 +38,31 @@ export default function Register(): React.JSX.Element {
 
     }
   };
+
+  async function onAppleButtonPress() {
+    try {
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN, 
+        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME]
+      })
+
+      const {user, email, identityToken} = appleAuthRequestResponse; 
+      const appleObject = {
+        email:email, 
+        id_token: identityToken
+      }
+
+      await appleLogin(appleObject)
+      navigation.navigate('Tabs')
+
+
+    } catch (error:any) {
+      if (error?.code === appleAuth.Error.CANCELED){
+        console.warn('User canceled Apple Sign');
+      } else 
+      console.error(error);
+    }
+  }
 
   return (
     <SafeAreaView>
@@ -78,7 +108,31 @@ export default function Register(): React.JSX.Element {
           <Text>Login</Text>
           </TouchableOpacity>
         </HStack>
+
+        <View style={styles.container}>
+      <AppleButton
+        buttonStyle={AppleButton.Style.BLACK}
+        buttonType={AppleButton.Type.SIGN_IN}
+        style={styles.appleButton}
+        onPress={onAppleButtonPress}
+      />
+    </View>
       </Stack>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10
+  },
+  appleButton: {
+    width: 200,
+    height: 44,
+  },
+});
+
+export default Register
