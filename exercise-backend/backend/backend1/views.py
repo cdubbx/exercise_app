@@ -12,8 +12,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from uuid import uuid4
 from .utils.utils import send_otp, generate_otp
+from django.core.mail import send_mail, EmailMessage
+from django.conf import settings
+
+
 from .backends import AppleAuthenticationBackend
 import logging
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
 logger = logging.getLogger(__name__)
 
 import jwt
@@ -311,6 +317,56 @@ class SigninWIthApple(APIView):
         except Exception as e:
             print(f"An error has occured {e}")
             return Response({"error": "Internal server error"})
-        
+class RequestPasswordResetAPIView(APIView):
+        permission_classes = [AllowAny]
+        def post(self, request):
+            email = request.data.get('email')        
+            if not email:
+                raise ValidationError({'email': 'This field is required'})
+            try:
+                user = User.objects.get(email=email)
+                token_generator = PasswordResetTokenGenerator()
+                token = token_generator.make_token(user)
 
-       
+                reset_link = f"exercisefrontend://reset-password?token={token}&email={email}"
+                email_subject = "Password Reset Request"
+                email_body = f"""
+                    <p>Click the link below to reset your password:</p>
+                    <a href="{reset_link}">{reset_link}</a>
+                """
+                email = EmailMessage(
+                    subject=email_subject,
+                    body=email_body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[email],
+                )
+                email.content_subtype = "html"  # Set the email content to HTML
+                email.send()
+                return Response({'message': 'Password reset link sent to your email'})
+            except User.DoesNotExist:
+                raise ValidationError({'email': 'User with this email does not exist'})
+            except Exception as e:
+                print( f"There is an internal error {e}")
+                return Response({'message': f"There is an internal error {e}"}, status=500)
+class ResetPasswordAPIView(APIView):
+        permission_classes = [AllowAny]
+        def post(self, request):
+            email = request.data.get('email')
+            token = request.data.get('token')
+            new_password = request.data.get('new_password')
+
+            if not email or not token or not new_password:
+                raise ValidationError({'message': 'Email, token, and new password are required'})
+            try:
+                user = User.objects.get(email=email)
+                token_generator = PasswordResetTokenGenerator()
+                if not token_generator.check_token(user, token):
+                    raise ValidationError({'error': 'Invalid or expired token'})
+                user.set_password(new_password)
+                user.save()
+                return Response({'message': 'Password has been reset successfully'}, status=200)
+            except User.DoesNotExist:
+                raise ValidationError({'email': 'User with this email does not exist'})
+            except Exception as e:
+                print( f"There is an internal error {e}")
+                return Response({'message': f"There is an internal error {e}"}, status=500)

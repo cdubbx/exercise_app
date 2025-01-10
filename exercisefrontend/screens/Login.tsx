@@ -2,21 +2,22 @@ import {
   View,
   SafeAreaView,
   TextInput,
-  Touchable,
   TouchableOpacity,
   Alert,
+  StyleSheet,
 } from 'react-native';
-import {Stack, VStack, Text, HStack} from '@react-native-material/core';
-import React, { useState } from 'react';
+import {Stack, VStack, Text} from '@react-native-material/core';
+import React, {useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useLogin} from '../hooks/auth';
+import {useLogin, useResetPassword} from '../hooks/auth';
 
 type RootStackParamList = {
   Register: undefined; // Add other screens as needed
-  // OtherScreen: undefined;
   Tabs: undefined;
+  RequestResetPassword: undefined; // Add the reset password screen route
 };
+
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'Register'
@@ -25,8 +26,10 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 export default function Login(): React.JSX.Element {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const {login} = useLogin();
+  const {requestPasswordReset} = useResetPassword(); // Hook for reset password
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const onSubmit = async () => {
     try {
@@ -34,9 +37,27 @@ export default function Login(): React.JSX.Element {
       if (isSuccess) {
         navigation.navigate('Tabs');
       }
-    } catch (error:any) {
+    } catch (error: any) {
       console.log('Login failed:', error.message);
-      Alert.alert('Login Error', error.message);  // Display the error message to the user
+      Alert.alert('Login Error', error.message);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address to reset your password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const message = await requestPasswordReset(email);
+      Alert.alert('Success', message);
+    } catch (error: any) {
+      console.log('Reset password error:', error.message);
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,7 +71,7 @@ export default function Login(): React.JSX.Element {
           pb={40}
           direction="row">
           <Text>Sign in to</Text>
-          <Text>Execise App</Text>
+          <Text>Exercise App</Text>
         </Stack>
         <Stack
           justify="center"
@@ -58,36 +79,76 @@ export default function Login(): React.JSX.Element {
           mt={20}
           spacing={5}
           direction="column">
-         <TextInput
-            style={{margin: 16, width: 300, backgroundColor: '#f0f0f0'}}
-            placeholder="email"
-            onChangeText={text => {
-              setEmail(text);
-              console.log(text);
-            }}
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            onChangeText={(text) => setEmail(text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           <TextInput
-            style={{margin: 16, width: 300, backgroundColor: '#f0f0f0'}}
+            style={styles.input}
             placeholder="Password"
             secureTextEntry={true}
-            onChangeText={text => {
-              setPassword(text);
-              console.log(text);
-            }}
+            onChangeText={(text) => setPassword(text)}
           />
         </Stack>
 
-        <VStack mt={-30} items={'center'} p={40} justify="center">
-          <TouchableOpacity onPress={onSubmit}>
-            <Text>Login</Text>
+        <VStack mt={-30} items="center" p={40} justify="center">
+          <TouchableOpacity onPress={onSubmit} style={styles.button}>
+            <Text style={styles.buttonText}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('RequestResetPassword')
+            }}
+            style={styles.link}>
+            <Text style={styles.linkText}>
+              {loading ? 'Sending reset link...' : 'Forgot Password?'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={1}
-            onPress={() => navigation.navigate('Register')}>
-            <Text>Create account</Text>
+            onPress={() => navigation.navigate('Register')}
+            style={styles.link}>
+            <Text style={styles.linkText}>Create account</Text>
           </TouchableOpacity>
         </VStack>
       </Stack>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  input: {
+    margin: 16,
+    width: 300,
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  link: {
+    marginTop: 10,
+  },
+  linkText: {
+    color: '#007BFF',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+});

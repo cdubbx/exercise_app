@@ -253,3 +253,59 @@ export const useLogin = () => {
 
   return {login, loading, appleLogin};
 };
+
+export const useResetPassword = () => {
+  const [isLoading, setLoading] = useState<boolean>(false);
+
+  async function resetPassword(resetPasswordObject:any){
+    try {
+        setLoading(true)
+        const response = await fetch('http://192.168.0.13:8000/api/reset-password/', {
+          method:"POST",
+          headers: {
+            "Content-Type":'application/json'
+          }, 
+          body: JSON.stringify(resetPasswordObject)
+        })
+
+        const data = await response.json();
+        if (!response.ok) {
+          console.log(data.error || 'There is a network error');
+          throw new Error(data.error || 'There is a network error');
+        }
+        setLoading(false);
+        return data?.message;
+    } catch (error) {
+      console.log('Error:', error);
+      setLoading(false);
+    }
+  }
+
+  async function requestPasswordReset(resetPasswordObject:any){
+    try {
+        setLoading(true)
+        const response = await fetch('http://192.168.0.13:8000/api/request-password-reset/', {
+          method:"POST",
+          headers: {
+            "Content-Type":'application/json'
+          }, 
+          body: JSON.stringify(resetPasswordObject)
+        })
+
+        const data = await response.json();
+        if (!response.ok) {
+          console.log(data.error || 'There is a network error');
+          throw new Error(data.error || 'There is a network error');
+        }
+        setLoading(false);
+        return data?.message;
+    } catch (error) {
+      console.log('Error:', error);
+      setLoading(false);
+    }
+  }
+
+  return {requestPasswordReset, resetPassword, isLoading }
+
+
+}
