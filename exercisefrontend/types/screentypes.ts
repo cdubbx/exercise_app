@@ -5,7 +5,14 @@ export type AuthStackParamList = {
     OTP: { email: string };
     Home: undefined;
     Tabs: undefined;
-  };
+    RequestResetPassword: undefined;
+    ResetPassword: {email:any, token:any}
+  }
+
+  export type ResetPasswordList = {
+    AuthStack: undefined
+    ResetPassword: {email:any, token:any}
+  }
   
   // Other stack parameter lists
   export type ExploreStackParamList = {
