@@ -6,7 +6,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMuscleExercise} from '../hooks/exercises';
 import {Box, HStack, Stack, VStack, Text} from '@react-native-material/core';
@@ -34,7 +34,18 @@ export default function BodyPart({route, navigation}: Props) {
   const {loading, bodyExercises} = useMuscleExercise(parts);
   const [hasExercises, setHasExercises] = useState(false);
   // console.log(parts);
+
   // console.log(bodyExercises);
+
+  useEffect(
+    () => () => {
+      console.log(
+        'These are the exercise fetched from the backend',
+        bodyExercises,
+      );
+    },
+    [parts],
+  );
 
   if (loading) {
     return <Text>Loading...</Text>;

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ExerciseViewSet, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView, ValidateTokenView, UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView
-from .views import ResetPasswordAPIView, RequestPasswordResetAPIView
+from .views import ExerciseViewSet, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView,  UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView, UploadWorkOutView, GetBodyPartWorkOutView, SpotifyRefreshTokenView, SpotifySwapTokenView
+from .views import ResetPasswordAPIView, RequestPasswordResetAPIView, UserListView, UserDetailView, NowPlayingForUserView, UpdateNowPlayingView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 # Using `router.register(r'exercises', ExerciseViewSet)` registers the `ExerciseViewSet` with the router,
@@ -17,17 +17,23 @@ urlpatterns = [
     path('register/', RegisterAPIView.as_view(), name='register'),
     path('saveWorkOuts', SaveWorkOutView.as_view(), name = 'saveWorkout'),
     path('login/', LoginAPIView.as_view()),
-    path('user/', UserView.as_view()),
+    path('user/', UserView.as_view(), name='user'),
     path('verify-otp/', VerifyOTPAPIView.as_view(), name='verify-otp'),
     path('social-login/', SigninWIthApple.as_view(), name='social-login'),
+    path('token/swap/', SpotifySwapTokenView.as_view(), name='token-swap'),
+    path('token/refresh/', SpotifyRefreshTokenView.as_view(), name='token-refresh'),
+    path('user-uploaded-workout/', UploadWorkOutView.as_view(), name='user-uploaded-workout'),
+    path("users/", UserListView.as_view(), name="user_list"),  # ✅ Paginated user list
+    path("users/<int:user_id>/", UserDetailView.as_view(), name="user_detail"),  # ✅ Fetch user by ID
     path('request-password-reset/', RequestPasswordResetAPIView.as_view(), name='request-password-reset'),
     path('reset-password/', ResetPasswordAPIView.as_view(), name='reset-password'),
+    path('get-specific-exercises/', GetBodyPartWorkOutView.as_view(), name='GetBodyPartWorkOutView'),
     path('logout/', LogoutView.as_view()),
-    path('validate-token/', ValidateTokenView.as_view(), name='validate_token'),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('userSavedWorkouts/', UserSavedWorkoutsView.as_view(), name= 'userSavedWorkOuts'),
     path('plannedWorkouts/', UserPlannedWorkoutsView.as_view(), name='planned_workouts'),
-
+    path("now_playing/<int:user_id>/", NowPlayingForUserView.as_view(), name="now_playing_for_user"),
+    path("now_playing/update", UpdateNowPlayingView.as_view(), name="update-now_playing"),
 ]

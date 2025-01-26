@@ -1,17 +1,28 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from .models import Exercise, User, SavedWorkout, PlannedWorkout
+from .models import Exercise, User, SavedWorkout, PlannedWorkout,UserUploadWorkedouts, NowPlayingTrack
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Exercise
         fields = '__all__'
+        
+class UserUploadWorkoutsSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = UserUploadWorkedouts
+        fields = '__all__'
+    def create(self, validated_data):
+        return super().create(validated_data)
 
 class UserSerializer(serializers.ModelSerializer):
+    date_joined = serializers.SerializerMethodField()
+
+    def get_date_joined(self, obj):
+        return obj.date_joined.date().strftime("%Y-%m-%d")
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'username']
+        fields = ['id', 'email', 'password', 'username', 'streak', 'image_url', 'date_joined', 'streak' ]
 
         extra_kwargs = {
             'password': {'write_only': True},
@@ -51,4 +62,8 @@ class PlannedWorkoutSerializer(serializers.ModelSerializer):
     saved_workout_details = SavedWorkoutSerializer(source='saved_workout', read_only=True)
     class Meta:
         model = PlannedWorkout
+        fields = '__all__'
+class NowPlayingTrackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NowPlayingTrack
         fields = '__all__'

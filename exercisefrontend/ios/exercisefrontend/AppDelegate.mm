@@ -1,25 +1,34 @@
 #import "AppDelegate.h"
 #import <React/RCTBundleURLProvider.h>
-#import <React/RCTLinkingManager.h> // Add this line for linking manager
+#import <React/RCTLinkingManager.h> // Required for deep linking
+#import <RNSpotifyRemote.h> // Required for Spotify Remote SDK
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
   self.moduleName = @"exercisefrontend";
-  // You can add your custom initial props in the dictionary below.
-  // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
-
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-// Add the following method to handle deep linking:
+// ✅ Single openURL method handling both React Native Linking & Spotify Authentication
 - (BOOL)application:(UIApplication *)application
-   openURL:(NSURL *)url
-   options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
+            openURL:(NSURL *)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
 {
-  return [RCTLinkingManager application:application openURL:url options:options];
+  if ([[RNSpotifyRemoteAuth sharedInstance] application:application openURL:url options:options]) {
+    return YES; // If Spotify handled it, return YES
+  }
+  return [RCTLinkingManager application:application openURL:url options:options]; // Handle other deep links
+}
+
+// ✅ Required for Universal Links (iOS 9+)
+- (BOOL)application:(UIApplication *)application
+            continueUserActivity:(NSUserActivity *)userActivity
+            restorationHandler:(void (^)(NSArray *restorableObjects))restorationHandler
+{
+  return [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge

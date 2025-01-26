@@ -1,21 +1,24 @@
 from django.shortcuts import render
 from rest_framework import viewsets,status
-from .models import Exercise, User, SavedWorkout,PlannedWorkout
-from .serializers import ExerciseSerializer, UserSerializer, SavedWorkoutSerializer,PlannedWorkoutSerializer
+from .models import Exercise, User, SavedWorkout,PlannedWorkout, NowPlayingTrack
+from .serializers import ExerciseSerializer, UserSerializer, SavedWorkoutSerializer,PlannedWorkoutSerializer, UserUploadWorkoutsSerializer, NowPlayingTrackSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import get_authorization_header, TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import CursorPagination
 from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from uuid import uuid4
 from .utils.utils import send_otp, generate_otp
+from django.shortcuts import get_object_or_404
+from django.utils.timezone import now
 from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
-
-
+import requests
 from .backends import AppleAuthenticationBackend
 import logging
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -64,30 +67,22 @@ class VerifyOTPAPIView(APIView):
             email = request.data.get('email')
             otp = request.data.get('otp')
             
-            # Validate required fields
             if not email or not otp:
                 raise ValidationError({'error': 'Email and OTP are required.'})
             
-            # Retrieve cached OTP
             cached_otp = cache.get(f'otp_{email}')
             if not cached_otp or cached_otp != otp:
-                raise ValidationError({'otp': 'Invalid or expired OTP.'})
-            
-            # OTP is valid: Activate the user
+                raise ValidationError({'otp': 'Invalid or expired OTP.'})            
             user = User.objects.get(email=email)
             if not user.is_active:  # Check if the user is inactive
                 user.is_active = True  # Activate the user
                 user.save()
             else:
-                return Response({'message': 'User is already activated.'})
-            
-            # Generate tokens
+                return Response({'message': 'User is already activated.'})            
             refresh = RefreshToken.for_user(user)
             access = refresh.access_token
             
-            # Serialize user data for response
             user_data = UserSerializer(user).data
-
             return Response({
                 'message': 'Account successfully verified and activated.',
                 'user': user_data,
@@ -101,6 +96,7 @@ class VerifyOTPAPIView(APIView):
         except Exception as e:
             logger.error('Unexpected error occurred in VerifyOTPAPIView', exc_info=True)
             return Response({'error': str(e)}, status=500)
+        
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]  # Allow any user to access this view
 
@@ -130,30 +126,59 @@ class LoginAPIView(APIView):
         return response
 
 class UserView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
-        auth = get_authorization_header(request).split()
-        
-        if not auth or auth[0].lower() != b'bearer':
-            raise AuthenticationFailed('Unauthenticated')
-        
+            authenticated_user = request.user
+            try:
+                user = User.objects.get(id=authenticated_user.id)
+                serializer = UserSerializer(user)
+                return Response(serializer.data, status=200)
+            except User.DoesNotExist:
+                return Response({"error": "User not found"}, status=404)
+
+class UserCursorPagination(CursorPagination):
+    page_size = 10
+    ordering = "date_joined"
+
+class UserListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all().order_by("date_joined")
+    serializer_class = UserSerializer
+    pagination_class = UserCursorPagination
+
+    def get_queryset(self):
+        cached_users = cache.get("user_list")
+        if cached_users:
+            return cached_users
+        users = super().get_queryset()
+        cache.set("user_list", users, timeout=60 * 60)
+        return users
+
+class UserDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, user_id):
+        cache_key = f"user_{user_id}"
+        cached_user = cache.get(cache_key)
+        if cached_user:
+            return Response(cached_user)
         try:
-            token = auth[1]
-            payload = jwt.decode(token, 'access_secret', algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Unauthenticated')
-        
-        user = User.objects.filter(id=payload['id']).first()
-        serializer = UserSerializer(user)
-
-        return Response(serializer.data)
-
-class ValidateTokenView(APIView):
+            user = User.objects.get(id=user_id)
+            serializer = UserSerializer(user)
+            cache.set(cache_key, serializer.data, timeout=60* 60)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+class UserSavedWorkoutsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        return Response({"detail": "Token is valid"})    
-    
-    
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        # Use select_related to fetch related Exercise objects efficiently
+        saved_workouts = SavedWorkout.objects.filter(user=user).select_related('exercise')
+        serializer = SavedWorkoutSerializer(saved_workouts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
 class LogoutView(APIView):
     def post(self,request):
         response = Response()
@@ -202,17 +227,39 @@ class TokenRefreshView(APIView):
             'access_token': new_acccess_token,
             'refresh_token': new_refresh_token
         })
-    
-
-class UserSavedWorkoutsView(APIView):
+        
+class UploadWorkOutView(APIView):
     permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            user = request.user
+            workout_data = request.data.get('workout', {})
+            serializer = UserUploadWorkoutsSerializer(data=workout_data )
+            if serializer.is_valid():
+                workout = serializer.save(user=user)
+                return Response({"message": f'Workout with {workout.id} has been saved!'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f'An error has occurred {e}')
+            logger.debug(f'An error has occured {e}')
+            return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        # Use select_related to fetch related Exercise objects efficiently
-        saved_workouts = SavedWorkout.objects.filter(user=user).select_related('exercise')
-        serializer = SavedWorkoutSerializer(saved_workouts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+class GetBodyPartWorkOutView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            bodyPart = request.data.get('bodyPart')
+            exercises = Exercise.objects.all()
+            if bodyPart:
+                exercises = exercises.filter(primaryMuscles__overlap=bodyPart)
+            serializer = ExerciseSerializer(exercises, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.debug(f'An internal error has occurred {e}')
+            print(f'An internal error has occurred {e}')
+            return Response({"error": f"f'An internal error has occurred {e}'"})
+
 class SaveWorkOutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -252,11 +299,14 @@ class UserPlannedWorkoutsView(APIView):
     def post(self, request, *args, **kwargs):
         user = request.user
         request.data['user'] = user.id  # Set the user
-        workout_data = request.data.get('workout', {})
-        workout = workout_data.get('workout', {})
-        saved_workout_id = workout.get('id')
+        workout_data = request.data.get('workout', {}) 
+        workout = workout_data.get('exercise', {})
+        exercise_id = workout.get('id')
         day_of_the_week = workout_data.get('day')
         reps = workout_data.get('reps')
+        saved_workout_instance = get_object_or_404(SavedWorkout, exercise_id=exercise_id, user=user)       
+        saved_workout_id = saved_workout_instance.id
+
         
         if not saved_workout_id or not day_of_the_week:
             return Response({"error": "Both saved_workout and day_of_the_week are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -317,6 +367,7 @@ class SigninWIthApple(APIView):
         except Exception as e:
             print(f"An error has occured {e}")
             return Response({"error": "Internal server error"})
+        
 class RequestPasswordResetAPIView(APIView):
         permission_classes = [AllowAny]
         def post(self, request):
@@ -348,6 +399,7 @@ class RequestPasswordResetAPIView(APIView):
             except Exception as e:
                 print( f"There is an internal error {e}")
                 return Response({'message': f"There is an internal error {e}"}, status=500)
+            
 class ResetPasswordAPIView(APIView):
         permission_classes = [AllowAny]
         def post(self, request):
@@ -370,3 +422,99 @@ class ResetPasswordAPIView(APIView):
             except Exception as e:
                 print( f"There is an internal error {e}")
                 return Response({'message': f"There is an internal error {e}"}, status=500)
+
+class TrackStreakView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+             user = request.user
+             streak_user = User.objects.get(user=user)
+             streak_user.update_streak()
+             serializer = UserSerializer(streak_user)
+             return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.debug(f"An error has occurred {e}")
+            print(f"An error has occurred {e}")
+            return Response({"error": f"An error has occured {e}"}, status=status.HTTP_400_BAD_REQUEST)
+   
+class SpotifySwapTokenView(APIView):
+
+    permission_classes = [AllowAny]  # ✅ Allow all users (ensure API is public)
+
+    def post(self, request):
+        try:
+            code = request.data.get('code')
+            print("🚀 Received request at /api/token/swap/")
+            print("🔍 Request headers:", request.headers)
+            print("🔍 Request body:", request.data)  # ✅ Print 
+            print(code)
+
+            payload = {
+                'grant_type': 'authorization_code',
+                 'code': code,
+                 'redirect_uri': settings.FRONTEND_REDIRECT_URL,
+                 'client_id': settings.SPOTIFY_CLIENT_ID,
+                 'client_secret': settings.SPOTIFY_CLIENT_SECRET
+            }
+            
+            response = requests.post('https://accounts.spotify.com/api/token', data=payload)
+            return Response(response.json())
+        except Exception as e: 
+            logger.debug(f'An error has occurred {e}')
+            print(f'An error has occurred {e}')
+            Response({"error": f"An error has occurred {e}"})
+
+class SpotifyRefreshTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh_token')
+            payload = {
+                'grant_type':'refresh_token',
+                'refresh_token': refresh_token,
+                'client_id': settings.SPOTIFY_CLIENT_ID,
+                'client_secret': settings.SPOTIFY_CLIENT_SECRET,
+            }
+            response = requests.post('https://accounts.spotify.com/api/token', data=payload)
+            Response(response.json(), status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.debug(f'An error has occurred {e}')
+            print(f'An error has occurred {e}')
+            Response({"error": f"An error has occurred {e}"})
+    
+class UpdateNowPlayingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            track_name = request.data.get('track_name')
+            artist_name = request.data.get('artist_name')
+            album_image_url = request.data.get('album_image_url')
+            album_name = request.data.get('album_name')
+
+            user = get_object_or_404(User, id=request.user.id) 
+            NowPlayingTrack.objects.update_or_create(
+                user=user,
+                defaults={"track_name":track_name, "artist_name": artist_name, "album_image_url": album_image_url,"album_name": album_name , "timestamp": now()}
+            )
+            return Response({"message":"Track updated successfully"}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.debug(f'An error has occurred {e}')
+            print(f'An error has occurred {e}')
+            Response({"error": f"An error has occurred {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+class NowPlayingForUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, user_id):
+        try:
+            user = get_object_or_404(User, id=user_id)
+            track = NowPlayingTrack.objects.filter(user=user).order_by("-timestamp").first()
+            if track:
+                serializer = NowPlayingTrackSerializer(track)
+                return Response(serializer.data,status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "User is currently not playing any track"}, status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response({"error":"User doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Internal server error {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

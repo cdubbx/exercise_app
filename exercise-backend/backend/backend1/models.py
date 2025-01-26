@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from .managers import CustomerUserManager
 from django.conf import settings
 import random 
+from datetime import date, timedelta
 import string
 
 from uuid import uuid4
@@ -18,9 +19,32 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="Adding the create at field")
     USERNAME_FIELD = 'email'
+    image_url = models.CharField(max_length=255, blank=True, null=True)
+    height = models.DecimalField(max_digits=7, decimal_places=4, null=True, blank=True)  
+    weight = models.DecimalField(max_digits=7, decimal_places=3, null=True, blank=True) 
+    phone_number = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    streak = models.IntegerField(default=0) 
+    is_trainer = models.BooleanField(default=False, blank=True, null=True)
+    last_active = models.DateField(null=True, blank=True)
+    streak = models.IntegerField(default=0, null=True, blank=True)
 
     def __str__(self) -> str:
         return self.email
+    def update_streak(self):
+        today = date.today()
+        if self.last_active is None:
+            self.streak = 1
+        elif self.last_active == today:
+            return self.streak
+        elif self.last_active == today - timedelta(days=1):
+            self.streak += 1
+        else:
+            self.streak = 1
+
+        self.last_active = today
+        self.save() 
+        return self.streak
+
     def make_random_password(self, length=8, allowed_chars=string.ascii_letters + string.digits):
         """Custom password generator"""
         return ''.join(random.choice(allowed_chars) for _ in range(length))
@@ -31,11 +55,11 @@ class Exercise(models.Model):
     aliases = models.JSONField(blank=True, null=True)
     primaryMuscles = models.JSONField(blank = True, null = True)
     secondaryMuscles = models.JSONField(blank=True, null=True)
-    force = models.CharField(max_length=50, null = True)
-    level = models.CharField(max_length=50, null = True)
+    force = models.CharField(max_length=50, blank= True, null = True)
+    level = models.CharField(max_length=50, blank= True, null = True)
     mechanic = models.CharField(max_length=50, blank=True, null=True)
-    equipment = models.CharField(max_length=50, null =True)
-    category = models.CharField(max_length=50,  null = True)
+    equipment = models.CharField(max_length=50,blank= True , null =True)
+    category = models.CharField(max_length=50, blank= True , null = True)
     instructions = models.JSONField(null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     tips = models.JSONField(blank=True, null=True)
@@ -45,6 +69,29 @@ class Exercise(models.Model):
 
     def __str__(self):
         return self.name
+    
+class UserUploadWorkedouts(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    aliases = models.JSONField(blank=True, null=True)
+    primaryMuscles = models.JSONField(blank = True, null = True)
+    secondaryMuscles = models.JSONField(blank=True, null=True)
+    force = models.CharField(max_length=50, blank= True, null = True)
+    level = models.CharField(max_length=50, blank= True, null = True)
+    mechanic = models.CharField(max_length=50, blank=True, null=True)
+    equipment = models.CharField(max_length=50,blank= True , null =True)
+    category = models.CharField(max_length=50, blank= True , null = True)
+    instructions = models.JSONField(null=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    tips = models.JSONField(blank=True, null=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    img_url = models.JSONField(null=True, blank=True)
+    trainer_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+    
     
 class SavedWorkout(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_saved')
@@ -76,4 +123,13 @@ class PlannedWorkout(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.saved_workout.exercise.name} on {self.day_of_the_week}"
     
+class NowPlayingTrack(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    track_name = models.CharField(max_length=255, null=True, blank=True)
+    artist_name = models.CharField(max_length=255, null=True, blank=True)
+    album_image_url = models.URLField(blank=True, null=True)
+    album_name = models.CharField(max_length=255, null=True, blank=True)
+    preview_url = models.URLField(blank=True, null=True)
     
+    def __str__(self):
+        return f"{self.user.username} - {self.track_name}"

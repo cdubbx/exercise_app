@@ -12,7 +12,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import Entypo from 'react-native-vector-icons/Entypo';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {useSaveWorkOuts} from '../hooks/exercises';
+import {useSaveWorkOuts, useSetExercise} from '../hooks/exercises';
 
 type HomeStackParamList = {
   Home: undefined;
@@ -25,8 +25,11 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'BodyPart'>;
 // Note the correction in the prop name from 'exericse' to 'exercise' and the typing syntax
 export default function ExerciseCard({route, navigation}: any) {
   const [reps, setReps] = useState(0);
-
+  const {addExercises} = useSetExercise();
   const {saveWorkouts} = useSaveWorkOuts();
+
+  const exerciseItems = route.params?.item;
+
 
   function incrementRep() {
     setReps(prevState => prevState + 1);
@@ -39,12 +42,12 @@ export default function ExerciseCard({route, navigation}: any) {
       setReps(0);
     }
   }
-
   const onSaveWorkout = async () => {
+    if(exerciseItems !== undefined){
+      addExercises(exerciseItems);
+    }
     saveWorkouts(exerciseItems);
   };
-
-  const exerciseItems = route.params?.item;
 
   return (
     //@ts-ignore

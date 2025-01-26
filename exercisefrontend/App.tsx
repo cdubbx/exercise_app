@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -31,11 +31,15 @@ import {
   HomeStackParamList,
   ProfileStackParamList,
   ResetPasswordList,
-} from './types/screentypes';
-import { parseRouteFromUrl } from './utils/utils';
+} from './interfaces/screentypes';
 import ResetPassword from './screens/ResetPassword';
 import ResetPasswordScreen from './screens/ResetPassword';
 import RequestResetPassword from './screens/RequestResetPassword';
+import {ExerciseProvider} from './context/ExerciseContext';
+import {UserContextProvider} from './context/UserContext';
+import SavedExercise from './cards/SavedFetchedExercise';
+import Settings from './screens/Settings';
+import {NowPlayingProvider} from './context/NowPlayContextSpotify';
 
 export default function App(): React.JSX.Element {
   const {isAuthenticated} = useAuth();
@@ -54,22 +58,21 @@ export default function App(): React.JSX.Element {
   //   )
   // }
 
-  const linking  = {
+  const linking = {
     prefixes: ['exercisefrontend://'],
     config: {
-        screens: {
-          ResetPassword: {
-            path:'reset-password',
-            parse: {
-              token: (token: string) => token, 
-              email: (email: string) => email
-            }
-          }
-        }
-    }
-  }
-
-
+      screens: {
+        Settings: 'spotify-auth',
+        ResetPassword: {
+          path: 'reset-password',
+          parse: {
+            token: (token: string) => token,
+            email: (email: string) => email,
+          },
+        },
+      },
+    },
+  };
 
   const AuthNavigator = () => {
     return (
@@ -80,12 +83,15 @@ export default function App(): React.JSX.Element {
         <AuthStack.Screen name="Register" component={Register} />
         <AuthStack.Screen name="Tabs" component={TabNavigator} />
         <AuthStack.Screen name="OTP" component={OTPScreen} />
-        <AuthStack.Screen name='RequestResetPassword' component={RequestResetPassword} />
         <AuthStack.Screen
-        name="ResetPassword" // Matches linking config
-        component={ResetPasswordScreen} // Pass the ResetPasswordStackNavigator here
-        options={{ headerShown: false }}
-      />
+          name="RequestResetPassword"
+          component={RequestResetPassword}
+        />
+        <AuthStack.Screen
+          name="ResetPassword" // Matches linking config
+          component={ResetPasswordScreen} // Pass the ResetPasswordStackNavigator here
+          options={{headerShown: false}}
+        />
       </AuthStack.Navigator>
     );
   };
@@ -119,7 +125,8 @@ export default function App(): React.JSX.Element {
         initialRouteName="Profile"
         screenOptions={{headerShown: false}}>
         <ProfileStack.Screen name="Profile" component={ProfileScreen} />
-        <ProfileStack.Screen name="SavedWorkouts" component={SavedWorkOuts} />
+        <ProfileStack.Screen name="SavedExercises" component={SavedExercise} />
+        <ProfileStack.Screen name="Settings" component={Settings} />
       </ProfileStack.Navigator>
     );
   };
@@ -137,11 +144,15 @@ export default function App(): React.JSX.Element {
     );
   };
 
-
-
   return (
-    <NavigationContainer linking={linking}>
-      {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
-    </NavigationContainer>
+    <NowPlayingProvider>
+      <UserContextProvider>
+        <ExerciseProvider>
+          <NavigationContainer linking={linking}>
+            {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
+          </NavigationContainer>
+        </ExerciseProvider>
+      </UserContextProvider>
+    </NowPlayingProvider>
   );
 }

@@ -14,11 +14,12 @@ from pathlib import Path
 import os
 from corsheaders.defaults import default_headers
 import datetime
-from decouple import config
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+dotenv_path = BASE_DIR / ".env"
+load_dotenv(dotenv_path=dotenv_path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -29,7 +30,7 @@ SECRET_KEY = 'django-insecure-(@&^ci%yw$1736u24yroz+4k!j8!%5%c6^b2m5xqkf9yjgoeli
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.0.13', '0.0.0.0']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.0.13', '192.168.0.16',  '*' ,'0.0.0.0']
 
 # Application definition
 
@@ -44,7 +45,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
-    'social_django'
+    'social_django',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +83,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis for production
+    },
+}
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
@@ -100,8 +107,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 CORS_ALLOWED_ORIGINS = [
+    'http://0.0.0.0:8081',
     'http://localhost:8081',  # Adjust with your React Native app's origin
-    'http://192.168.0.13:8081'
+    'http://192.168.0.13:8081',
+    'http://0.0.0.0'
 ]
 
 
@@ -123,24 +132,28 @@ LOGGING = {
 
 # settings.py
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'clwantong@gmail.com'
-EMAIL_HOST_PASSWORD = 'hyjp gfmc guuy kjkk'
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 
-SOCIAL_AUTH_APPLE_PRIVATE_KEY ='''-----BEGIN PRIVATE KEY-----
-MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgWdXsArONZIAIbpQd
-bzhpHZWIvFkQLeElqiftlCSFvCWgCgYIKoZIzj0DAQehRANCAASsu0qxwgdQV3XD
-05bRuqCCFaXVWOpunktP+3wI9V9I0tDgsaSpupQz1MVL/ftYfnb7raYAyRUfYV6K
-JuWzjfVM
------END PRIVATE KEY-----'''
+# SOCIAL_AUTH_APPLE_PRIVATE_KEY ='''-----BEGIN PRIVATE KEY-----
+# MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgWdXsArONZIAIbpQd
+# bzhpHZWIvFkQLeElqiftlCSFvCWgCgYIKoZIzj0DAQehRANCAASsu0qxwgdQV3XD
+# 05bRuqCCFaXVWOpunktP+3wI9V9I0tDgsaSpupQz1MVL/ftYfnb7raYAyRUfYV6K
+# JuWzjfVM
+# -----END PRIVATE KEY-----'''
 
-SOCIAL_AUTH_APPLE_TEAM_ID = "8Q66V476N4"
-SOCIAL_AUTH_APPLE_CLIENT_ID = "org.reactjs.native.example.exercisefrontend"
-SOCIAL_AUTH_APPLE_KEY_ID = "R9B4NFVU9X"
+SOCIAL_AUTH_APPLE_PRIVATE_KEY = os.getenv("SOCIAL_AUTH_APPLE_PRIVATE_KEY")
+SOCIAL_AUTH_APPLE_TEAM_ID = os.getenv("SOCIAL_AUTH_APPLE_TEAM_ID")
+SOCIAL_AUTH_APPLE_CLIENT_ID = os.getenv("SOCIAL_AUTH_APPLE_CLIENT_ID")
+SOCIAL_AUTH_APPLE_KEY_ID = os.getenv("SOCIAL_AUTH_APPLE_KEY_ID")
+FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL")
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=15),

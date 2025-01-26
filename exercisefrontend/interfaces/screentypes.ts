@@ -21,7 +21,8 @@ export type AuthStackParamList = {
   
   export type ProfileStackParamList = {
     Profile: undefined;
-    SavedWorkouts: { exercises: any[] };
+    SavedExercises: { exercise: any };
+    Settings: undefined;
   };
   
   export type HomeStackParamList = {

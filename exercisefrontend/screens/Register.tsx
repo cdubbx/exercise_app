@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useLogin, useRegister} from '../hooks/auth';
-import { AuthStackParamList } from '../types/screentypes';
+import { AuthStackParamList } from '../interfaces/screentypes';
 import {appleAuth, AppleButton} from '@invertase/react-native-apple-authentication';
 
 
