@@ -13,7 +13,7 @@ from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from uuid import uuid4
-from .utils.utils import send_otp, generate_otp
+from .utils.utils import send_otp, generate_otp, send_track_update
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from django.core.mail import send_mail, EmailMessage
@@ -497,6 +497,8 @@ class UpdateNowPlayingView(APIView):
                 user=user,
                 defaults={"track_name":track_name, "artist_name": artist_name, "album_image_url": album_image_url,"album_name": album_name , "timestamp": now()}
             )
+            # send_track_update(user.id, track_name, artist_name, album_image_url)
+
             return Response({"message":"Track updated successfully"}, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.debug(f'An error has occurred {e}')
