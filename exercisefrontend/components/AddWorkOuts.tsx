@@ -15,7 +15,7 @@ export const AddWorkOuts: React.FC<ScreenNavProps> = ({exercises, navigation}) =
     <FlatList
       ListHeaderComponent={
         <View style={{marginBottom: 10}}>
-          <Text>Recently Add Exercises</Text>
+          <Text>Recently Added Exercises</Text>
         </View>
       }
       data={exercises}

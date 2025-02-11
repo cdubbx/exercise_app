@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -16,7 +16,7 @@ import Login from './screens/Login';
 import {Button, even, Provider} from '@react-native-material/core';
 import Register from './screens/Register';
 import HomeScreen from './screens/HomeScreen';
-import {useAuth} from './hooks/auth';
+import {getAuthToken, useAuth, useUser, useUserContext} from './hooks/auth';
 import ExploreScreen from './screens/ExploreScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import BodyPart from './screens/BodyPart';
@@ -40,24 +40,163 @@ import {UserContextProvider} from './context/UserContext';
 import SavedExercise from './cards/SavedFetchedExercise';
 import Settings from './screens/Settings';
 import {NowPlayingProvider} from './context/NowPlayContextSpotify';
+import OtherUserScreen from './screens/OtherUserScreen';
+import WorkoutForm from './screens/WorkoutForm';
+import PublicExercises from './components/PublicExercises';
+import Entypo from 'react-native-vector-icons/Entypo';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import MainNavigator from './components/MainNavigator';
 
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const ResetPasswordStack = createNativeStackNavigator<ResetPasswordList>();
+const ExploreStack = createNativeStackNavigator<ExploreStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator<BottomTabParamList>();
+
+
+
+export const AuthNavigator = () => {
+  return (
+    <AuthStack.Navigator
+      initialRouteName="Login"
+      screenOptions={{headerShown: false}}>
+      <AuthStack.Screen name="Login" component={Login} />
+      <AuthStack.Screen name="Register" component={Register} />
+      <AuthStack.Screen name="Tabs" component={TabNavigator} />
+      <AuthStack.Screen name="OTP" component={OTPScreen} />
+      <AuthStack.Screen
+        name="RequestResetPassword"
+        component={RequestResetPassword}
+      />
+      <AuthStack.Screen
+        name="ResetPassword" // Matches linking config
+        component={ResetPasswordScreen} // Pass the ResetPasswordStackNavigator here
+        options={{headerShown: false}}
+      />
+    </AuthStack.Navigator>
+  );
+};
+
+const HomeNavigator = () => {
+  return (
+    <HomeStack.Navigator
+      initialRouteName="Home"
+      screenOptions={{headerShown: false}}>
+      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen name="BodyPart" component={BodyPart} />
+      <HomeStack.Screen name="ExerciseCard" component={ExerciseCard} />
+      <HomeStack.Screen name="Register" component={Register} />
+    </HomeStack.Navigator>
+  );
+};
+
+const ExploreNavigator = () => {
+  return (
+    <ExploreStack.Navigator
+      initialRouteName="Explore"
+      screenOptions={{headerShown: false}}>
+      <ExploreStack.Screen name="Explore" component={ExploreScreen} />
+      <ExploreStack.Screen name="OtherUser" component={OtherUserScreen} />
+      <ExploreStack.Screen
+        name="PublicWorkoutsScreen"
+        component={PublicExercises}
+      />
+    </ExploreStack.Navigator>
+  );
+};
+
+const ProfileNavigator = () => {
+  return (
+    <ProfileStack.Navigator
+      initialRouteName="Profile"
+      screenOptions={{headerShown: false}}>
+      <ProfileStack.Screen name="Profile" component={ProfileScreen} />
+      <ProfileStack.Screen name="SavedExercises" component={SavedExercise} />
+      <ProfileStack.Screen
+        name="SavedExerciseList"
+        component={SavedWorkOuts}
+      />
+      <ProfileStack.Screen name="Settings" component={Settings} />
+      <ProfileStack.Screen name="AddWorkoutScreen" component={WorkoutForm} />
+      <ProfileStack.Screen name= "Login1" component={AuthNavigator} />
+    </ProfileStack.Navigator>
+  );
+};
+
+export const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      initialRouteName="Home1"
+      screenOptions={{headerShown: false}}>
+      <Tab.Screen
+        name="Home1"
+        component={HomeNavigator}
+        options={{
+          tabBarIcon: ({focused}) => {
+            return <Entypo name="home" size={focused ? 30: 26} />;
+          },
+          tabBarLabel: 'Home',
+          tabBarLabelStyle: {color: 'black'},
+        }}
+      />
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarCard}
+        options={{
+          tabBarIcon: ({focused}) => {
+            return <Entypo name="calendar" size={focused ? 30: 26} />;
+          },
+          tabBarLabel: 'Calendar',
+          tabBarLabelStyle: {color: 'black'},
+        }}
+      />
+      <Tab.Screen
+        name="Explore1"
+        component={ExploreNavigator}
+        options={{
+          tabBarIcon: ({focused}) => {
+            return <AntDesign name="search1" size={focused ? 30: 26} />;
+          },
+          tabBarLabel: 'Explore',
+          tabBarLabelStyle: {color: 'black'},
+        }}
+      />
+      <Tab.Screen
+        name="Profile1"
+        component={ProfileNavigator}
+        options={{
+          tabBarIcon: ({focused}) => {
+            return <AntDesign name="user" size={focused ? 30: 26} />;
+          },
+          tabBarLabel: 'Profile',
+          tabBarLabelStyle: {color: 'black'},
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 export default function App(): React.JSX.Element {
-  const {isAuthenticated} = useAuth();
+  const {checkToken, isAuthenticated} = useAuth();
+  const [token, setToken] = useState<string | null>(null);
 
-  const AuthStack = createNativeStackNavigator<AuthStackParamList>();
-  const HomeStack = createNativeStackNavigator<HomeStackParamList>();
-  const ResetPassword = createNativeStackNavigator<ResetPasswordList>();
-  const ExploreStack = createNativeStackNavigator<ExploreStackParamList>();
-  const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
-  const Stack = createNativeStackNavigator();
-  const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-  // const BottomTabNavigator = () => {
-  //   return (
 
-  //   )
-  // }
 
+  
+  useEffect(() => {
+    const handleGetAuth = async () => {
+      checkToken()
+     const fetchedToken = await AsyncStorage.getItem("access");
+     console.log(fetchedToken); 
+     if(!fetchedToken) setToken(null);
+    }
+    console.log("Token is null", token);
+    
+    handleGetAuth();
+  }, [token])
   const linking = {
     prefixes: ['exercisefrontend://'],
     config: {
@@ -74,82 +213,13 @@ export default function App(): React.JSX.Element {
     },
   };
 
-  const AuthNavigator = () => {
-    return (
-      <AuthStack.Navigator
-        initialRouteName="Login"
-        screenOptions={{headerShown: false}}>
-        <AuthStack.Screen name="Login" component={Login} />
-        <AuthStack.Screen name="Register" component={Register} />
-        <AuthStack.Screen name="Tabs" component={TabNavigator} />
-        <AuthStack.Screen name="OTP" component={OTPScreen} />
-        <AuthStack.Screen
-          name="RequestResetPassword"
-          component={RequestResetPassword}
-        />
-        <AuthStack.Screen
-          name="ResetPassword" // Matches linking config
-          component={ResetPasswordScreen} // Pass the ResetPasswordStackNavigator here
-          options={{headerShown: false}}
-        />
-      </AuthStack.Navigator>
-    );
-  };
-
-  const HomeNavigator = () => {
-    return (
-      <HomeStack.Navigator
-        initialRouteName="Home"
-        screenOptions={{headerShown: false}}>
-        <HomeStack.Screen name="Home" component={HomeScreen} />
-        <HomeStack.Screen name="BodyPart" component={BodyPart} />
-        <HomeStack.Screen name="ExerciseCard" component={ExerciseCard} />
-        <HomeStack.Screen name="Register" component={Register} />
-      </HomeStack.Navigator>
-    );
-  };
-
-  const ExploreNavigator = () => {
-    return (
-      <ExploreStack.Navigator
-        initialRouteName="Explore"
-        screenOptions={{headerShown: false}}>
-        <ExploreStack.Screen name="Explore" component={ExploreScreen} />
-      </ExploreStack.Navigator>
-    );
-  };
-
-  const ProfileNavigator = () => {
-    return (
-      <ProfileStack.Navigator
-        initialRouteName="Profile"
-        screenOptions={{headerShown: false}}>
-        <ProfileStack.Screen name="Profile" component={ProfileScreen} />
-        <ProfileStack.Screen name="SavedExercises" component={SavedExercise} />
-        <ProfileStack.Screen name="Settings" component={Settings} />
-      </ProfileStack.Navigator>
-    );
-  };
-
-  const TabNavigator = () => {
-    return (
-      <Tab.Navigator
-        initialRouteName="Home1"
-        screenOptions={{headerShown: false}}>
-        <Tab.Screen name="Home1" component={HomeNavigator} />
-        <Tab.Screen name="Calendar" component={CalendarCard} />
-        <Tab.Screen name="Explore1" component={ExploreNavigator} />
-        <Tab.Screen name="Profile1" component={ProfileNavigator} />
-      </Tab.Navigator>
-    );
-  };
 
   return (
     <NowPlayingProvider>
       <UserContextProvider>
         <ExerciseProvider>
           <NavigationContainer linking={linking}>
-            {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
+            <MainNavigator />
           </NavigationContainer>
         </ExerciseProvider>
       </UserContextProvider>

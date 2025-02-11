@@ -27,6 +27,9 @@ class User(AbstractUser):
     is_trainer = models.BooleanField(default=False, blank=True, null=True)
     last_active = models.DateField(null=True, blank=True)
     streak = models.IntegerField(default=0, null=True, blank=True)
+    goal_weight = models.DecimalField(max_digits=7, decimal_places=3, null=True, blank=True)
+    is_private = models.BooleanField(default=False, null=True, blank=True)
+    is_searchable = models.BooleanField(default=False, blank=True, null=True)
 
     def __str__(self) -> str:
         return self.email
@@ -71,6 +74,7 @@ class Exercise(models.Model):
         return self.name
     
 class UserUploadWorkedouts(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='uploaded_workouts', null=True)
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=255)
     aliases = models.JSONField(blank=True, null=True)
@@ -79,18 +83,20 @@ class UserUploadWorkedouts(models.Model):
     force = models.CharField(max_length=50, blank= True, null = True)
     level = models.CharField(max_length=50, blank= True, null = True)
     mechanic = models.CharField(max_length=50, blank=True, null=True)
-    equipment = models.CharField(max_length=50,blank= True , null =True)
-    category = models.CharField(max_length=50, blank= True , null = True)
+    equipment = models.CharField(max_length=50,blank= True,null =True)
+    category = models.CharField(max_length=50, blank= True, null = True)
     instructions = models.JSONField(null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     tips = models.JSONField(blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     img_url = models.JSONField(null=True, blank=True)
-    trainer_verified = models.BooleanField(default=False)
+    is_public = models.BooleanField(default=False, blank=True, null=True)
+    trainer_verified = models.BooleanField(default=False, blank=True, null=True)
+   
 
     def __str__(self):
-        return self.name
+        return f"{self.user.email}-{self.name}-uploaded_workout"
     
     
 class SavedWorkout(models.Model):

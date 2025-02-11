@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets,status
-from .models import Exercise, User, SavedWorkout,PlannedWorkout, NowPlayingTrack
+from .models import Exercise, User, SavedWorkout,PlannedWorkout, NowPlayingTrack, UserUploadWorkedouts
 from .serializers import ExerciseSerializer, UserSerializer, SavedWorkoutSerializer,PlannedWorkoutSerializer, UserUploadWorkoutsSerializer, NowPlayingTrackSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import get_authorization_header, TokenAuthentication
@@ -22,6 +22,8 @@ import requests
 from .backends import AppleAuthenticationBackend
 import logging
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync 
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +40,11 @@ class ExerciseViewSet(viewsets.ModelViewSet):
 
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
         try:
             serializer = UserSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            
-            # Save the user as inactive
-            user = serializer.save(is_active=False)
-            
-            # Generate and send OTP
+            user = serializer.save(is_active=False)            
             email = serializer.validated_data['email']
             otp = generate_otp()
             cache.set(f'otp_{email}', otp, timeout=300)
@@ -147,11 +144,12 @@ class UserListView(ListAPIView):
     pagination_class = UserCursorPagination
 
     def get_queryset(self):
-        cached_users = cache.get("user_list")
+        cursor = self.request.query_params.get("cursor", "first_page")        
+        cached_users = cache.get(f"user_list:{cursor}")
         if cached_users:
             return cached_users
         users = super().get_queryset()
-        cache.set("user_list", users, timeout=60 * 60)
+        cache.set(f"user_list:{cursor}", users, timeout=60 * 60)
         return users
 
 class UserDetailView(APIView):
@@ -168,6 +166,19 @@ class UserDetailView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class EditUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            user = request.user
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "User information updated successfully"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UserSavedWorkoutsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -203,8 +214,6 @@ class TokenRefreshView(APIView):
         if not user:
             raise AuthenticationFailed('Unauthenticated')
         
-        
-
         access_token_payload = {
             "id": user.id,
             "exp":datetime.datetime.utcnow() + datetime.timedelta(minutes=15),
@@ -212,8 +221,6 @@ class TokenRefreshView(APIView):
         }
 
         new_acccess_token = jwt.encode(access_token_payload, 'access_secret', algorithm = "HS256")
-
-
         new_refresh_token_payload = {
             "id": payload['id'],
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7),
@@ -233,8 +240,8 @@ class UploadWorkOutView(APIView):
     def post(self, request):
         try:
             user = request.user
-            workout_data = request.data.get('workout', {})
-            serializer = UserUploadWorkoutsSerializer(data=workout_data )
+            workout_data = request.data
+            serializer = UserUploadWorkoutsSerializer(data=workout_data)
             if serializer.is_valid():
                 workout = serializer.save(user=user)
                 return Response({"message": f'Workout with {workout.id} has been saved!'}, status=status.HTTP_201_CREATED)
@@ -244,6 +251,43 @@ class UploadWorkOutView(APIView):
             print(f'An error has occurred {e}')
             logger.debug(f'An error has occured {e}')
             return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class UserUploadedWorkoutsCursorPagination(CursorPagination):
+    page_size = 10
+    ordering = 'date_created'
+
+class GetUserUploadedWorkOutView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserUploadWorkoutsSerializer
+    pagination_class = UserUploadedWorkoutsCursorPagination
+    
+    def get_queryset(self):
+        cursor = self.request.query_params.get('cursor', 'first_page')
+        is_public = self.request.query_params.get('is_public','false').lower() == 'true'
+        cache_key = f"workoutlist_{'public' if is_public else self.request.user.id}_{cursor}"
+        cached_workouts = cache.get(cache_key)
+        if cached_workouts:
+            return cached_workouts
+        if is_public:
+            workouts = UserUploadWorkedouts.objects.filter(is_public = True).order_by("-date_created")
+        workouts = UserUploadWorkedouts.objects.filter(user=self.request.user).order_by("-date_created")
+        cache.set(cache_key, workouts, timeout=60 * 60)
+        return workouts
+
+class GetTrainerVerifiedWorkkouts(ListAPIView):
+    authentication_classes = [IsAuthenticated]
+    serializer_class = UserUploadWorkoutsSerializer
+    pagination_class = UserUploadedWorkoutsCursorPagination
+
+    def get_queryset(self):
+        cursor = self.request.query_params.get('cursor', 'first_page')
+        cache_key = f"trainer_verfied_workouts {cursor}"
+        cached_workouts = cache.get(cache_key)
+        if cached_workouts:
+            return cached_workouts
+        workouts = UserUploadWorkedouts.objects.filter(trainer_verified=True).order_by("-date_created")
+        cache.set(cache_key)
+        return workouts
 
 class GetBodyPartWorkOutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -273,7 +317,6 @@ class SaveWorkOutView(APIView):
         workout_data = request.data.get('workout', {})
         exercise_id = workout_data.get('id')
         
-
         if not exercise_id:
             return Response({"error": "Exercise ID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -491,14 +534,8 @@ class UpdateNowPlayingView(APIView):
             artist_name = request.data.get('artist_name')
             album_image_url = request.data.get('album_image_url')
             album_name = request.data.get('album_name')
-
             user = get_object_or_404(User, id=request.user.id) 
-            NowPlayingTrack.objects.update_or_create(
-                user=user,
-                defaults={"track_name":track_name, "artist_name": artist_name, "album_image_url": album_image_url,"album_name": album_name , "timestamp": now()}
-            )
-            # send_track_update(user.id, track_name, artist_name, album_image_url)
-
+            send_track_update(user.id, track_name, artist_name, album_image_url)
             return Response({"message":"Track updated successfully"}, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.debug(f'An error has occurred {e}')

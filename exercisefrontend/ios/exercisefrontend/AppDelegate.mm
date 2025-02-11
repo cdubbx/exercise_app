@@ -26,7 +26,7 @@
 // ✅ Required for Universal Links (iOS 9+)
 - (BOOL)application:(UIApplication *)application
             continueUserActivity:(NSUserActivity *)userActivity
-            restorationHandler:(void (^)(NSArray *restorableObjects))restorationHandler
+            restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler
 {
   return [RCTLinkingManager application:application continueUserActivity:userActivity restorationHandler:restorationHandler];
 }

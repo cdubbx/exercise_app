@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ExerciseViewSet, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView,  UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView, UploadWorkOutView, GetBodyPartWorkOutView, SpotifyRefreshTokenView, SpotifySwapTokenView
-from .views import ResetPasswordAPIView, RequestPasswordResetAPIView, UserListView, UserDetailView, NowPlayingForUserView, UpdateNowPlayingView
+from .views import ResetPasswordAPIView, RequestPasswordResetAPIView, UserListView, UserDetailView, NowPlayingForUserView, UpdateNowPlayingView, EditUserView, GetUserUploadedWorkOutView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 # Using `router.register(r'exercises', ExerciseViewSet)` registers the `ExerciseViewSet` with the router,
@@ -22,7 +22,9 @@ urlpatterns = [
     path('social-login/', SigninWIthApple.as_view(), name='social-login'),
     path('token/swap/', SpotifySwapTokenView.as_view(), name='token-swap'),
     path('token/refresh/', SpotifyRefreshTokenView.as_view(), name='token-refresh'),
-    path('user-uploaded-workout/', UploadWorkOutView.as_view(), name='user-uploaded-workout'),
+    path('user-upload-workout/', UploadWorkOutView.as_view(), name='user-upload-workout'),
+    path('user-upload-workouts/', GetUserUploadedWorkOutView.as_view(), name='user-upload-workouts'), 
+    path('user/update/', EditUserView.as_view(), name='user-update'),
     path("users/", UserListView.as_view(), name="user_list"),  # ✅ Paginated user list
     path("users/<int:user_id>/", UserDetailView.as_view(), name="user_detail"),  # ✅ Fetch user by ID
     path('request-password-reset/', RequestPasswordResetAPIView.as_view(), name='request-password-reset'),

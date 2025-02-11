@@ -17,3 +17,19 @@ export const formatDate = (dateObj: string | Date, formatType: "full" | "mm-dd-y
 export const determineStreakIcon = () => {
     
 }
+
+export const convertToDecimalFeet = (feet:number, inches: number): number => {
+    console.log(feet + inches / 12);
+    return feet + inches / 12;
+}
+
+export const formatDecimalFeet = (decimalHeight:number) => {
+    const feet = Math.floor(decimalHeight);
+    const inches = Math.round((decimalHeight - feet) * 12);
+    return `${feet}'${inches}"`
+}
+
+export const formatWeight = (dirtyWeight: number | undefined) => {
+    if (dirtyWeight === undefined || isNaN(dirtyWeight)) return "Invalid weight";
+    return Number(dirtyWeight.toPrecision(4));
+  };

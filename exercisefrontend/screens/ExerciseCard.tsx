@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import {Box, HStack, Text as MatText, Stack} from '@react-native-material/core';
 import React, {useContext, useEffect, useState} from 'react';
-import {ExerciseCardProps} from '../interfaces'; // Ensure this path is correct
+import {ExerciseCardProps} from '../interfaces/interfaces'; // Ensure this path is correct
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import RNPickerSelect from 'react-native-picker-select';
 import {useSavePlannedWorkouts, useSetExercise} from '../hooks/exercises';
@@ -23,7 +23,9 @@ const Exercise  = ({item}:any) => {
   const [reps, setReps] = useState('');
   const [selectedDay, setSelectedDay] = useState<string | null>('');
   const {savePlannedWorkouts} = useSavePlannedWorkouts();
-  const {addExercises, exercises} = useSetExercise();
+  const {addExercises, exercises, setExercises} = useSetExercise();
+
+  const day = "day_of_the_week"
 
   const selectDay = (day: any) => {
     setSelectedDay(day);
@@ -40,6 +42,13 @@ const Exercise  = ({item}:any) => {
       console.log(
         'These are the exercises that are being added to state',
         exercises,
+      );
+      setExercises((prevExercises: any) =>
+        prevExercises.map((exercise:any) =>
+          exercise.id === workoutData.workout.id
+            ? { ...exercise, [reps]: reps, [day]: selectedDay } 
+            : exercise
+        )
       );
 
       setModal(false);
@@ -62,10 +71,10 @@ const Exercise  = ({item}:any) => {
             style={{height: 100, width: 100, borderRadius: 10}}
           />
           <Stack spacing={3}>
-            <Text style={{fontSize: 13, color: 'white', fontWeight: 'bold'}}>
+            <Text style={{fontSize: 13, color: 'black', fontWeight: 'bold'}}>
               {item?.name}
             </Text>
-            <Text style={{fontSize: 11, color: 'white', fontWeight: 'bold'}}>
+            <Text style={{fontSize: 11, color: 'black', fontWeight: 'bold'}}>
               {item?.category}
             </Text>
           </Stack>

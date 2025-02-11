@@ -9,6 +9,8 @@ class ExerciseSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class UserUploadWorkoutsSerializer(serializers.ModelSerializer):
+    img_url = serializers.ListField(child=serializers.URLField(), required=False)  # Ensures correct serialization
+    primaryMuscles = serializers.ListField(child=serializers.CharField(), required=False)  # Ensures it's a proper li
     class Meta: 
         model = UserUploadWorkedouts
         fields = '__all__'
@@ -22,13 +24,22 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.date_joined.date().strftime("%Y-%m-%d")
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'username', 'streak', 'image_url', 'date_joined', 'streak' ]
+        fields = ['id', 'email', 'password', 'username', 'streak', 'image_url', 'date_joined', 'streak', 'weight', 'height', 'goal_weight', 'phone_number']
 
         extra_kwargs = {
             'password': {'write_only': True},
             'username': {'required': False}
         }
-
+    def validate_username(self, value):
+        """Ensure the username is unique before updating"""
+        user = self.instance
+        if User.objects.filter(username=value).exclude(id=user.id).exists():
+            raise serializers.ValidationError("Username already taken")
+        return value
+    def validate(self, data):
+        """If there is a null or blank value in the request and then it doesn't update it"""
+        cleaned_data = {key:value for key, value in data.items() if value not in [None, ""]}
+        return cleaned_data
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         instance = self.Meta.model(**validated_data)

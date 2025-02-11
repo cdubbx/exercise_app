@@ -29,19 +29,17 @@ target 'exercisefrontend' do
   end
 
   post_install do |installer|
+    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
     )
-
-    # ✅ Exclude arm64 for iOS Simulator to prevent Spotify SDK linking errors
-    installer.pods_project.targets.each do |target|
-      if target.name == 'RNSpotifyRemote'
+      installer.pods_project.targets.each do |target|
         target.build_configurations.each do |config|
-          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
-        end
+          config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
       end
     end
-  end # ✅ Correct placement of `end`
-end # ✅ Closing the `target 'exercisefrontend' do`
+  end
+end

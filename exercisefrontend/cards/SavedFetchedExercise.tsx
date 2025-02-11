@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import {Box, HStack, Text as MatText, Stack} from '@react-native-material/core';
 import React, {useContext, useEffect, useState} from 'react';
-import {ExerciseCardProps} from '../interfaces'; // Ensure this path is correct
+import {ExerciseCardProps} from '../interfaces/interfaces'; // Ensure this path is correct
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import RNPickerSelect from 'react-native-picker-select';
 import {useSavePlannedWorkouts, useSetExercise} from '../hooks/exercises';
@@ -41,18 +41,19 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
 
   const onSubmit = async () => {
     try {
-      const workoutData = {
+      const workoutData:any = {
         exercise: item,
         reps: reps,
         day: selectedDay,
       };
       await savePlannedWorkouts(workoutData);
+      workoutData["day_of_the_week"] = selectedDay
+      addExercises(workoutData);
       console.log(
         'These are the exercises that are being added to state',
         exercises,
       );
-
-      setModal(false);
+      // navigation.goBack();
     } catch (error) {
       Alert.alert(`${error}`);
     }
@@ -87,11 +88,13 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
 
         <TextInput
           placeholder="Reps amount"
+          placeholderTextColor={'black'}
           style={{right: 130, marginTop: 40}}
           onChangeText={text => setReps(text)}
         />
         <Box style={{right: 120}}>
           <RNPickerSelect
+            
             value={selectedDay} // ✅ Ensures correct selection
             onValueChange={selectDay}
             items={[
@@ -103,7 +106,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
               {label: 'Saturday', value: 'Saturday'},
               {label: 'Sunday', value: 'Sunday'},
             ]}
-            textInputProps={{ pointerEvents: "none" }}
+            textInputProps={{ pointerEvents: "none",}}
             placeholder={{label: 'Select a day', value: null}} // ✅ Fix placeholder format
             style={{
               inputIOS: {
@@ -117,7 +120,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
                 padding: 10,
               },
               placeholder: {
-                color: 'gray',
+                color: 'black',
                 fontSize: 18,
               },
             }}

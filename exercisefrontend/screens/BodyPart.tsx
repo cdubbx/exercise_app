@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -39,10 +40,10 @@ export default function BodyPart({route, navigation}: Props) {
 
   useEffect(
     () => () => {
-      console.log(
-        'These are the exercise fetched from the backend',
-        bodyExercises,
-      );
+      // console.log(
+      //   'These are the exercise fetched from the backend',
+      //   bodyExercises,
+      // );
     },
     [parts],
   );
@@ -54,334 +55,177 @@ export default function BodyPart({route, navigation}: Props) {
   return (
     //@ts-ignore
 
-    <SafeAreaView style={{height: 900}}>
-      <LinearGradient
-        colors={['rgba(67,67,101,1)', 'rgba(32,31,66,1)', 'rgba(2,0,36,1)']}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}
-        style={{minHeight: 900}}>
-        {bodyExercises.length > 0 ? (
-          <FlatList
-            data={bodyExercises}
-            keyExtractor={(item: any) => item.id}
-            //  ListHeaderComponent={
-
-            //      <HStack>
-            //          <Text>{item.primaryMuscles}</Text>
-            //      </HStack>
-            //  }
-
-            renderItem={(
-              {item}, // Destructure item here
-            ) => (
+    <SafeAreaView>
+      {bodyExercises.length > 0 ? (
+        <FlatList
+          contentContainerStyle={styles.flatListContainer}
+          data={bodyExercises}
+          keyExtractor={(item: any) => item.id}
+          ListHeaderComponent={
+            <View style={styles.headerButtons}>
               <TouchableOpacity
                 onPress={() => {
-                  navigation.navigate('ExerciseCard', {
-                    item: item,
-                  });
+                  navigation.goBack();
                 }}>
-                <BodyPartExercise item={item} />
+                <AntDesign
+                  style={styles.goBackButton}
+                  name="leftcircle"
+                  size={24}
+                  color={'black'}
+                />
               </TouchableOpacity>
-            )}
-          />
-        ) : (
-          <ScrollView>
-            <Stack spacing={10}>
-              <HStack p={20} spacing={20} items="center" justify="between">
-                <AntDesign name="leftcircle" size={24} color={'white'} />
-                <Text
-                  color="white"
-                  style={{fontSize: 26, fontFamily: 'Roboto-Medium'}}>
-                  Exercises
-                </Text>
-                <Entypo name="dots-three-vertical" size={15} color={'white'} />'
+              <Text style={styles.headerTextFlatlist}>
+                {parts.charAt(0).toUpperCase() + parts.slice(1)}
+              </Text>
+            </View>
+          }
+          renderItem={(
+            {item}, // Destructure item here
+          ) => (
+            <TouchableOpacity
+              style={{marginLeft: 10}}
+              onPress={() => {
+                navigation.navigate('ExerciseCard', {
+                  item: item,
+                });
+              }}>
+              <BodyPartExercise item={item} />
+            </TouchableOpacity>
+          )}
+        />
+      ) : (
+        <ScrollView>
+          <Stack spacing={10}>
+            <HStack p={20} spacing={20} items="center" justify="between">
+              <TouchableOpacity onPress={() => {
+                navigation.goBack()
+              }}>
+              <AntDesign name="leftcircle" size={24} color={'black'} />
+              </TouchableOpacity>
+              <Text
+                color="black"
+                style={{fontSize: 26, fontFamily: 'Roboto-Medium'}}>
+                Legs
+              </Text>
+              <Entypo name="dots-three-vertical" size={15} color={'black'} />'
+            </HStack>
+
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('BodyPart', {
+                  bodyParts: 'glutes',
+                });
+              }}>
+              <HStack style={styles.exerciseCardContainerContainer}>
+                <View
+                  style={styles.exerciseCardContainer}>
+                  <Text style={styles.exerciseName}>Glutes</Text>
+                  <Image source={gluteImg} style={styles.exerciseImage} />
+                </View>
               </HStack>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate('BodyPart', {
-                    bodyParts: 'glutes',
-                  });
-                }}>
-                <HStack p={10} style={{borderRadius: 10, height: 200}}>
-                  //@ts-ignore
-                  <View
-                    style={{width: '100%', height: 150, position: 'relative'}}>
-                    <Text
-                      style={{
-                        top: 10,
-                        left: 10,
-                        color: 'white',
-                        position: 'absolute',
-                        zIndex: 1,
-                        fontWeight: 'bold',
-                        fontSize: 18,
-                        fontFamily: 'Roboto',
-                      }}>
-                      Glutes
-                    </Text>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('BodyPart', {
+                  bodyParts: 'hamstrings',
+                });
+              }}>
+              <HStack style={styles.exerciseCardContainerContainer}>
+                <View
+                  style={styles.exerciseCardContainer}>
+                  <Text style={styles.exerciseName}>Hamstring</Text>
+                  <Image source={hamstringImg} style={styles.exerciseImage} />
+                </View>
+              </HStack>
+            </TouchableOpacity>
 
-                    <Image
-                      source={gluteImg}
-                      style={{
-                        width: '100%',
-                        height: 198,
-                        borderRadius: 10,
-                        padding: 10,
-                        opacity: 0.5,
-                      }}
-                    />
-
-                    <HStack
-                      spacing={10}
-                      p={10}
-                      justify="center"
-                      style={{position: 'absolute', bottom: -50}}>
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Strength
-                        </Text>
-                      </Box>
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Power Lifting
-                        </Text>
-                      </Box>
-
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Stretching
-                        </Text>
-                      </Box>
-                    </HStack>
-                  </View>
-                </HStack>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate('BodyPart', {
-                    bodyParts: 'hamstrings',
-                  });
-                }}>
-                <HStack p={10} style={{borderRadius: 10, height: 200}}>
-                  //@ts-ignore
-                  <View
-                    style={{width: '100%', height: 150, position: 'relative'}}>
-                    <Text
-                      style={{
-                        top: 10,
-                        left: 10,
-                        color: 'white',
-                        position: 'absolute',
-                        zIndex: 1,
-                        fontWeight: 'bold',
-                        fontSize: 18,
-                        fontFamily: 'Roboto',
-                      }}>
-                      Hamstring
-                    </Text>
-
-                    <Image
-                      source={hamstringImg}
-                      style={{
-                        width: '100%',
-                        height: 198,
-                        borderRadius: 10,
-                        padding: 10,
-                        opacity: 0.5,
-                      }}
-                    />
-
-                    <HStack
-                      spacing={10}
-                      p={10}
-                      justify="center"
-                      style={{position: 'absolute', bottom: -50}}>
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Strength
-                        </Text>
-                      </Box>
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Power Lifting
-                        </Text>
-                      </Box>
-
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Stretching
-                        </Text>
-                      </Box>
-                    </HStack>
-                  </View>
-                </HStack>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate('BodyPart', {
-                    bodyParts: 'quadriceps',
-                  });
-                }}>
-                <HStack p={10} style={{borderRadius: 10, height: 900}}>
-                  //@ts-ignore
-                  <View
-                    style={{width: '100%', height: 150, position: 'relative'}}>
-                    <Text
-                      style={{
-                        top: 10,
-                        left: 10,
-                        color: 'white',
-                        position: 'absolute',
-                        zIndex: 1,
-                        fontWeight: 'bold',
-                        fontSize: 18,
-                        fontFamily: 'Roboto',
-                      }}>
-                      Quads
-                    </Text>
-
-                    <Image
-                      source={quadImg}
-                      style={{
-                        width: '100%',
-                        height: 198,
-                        borderRadius: 10,
-                        padding: 10,
-                        opacity: 0.5,
-                      }}
-                    />
-
-                    <HStack
-                      spacing={10}
-                      p={10}
-                      justify="center"
-                      style={{position: 'absolute', bottom: -50}}>
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Strength
-                        </Text>
-                      </Box>
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Power Lifting
-                        </Text>
-                      </Box>
-
-                      <Box
-                        border={0.3}
-                        borderColor={'#9A9B9B'}
-                        ph={8}
-                        pv={3}
-                        style={{borderRadius: 20}}>
-                        <Text
-                          color="white"
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            fontFamily: 'Roboto',
-                          }}>
-                          Stretching
-                        </Text>
-                      </Box>
-                    </HStack>
-                  </View>
-                </HStack>
-              </TouchableOpacity>
-            </Stack>
-          </ScrollView>
-        )}
-      </LinearGradient>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('BodyPart', {
+                  bodyParts: 'quadriceps',
+                });
+              }}>
+              <HStack style={styles.exerciseCardContainerContainer}>
+                <View
+                  style={styles.exerciseCardContainer}>
+                  <Text style={styles.exerciseName}>Quads</Text>
+                  <Image source={quadImg} style={styles.exerciseImage} />
+                </View>
+              </HStack>
+            </TouchableOpacity>
+          </Stack>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  goBackButton: {
+    marginLeft: 10,
+  },
+  headerButtons: {
+    justifyContent: 'space-between',
+    marginBottom: 30,
+    width: '100%',
+    marginRight: 20,
+  },
+  exerciseName: {
+    top: 15,
+    left: 15,
+    color: 'gray',
+    position: 'absolute',
+    zIndex: 1,
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  exerciseCategory: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  exerciseCard: {
+    borderWidth: 0.3,
+    borderColor: '#9A9B9B',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  exerciseImage: {
+    width: '100%',
+    height: 198,
+    borderRadius: 10,
+    padding: 10,
+  },
+  exerciseCardContainer: {
+    width: '100%',
+    height: 150,
+    position: 'relative',
+  },
+  exerciseCardContainerContainer: {
+    borderRadius: 10,
+    height: 200,
+    padding: 10,
+  },
+  welcomeUserText: {
+    fontWeight: 'bold',
+    fontFamily: 'Arial',
+    color: 'black',
+  },
+  categoryStack: {
+    position: 'absolute',
+    bottom: -50,
+    padding: 10,
+    gap: 10,
+    justifyContent: 'center',
+  },
+  flatListContainer: {
+    // marginLeft: 10,
+  },
+  headerTextFlatlist: {
+    textAlign: 'center',
+    flex: 2,
+    fontSize: 20,
+  },
+});

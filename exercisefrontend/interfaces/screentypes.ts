@@ -1,3 +1,5 @@
+import { User } from "./types";
+
 // Define AuthStackParamList outside of the App component
 export type AuthStackParamList = {
     Login: undefined;
@@ -17,12 +19,17 @@ export type AuthStackParamList = {
   // Other stack parameter lists
   export type ExploreStackParamList = {
     Explore: undefined;
+    OtherUser: {user: User}
+    PublicWorkoutsScreen: {publicWorkouts: any[]};
   };
   
   export type ProfileStackParamList = {
     Profile: undefined;
     SavedExercises: { exercise: any };
+    SavedExerciseList: {exercises: any[]}
     Settings: undefined;
+    AddWorkoutScreen: undefined;
+    Login1:undefined;
   };
   
   export type HomeStackParamList = {

@@ -1,11 +1,26 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-import json
 
 class SpotifyConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        await self.channel_layer.group_add("spotify_updates", self.channel_name)
+        self.user_id = self.scope["url_route"]["kwargs"]["username"]
+        self.group_name = f"user_{self.user_id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
     async def disconnect(self, code):
-        await self.channel_layer.group_discard("spotify_updates", self.channel_name)
-    async def update_track(self, event):
-        await self.send(text_data=json.dumps(event["message"]))
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+    async def receive_json(self, content, ):
+        track_name = content.get('track_name')
+        artist_name = content.get('artist_name')
+        album_image_url = content.get('album_image_url')
+
+        await self.channel_layer.group_send(
+            self.group_name, 
+            {
+                "type": "send.update",
+                "track_name": track_name,
+                "artist_name": artist_name,
+                "album_image_url": album_image_url,
+            }
+        )
+    async def send_update(self, event):
+        await self.send_json(event)
