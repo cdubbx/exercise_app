@@ -13,7 +13,7 @@ export const useExercises = () => {
     const fetchExercises = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await fetch('http://192.168.0.8:8000/api/exercises/', {
+        const response = await fetch('http://localhost:8000/api/exercises/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -37,48 +37,62 @@ export const useExercises = () => {
 
 export const useMuscleExercise = (bodyPart: string) => {
   const [bodyExercises, setBodyExercises] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false); // Prevent duplicate API calls
   const [error, setError] = useState<Error | null>(null);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+
+  const fetchExercises = async (url?: string, isLoadMore = false) => {
+    if (loading || (isLoadMore && loadingMore)) return; // Prevent duplicate fetches
+
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
+
+    try {
+      const token = await getAuthToken();
+      const apiUrl = url || `http://localhost:8000/api/exercises/?primaryMuscles=${bodyPart}`;
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBodyExercises((prevExercises) =>
+          isLoadMore ? [...prevExercises, ...data.results] : data.results
+        );
+        setNextUrl(data.next); // Store the next page URL
+      } else {
+        throw new Error(data.detail || "Failed to fetch exercises");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error);
+      }
+    } finally {
+      if (isLoadMore) setLoadingMore(false);
+      else setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchExercises = async () => {
-      setLoading(true);
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const response = await fetch(
-          `http://192.168.0.8:8000/api/exercises/?primaryMuscles=${bodyPart}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const data = await response.json();
-
-        // ✅ Ensure we only filter when needed (SQLite workaround)
-        const filteredExercises = data.filter((exercise: any) =>
-          exercise.primaryMuscles?.includes(bodyPart),
-        );
-
-        setBodyExercises(filteredExercises);
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (bodyPart) {
       fetchExercises();
     }
   }, [bodyPart]);
 
-  return {loading, bodyExercises, error};
+  const loadMoreExercises = () => {
+    if (nextUrl && !loadingMore) {
+      fetchExercises(nextUrl, true);
+    }
+  };
+
+  return { loading, loadingMore, bodyExercises, error, loadMoreExercises, hasMore: !!nextUrl };
 };
 
 export const useSaveWorkOuts = () => {
@@ -93,7 +107,7 @@ export const useSaveWorkOuts = () => {
         throw new Error('No access token found');
       }
 
-      const response = await fetch('http://192.168.0.8:8000/api/saveWorkOuts', {
+      const response = await fetch('http://localhost:8000/api/saveWorkOuts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,7 +145,7 @@ export const useSavePlannedWorkouts = () => {
         throw new Error('No access token found');
       }
       const response = await fetch(
-        'http://192.168.0.8:8000/api/plannedWorkouts/',
+        'http://localhost:8000/api/plannedWorkouts/',
         {
           method: 'POST',
           headers: {
@@ -163,7 +177,7 @@ export const useFetchedSavedWorkOuts = () => {
         setLoading(true);
         const token = await AsyncStorage.getItem('access');
         const response = await fetch(
-          'http://192.168.0.8:8000/api/userSavedWorkouts/',
+          'http://localhost:8000/api/userSavedWorkouts/',
           {
             method: 'GET',
             headers: {
@@ -199,7 +213,7 @@ export const useFetchedPlanedWorkouts = () => {
         setLoading(true);
         const token = await AsyncStorage.getItem('access');
         const response = await fetch(
-          'http://192.168.0.8:8000/api/plannedWorkouts/',
+          'http://localhost:8000/api/plannedWorkouts/',
           {
             method: 'GET',
             headers: {
@@ -237,7 +251,7 @@ export const useUploadWorkOuts = () => {
   const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
   const [publicWorkouts, setPublicWorkouts] = useState<any[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(
-    'http://192.168.0.8:8000/api/user-upload-workouts/',
+    'http://localhost:8000/api/user-upload-workouts/',
   );
 
   async function addWorkout(exercise: any) {
@@ -245,7 +259,7 @@ export const useUploadWorkOuts = () => {
       setLoading(true);
       const token = await getAuthToken();
       const response = await fetch(
-        'http://192.168.0.8 :8000/api/user-upload-workout/',
+        'http://localhost :8000/api/user-upload-workout/',
         {
           method: 'POST',
           headers: {
@@ -298,7 +312,7 @@ export const useUploadWorkOuts = () => {
     try {
       setLoading(true);
       setNextUrl(
-        'http://192.168.0.8:8000/api/user-upload-workouts/?is_public=true',
+        'http://localhost:8000/api/user-upload-workouts/?is_public=true',
       );
       if (!nextUrl || isLoading) return;
       const token = await getAuthToken();

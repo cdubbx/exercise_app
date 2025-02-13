@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ExerciseViewSet, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView,  UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView, UploadWorkOutView, GetBodyPartWorkOutView, SpotifyRefreshTokenView, SpotifySwapTokenView
+from .views import ExerciseListView, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView,  UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView, UploadWorkOutView, GetBodyPartWorkOutView, SpotifyRefreshTokenView, SpotifySwapTokenView
 from .views import ResetPasswordAPIView, RequestPasswordResetAPIView, UserListView, UserDetailView, NowPlayingForUserView, UpdateNowPlayingView, EditUserView, GetUserUploadedWorkOutView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
@@ -10,12 +10,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 router = DefaultRouter()
 
 
-router.register(r'exercises', ExerciseViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
     path('register/', RegisterAPIView.as_view(), name='register'),
     path('saveWorkOuts', SaveWorkOutView.as_view(), name = 'saveWorkout'),
+    path('exercises/', ExerciseListView.as_view(), name='exercises'),
     path('login/', LoginAPIView.as_view()),
     path('user/', UserView.as_view(), name='user'),
     path('verify-otp/', VerifyOTPAPIView.as_view(), name='verify-otp'),

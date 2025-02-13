@@ -32,7 +32,8 @@ export default function BodyPart({route, navigation}: Props) {
   const hamstringImg = require('../assets/AdobeStock_287421213.jpeg');
 
   const parts = route.params.bodyParts;
-  const {loading, bodyExercises} = useMuscleExercise(parts);
+  const {loading, bodyExercises, loadMoreExercises, loadingMore} =
+    useMuscleExercise(parts);
   const [hasExercises, setHasExercises] = useState(false);
   // console.log(parts);
 
@@ -60,7 +61,15 @@ export default function BodyPart({route, navigation}: Props) {
         <FlatList
           contentContainerStyle={styles.flatListContainer}
           data={bodyExercises}
-          keyExtractor={(item: any) => item.id}
+          keyExtractor={(item: any, index) =>
+            item.id ? item.id.toString() + index : `index-${index}`
+          }
+          onEndReachedThreshold={0.5}
+          onEndReached={() => {
+            if (!loadingMore) {
+              loadMoreExercises();
+            }
+          }}
           ListHeaderComponent={
             <View style={styles.headerButtons}>
               <TouchableOpacity
@@ -97,10 +106,11 @@ export default function BodyPart({route, navigation}: Props) {
         <ScrollView>
           <Stack spacing={10}>
             <HStack p={20} spacing={20} items="center" justify="between">
-              <TouchableOpacity onPress={() => {
-                navigation.goBack()
-              }}>
-              <AntDesign name="leftcircle" size={24} color={'black'} />
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.goBack();
+                }}>
+                <AntDesign name="leftcircle" size={24} color={'black'} />
               </TouchableOpacity>
               <Text
                 color="black"
@@ -117,8 +127,7 @@ export default function BodyPart({route, navigation}: Props) {
                 });
               }}>
               <HStack style={styles.exerciseCardContainerContainer}>
-                <View
-                  style={styles.exerciseCardContainer}>
+                <View style={styles.exerciseCardContainer}>
                   <Text style={styles.exerciseName}>Glutes</Text>
                   <Image source={gluteImg} style={styles.exerciseImage} />
                 </View>
@@ -132,8 +141,7 @@ export default function BodyPart({route, navigation}: Props) {
                 });
               }}>
               <HStack style={styles.exerciseCardContainerContainer}>
-                <View
-                  style={styles.exerciseCardContainer}>
+                <View style={styles.exerciseCardContainer}>
                   <Text style={styles.exerciseName}>Hamstring</Text>
                   <Image source={hamstringImg} style={styles.exerciseImage} />
                 </View>
@@ -147,8 +155,7 @@ export default function BodyPart({route, navigation}: Props) {
                 });
               }}>
               <HStack style={styles.exerciseCardContainerContainer}>
-                <View
-                  style={styles.exerciseCardContainer}>
+                <View style={styles.exerciseCardContainer}>
                   <Text style={styles.exerciseName}>Quads</Text>
                   <Image source={quadImg} style={styles.exerciseImage} />
                 </View>

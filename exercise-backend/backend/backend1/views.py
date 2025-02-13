@@ -31,11 +31,33 @@ import jwt
 import datetime
 
 
-class ExerciseViewSet(viewsets.ModelViewSet):
-    queryset = Exercise.objects.all()
-    serializer_class = ExerciseSerializer
-    authentication_classes = [TokenAuthentication]  # For token authentication
+
+class ExerciseCursorPagination(CursorPagination):
+    page_size = 10  # Adjust as needed
+    ordering = 'date_created'  # Ensure ordering by a unique, indexed field (e.g., timestamp)
+
+class ExerciseListView(ListAPIView):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [AllowAny]
+    serializer_class = ExerciseSerializer
+    pagination_class = ExerciseCursorPagination  # Use CursorPagination
+
+    def get_queryset(self):
+        cursor = self.request.query_params.get("cursor", "first_page")
+        primaryMuscle = self.request.query_params.get("primaryMuscles")  # Get muscle filter
+
+        # Generate a cache key based on cursor and filter parameters
+        cache_key = f"exercise_cursor_{cursor}_muscle_{primaryMuscle}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return cached_data  # Return cached data
+        queryset = Exercise.objects.all()
+        if primaryMuscle:
+            queryset = queryset.filter(primaryMuscles__icontains=primaryMuscle)  # Ensure case-insensitive match
+        queryset = queryset.order_by('-date_created')  # Order for CursorPagination
+        cache.set(cache_key, queryset, timeout=60 * 15)
+        return queryset
 # Create your views here.
 
 class RegisterAPIView(APIView):

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Box, HStack, Stack, Text} from '@react-native-material/core';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
@@ -30,6 +30,10 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const [showMoreText, setShowMoreText] = useState<string>('Show more');
 
   const exerciseItems = route.params?.item;
+  useEffect(() => {
+    console.log("These are the exercise items", exerciseItems);
+    
+  })
 
   const onSaveWorkout = async () => {
     if (exerciseItems !== undefined) {
@@ -143,6 +147,8 @@ const styles = StyleSheet.create({
   }, 
   headerText: {
     fontSize: 20,
+    width:'70%',
+    textAlign:'center',
   },
 });
 export default ExerciseCard;
