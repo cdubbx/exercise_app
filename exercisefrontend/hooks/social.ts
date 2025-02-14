@@ -131,7 +131,7 @@ export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setLoading] = useState<boolean>(false);
   const [nextUrl, setNextUrl] = useState<string | null>(
-    'http://192.168.0.8:8000/api/users/',
+    'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/users/',
   );
 
   async function fetchUsers() {

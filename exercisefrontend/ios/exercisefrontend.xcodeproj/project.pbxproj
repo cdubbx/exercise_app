@@ -15,6 +15,7 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
+		17D96AE7A8C01AC5D55C39C7 /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2162777BA18F8110F9EFC7B9 /* libPods-exercisefrontend-exercisefrontendTests.a */; };
 		204F042CD4B34D7BA5587507 /* Roboto-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 78CAD172031F4E9FB0D08F0A /* Roboto-Bold.ttf */; };
 		2CCAE24AF6B04FE9B14D4159 /* Roboto-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 94D23F5E70C449A99736CF46 /* Roboto-Light.ttf */; };
 		403AF476C6EF45A3B249FA29 /* Roboto-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A89E081AAC774FB7A4848D99 /* Roboto-Thin.ttf */; };
@@ -39,13 +40,12 @@
 		8C6B28092D492D6200596320 /* Roboto-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8037BD0F10104EFABD9A55C6 /* Roboto-ThinItalic.ttf */; };
 		8C6B280A2D492D6200596320 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = D5BF814B87364F83956F9135 /* LICENSE.txt */; };
 		8C6B280B2D492D6200596320 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A4BFCDC3F89B9129FFA11480 /* PrivacyInfo.xcprivacy */; };
+		9AFCD492F44CE5B169C97EA0 /* libPods-exercisefrontend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F60B49737643E245709345C /* libPods-exercisefrontend.a */; };
 		A9C11EF8C5D34050A4B284C3 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = D5BF814B87364F83956F9135 /* LICENSE.txt */; };
-		B316D0DF7E41DF2DCD9E598D /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 69841795AA8FFFF09D345703 /* libPods-exercisefrontend-exercisefrontendTests.a */; };
 		B7FAB3B00CFC4D0D8C69C451 /* Roboto-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41C4696B9039447AB130FE13 /* Roboto-MediumItalic.ttf */; };
 		D8CDFA8E0620101CDD2CD86B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A4BFCDC3F89B9129FFA11480 /* PrivacyInfo.xcprivacy */; };
 		EA77896C2444490488628ADD /* Roboto-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 957C2F9402984BAD8EE602E4 /* Roboto-Italic.ttf */; };
 		FBA84DFDF3A546E6955E4664 /* Roboto-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 74A38031B9A1486F8DBA2945 /* Roboto-Regular.ttf */; };
-		FE423EB53C0ACF0AC98A444F /* libPods-exercisefrontend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 93F3C75FC00B48CFBAC36EB2 /* libPods-exercisefrontend.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +62,7 @@
 		00E356EE1AD99517003FC87E /* exercisefrontendTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = exercisefrontendTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* exercisefrontendTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = exercisefrontendTests.m; sourceTree = "<group>"; };
+		03AD6547FCAA7039FA8ABCC2 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-exercisefrontendTests.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests.release.xcconfig"; sourceTree = "<group>"; };
 		0DFE6CA626F44239A3AD386D /* Roboto-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Medium.ttf"; path = "../assets/fonts/Roboto/Roboto-Medium.ttf"; sourceTree = "<group>"; };
 		0EF651DFF7C3458EABB1E3EE /* Roboto-BoldItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-BoldItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-BoldItalic.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* exercisefrontend.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = exercisefrontend.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,26 +71,25 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = exercisefrontend/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = exercisefrontend/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = exercisefrontend/main.m; sourceTree = "<group>"; };
+		2162777BA18F8110F9EFC7B9 /* libPods-exercisefrontend-exercisefrontendTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend-exercisefrontendTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		29F1E81FD49E45E9B486BD72 /* Roboto-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Black.ttf"; path = "../assets/fonts/Roboto/Roboto-Black.ttf"; sourceTree = "<group>"; };
-		2B5EF3B7636191CAB07944D4 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-exercisefrontendTests.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests.release.xcconfig"; sourceTree = "<group>"; };
+		2EE0068AA3E33B023E843E77 /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig"; sourceTree = "<group>"; };
+		37970A857230DCD309E139B7 /* Pods-exercisefrontend.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend.debug.xcconfig"; sourceTree = "<group>"; };
 		41C4696B9039447AB130FE13 /* Roboto-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-MediumItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-MediumItalic.ttf"; sourceTree = "<group>"; };
-		4763A45ABD791F01C04D20A2 /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig"; sourceTree = "<group>"; };
-		656DFBC4211F778950667FCB /* Pods-exercisefrontend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend.release.xcconfig"; sourceTree = "<group>"; };
-		69841795AA8FFFF09D345703 /* libPods-exercisefrontend-exercisefrontendTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend-exercisefrontendTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		74A38031B9A1486F8DBA2945 /* Roboto-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Regular.ttf"; path = "../assets/fonts/Roboto/Roboto-Regular.ttf"; sourceTree = "<group>"; };
 		78CAD172031F4E9FB0D08F0A /* Roboto-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Bold.ttf"; path = "../assets/fonts/Roboto/Roboto-Bold.ttf"; sourceTree = "<group>"; };
-		7BE4419AF6BF711C4AFE0CDA /* Pods-exercisefrontend.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend.debug.xcconfig"; sourceTree = "<group>"; };
 		8037BD0F10104EFABD9A55C6 /* Roboto-ThinItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-ThinItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-ThinItalic.ttf"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = exercisefrontend/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		847E186577B846D1ACF0ADBD /* Roboto-BlackItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-BlackItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-BlackItalic.ttf"; sourceTree = "<group>"; };
 		8C6B28122D492D6200596320 /* exercisefrontendSimulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = exercisefrontendSimulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C6B28132D492D6200596320 /* exercisefrontend copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "exercisefrontend copy-Info.plist"; path = "/Users/cdubbx/Desktop/exercise_app/exercisefrontend/ios/exercisefrontend copy-Info.plist"; sourceTree = "<absolute>"; };
 		8CFFACBD2D291D250022B3B7 /* exercisefrontend.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = exercisefrontend.entitlements; path = exercisefrontend/exercisefrontend.entitlements; sourceTree = "<group>"; };
-		93F3C75FC00B48CFBAC36EB2 /* libPods-exercisefrontend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F60B49737643E245709345C /* libPods-exercisefrontend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		94D23F5E70C449A99736CF46 /* Roboto-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Light.ttf"; path = "../assets/fonts/Roboto/Roboto-Light.ttf"; sourceTree = "<group>"; };
 		957C2F9402984BAD8EE602E4 /* Roboto-Italic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Italic.ttf"; path = "../assets/fonts/Roboto/Roboto-Italic.ttf"; sourceTree = "<group>"; };
 		A4BFCDC3F89B9129FFA11480 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = exercisefrontend/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A89E081AAC774FB7A4848D99 /* Roboto-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Thin.ttf"; path = "../assets/fonts/Roboto/Roboto-Thin.ttf"; sourceTree = "<group>"; };
+		C220AAC6197AF0F46041E0E6 /* Pods-exercisefrontend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend.release.xcconfig"; sourceTree = "<group>"; };
 		D5BF814B87364F83956F9135 /* LICENSE.txt */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = LICENSE.txt; path = ../assets/fonts/Roboto/LICENSE.txt; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F4A6D29225174898A00F9E96 /* Roboto-LightItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-LightItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-LightItalic.ttf"; sourceTree = "<group>"; };
@@ -100,7 +100,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B316D0DF7E41DF2DCD9E598D /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */,
+				17D96AE7A8C01AC5D55C39C7 /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -108,7 +108,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FE423EB53C0ACF0AC98A444F /* libPods-exercisefrontend.a in Frameworks */,
+				9AFCD492F44CE5B169C97EA0 /* libPods-exercisefrontend.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -158,8 +158,8 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				93F3C75FC00B48CFBAC36EB2 /* libPods-exercisefrontend.a */,
-				69841795AA8FFFF09D345703 /* libPods-exercisefrontend-exercisefrontendTests.a */,
+				8F60B49737643E245709345C /* libPods-exercisefrontend.a */,
+				2162777BA18F8110F9EFC7B9 /* libPods-exercisefrontend-exercisefrontendTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -221,10 +221,10 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				7BE4419AF6BF711C4AFE0CDA /* Pods-exercisefrontend.debug.xcconfig */,
-				656DFBC4211F778950667FCB /* Pods-exercisefrontend.release.xcconfig */,
-				4763A45ABD791F01C04D20A2 /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */,
-				2B5EF3B7636191CAB07944D4 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */,
+				37970A857230DCD309E139B7 /* Pods-exercisefrontend.debug.xcconfig */,
+				C220AAC6197AF0F46041E0E6 /* Pods-exercisefrontend.release.xcconfig */,
+				2EE0068AA3E33B023E843E77 /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */,
+				03AD6547FCAA7039FA8ABCC2 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -236,12 +236,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "exercisefrontendTests" */;
 			buildPhases = (
-				77B3650E12A4AF3087EA5695 /* [CP] Check Pods Manifest.lock */,
+				AD79FE78AAFD1841DF14B3D6 /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
 				00E356EB1AD99517003FC87E /* Frameworks */,
 				00E356EC1AD99517003FC87E /* Resources */,
-				EBDB95D229709C79640F7F0C /* [CP] Embed Pods Frameworks */,
-				9B7D39338E6F81BF3ED82953 /* [CP] Copy Pods Resources */,
+				6257858093683354FC67EBE7 /* [CP] Embed Pods Frameworks */,
+				4FFE1DBF7B20522C03E6A44D /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -257,13 +257,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "exercisefrontend" */;
 			buildPhases = (
-				CC0950E902DB4AB91538BDC3 /* [CP] Check Pods Manifest.lock */,
+				9E15D4FAE4DB92E2C9693D23 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				DEF05BE1083D0C382365D6C5 /* [CP] Embed Pods Frameworks */,
-				56E6F2DF939C0D0B2447F555 /* [CP] Copy Pods Resources */,
+				8B8516616E39BDC8A73279CD /* [CP] Embed Pods Frameworks */,
+				942E84C759932945806D9B71 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -403,43 +403,55 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		56E6F2DF939C0D0B2447F555 /* [CP] Copy Pods Resources */ = {
+		4FFE1DBF7B20522C03E6A44D /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		77B3650E12A4AF3087EA5695 /* [CP] Check Pods Manifest.lock */ = {
+		6257858093683354FC67EBE7 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
+			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-exercisefrontend-exercisefrontendTests-checkManifestLockResult.txt",
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8B8516616E39BDC8A73279CD /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		8C6B280C2D492D6200596320 /* Bundle React Native code and images */ = {
@@ -458,24 +470,24 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		9B7D39338E6F81BF3ED82953 /* [CP] Copy Pods Resources */ = {
+		942E84C759932945806D9B71 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		CC0950E902DB4AB91538BDC3 /* [CP] Check Pods Manifest.lock */ = {
+		9E15D4FAE4DB92E2C9693D23 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -497,38 +509,26 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		DEF05BE1083D0C382365D6C5 /* [CP] Embed Pods Frameworks */ = {
+		AD79FE78AAFD1841DF14B3D6 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-exercisefrontend-exercisefrontendTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		EBDB95D229709C79640F7F0C /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks.sh\"\n";
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -573,7 +573,7 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4763A45ABD791F01C04D20A2 /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */;
+			baseConfigurationReference = 2EE0068AA3E33B023E843E77 /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -600,7 +600,7 @@
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2B5EF3B7636191CAB07944D4 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */;
+			baseConfigurationReference = 03AD6547FCAA7039FA8ABCC2 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -624,7 +624,7 @@
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7BE4419AF6BF711C4AFE0CDA /* Pods-exercisefrontend.debug.xcconfig */;
+			baseConfigurationReference = 37970A857230DCD309E139B7 /* Pods-exercisefrontend.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -658,7 +658,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 656DFBC4211F778950667FCB /* Pods-exercisefrontend.release.xcconfig */;
+			baseConfigurationReference = C220AAC6197AF0F46041E0E6 /* Pods-exercisefrontend.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -755,7 +755,10 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -825,7 +828,10 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

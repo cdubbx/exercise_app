@@ -1709,6 +1709,27 @@ PODS:
     - Yoga
   - RNEventEmitter (1.0.21):
     - React
+  - RNFlashList (1.7.3):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNFS (2.20.0):
     - React-Core
   - RNScreens (4.4.0):
@@ -1863,6 +1884,7 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
   - RNEventEmitter (from `../node_modules/react-native-events`)
+  - "RNFlashList (from `../node_modules/@shopify/flash-list`)"
   - RNFS (from `../node_modules/react-native-fs`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSound (from `../node_modules/react-native-sound`)
@@ -2022,6 +2044,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-picker/picker"
   RNEventEmitter:
     :path: "../node_modules/react-native-events"
+  RNFlashList:
+    :path: "../node_modules/@shopify/flash-list"
   RNFS:
     :path: "../node_modules/react-native-fs"
   RNScreens:
@@ -2109,6 +2133,7 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: fe98f1b459a87b80f12207da80c50b3a3abb6081
   RNCPicker: d23ebebb0c66864ac3edf260c20f8a4470aa2769
   RNEventEmitter: 557106956ec2f9ccda6940afeea563936385efd3
+  RNFlashList: 2ad2738637fa763b87b763578feab47d3e67c4c1
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
   RNScreens: d022507f2b6d76c73335e9e35aedcf7bb2f791b0
   RNSound: 6c156f925295bdc83e8e422e7d8b38d33bc71852

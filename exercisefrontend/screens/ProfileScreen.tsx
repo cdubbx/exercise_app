@@ -92,7 +92,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
 
   const showNowPlaying = async (track: any) => {
     const sessionIsValid = await getCurrentSession();
-    if (isPlaying && sessionIsValid) {
+    if (track) {
       setShowPlaying(true);
     } else {
       setShowPlaying(false);
@@ -143,7 +143,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
       setTrack(track);
     };
     handleShowPlaying();
-  }, [exercises, fetchedExercises]);
+  }, [exercises, fetchedExercises, track]);
 
   const onClose = () => {
     setIsVisible(false);

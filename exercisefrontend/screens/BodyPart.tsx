@@ -6,6 +6,7 @@ import {
   Image,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -17,16 +18,17 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
 import ExerciseCard from '../cards/ExerciseCard';
 import BodyPartExercise from '../cards/BodyPartExerciseCard';
+import { HomeStackParamList } from '../interfaces/screentypes';
+import { NavigationProp, RouteProp } from '@react-navigation/native';
+import { FlashList } from '@shopify/flash-list';
 
-type HomeStackParamList = {
-  Home: undefined;
-  BodyPart: {bodyParts: string};
-  ExerciseCard: {item: string};
-};
 
-type Props = NativeStackScreenProps<HomeStackParamList, 'BodyPart'>;
+interface Props{ 
+   navigation: NavigationProp<HomeStackParamList, 'BodyPart'>;
+   route: RouteProp<HomeStackParamList, 'BodyPart'>;
+}
 
-export default function BodyPart({route, navigation}: Props) {
+ const BodyPart: React.FC<Props> = ({route, navigation}) => {
   const quadImg = require('../assets/AdobeStock_442546175.jpeg');
   const gluteImg = require('../assets/AdobeStock_379171391.jpeg');
   const hamstringImg = require('../assets/AdobeStock_287421213.jpeg');
@@ -35,40 +37,30 @@ export default function BodyPart({route, navigation}: Props) {
   const {loading, bodyExercises, loadMoreExercises, loadingMore} =
     useMuscleExercise(parts);
   const [hasExercises, setHasExercises] = useState(false);
+  const fakeExercises = new Array(50).fill({ id: 1, name: "Fake Exercise" });
   // console.log(parts);
 
-  // console.log(bodyExercises);
-
-  useEffect(
-    () => () => {
-      // console.log(
-      //   'These are the exercise fetched from the backend',
-      //   bodyExercises,
-      // );
-    },
-    [parts],
-  );
 
   if (loading) {
     return <Text>Loading...</Text>;
   }
 
   return (
-    //@ts-ignore
-
-    <SafeAreaView>
-      {bodyExercises.length > 0 ? (
+    <>
+      {bodyExercises.length > 0 && (
         <FlatList
           contentContainerStyle={styles.flatListContainer}
+          inverted={false}
           data={bodyExercises}
           keyExtractor={(item: any, index) =>
             item.id ? item.id.toString() + index : `index-${index}`
           }
           onEndReachedThreshold={0.5}
+          ListFooterComponent={<ActivityIndicator animating />}
+
           onEndReached={() => {
-            if (!loadingMore) {
+            console.log("This function is being called");
               loadMoreExercises();
-            }
           }}
           ListHeaderComponent={
             <View style={styles.headerButtons}>
@@ -88,9 +80,8 @@ export default function BodyPart({route, navigation}: Props) {
               </Text>
             </View>
           }
-          renderItem={(
-            {item}, // Destructure item here
-          ) => (
+          showsVerticalScrollIndicator={false}
+          renderItem={({item}) => (
             <TouchableOpacity
               style={{marginLeft: 10}}
               onPress={() => {
@@ -102,7 +93,8 @@ export default function BodyPart({route, navigation}: Props) {
             </TouchableOpacity>
           )}
         />
-      ) : (
+      )}
+      {bodyExercises.length === 0 && (
         <ScrollView>
           <Stack spacing={10}>
             <HStack p={20} spacing={20} items="center" justify="between">
@@ -164,7 +156,7 @@ export default function BodyPart({route, navigation}: Props) {
           </Stack>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -224,15 +216,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -50,
     padding: 10,
-    gap: 10,
     justifyContent: 'center',
   },
   flatListContainer: {
     // marginLeft: 10,
+    marginTop:50, 
   },
   headerTextFlatlist: {
     textAlign: 'center',
-    flex: 2,
     fontSize: 20,
   },
 });
+
+
+export default BodyPart;

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useState, useEffect, useContext} from 'react';
+import {useState, useEffect, useContext, useRef} from 'react';
 import {Exercise, PlannedWorkout, SavedWorkout} from '../interfaces/interfaces';
 import {ExerciseContext} from '../context/ExerciseContext';
 import {getAuthToken} from './auth';
@@ -13,7 +13,7 @@ export const useExercises = () => {
     const fetchExercises = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await fetch('http://localhost:8000/api/exercises/', {
+        const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/exercises/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -35,22 +35,28 @@ export const useExercises = () => {
   return {exercises, loading, error};
 };
 
+
 export const useMuscleExercise = (bodyPart: string) => {
   const [bodyExercises, setBodyExercises] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false); // Prevent duplicate API calls
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
 
-  const fetchExercises = async (url?: string, isLoadMore = false) => {
-    if (loading || (isLoadMore && loadingMore)) return; // Prevent duplicate fetches
+  const loadingRef = useRef(false); // 🔹 Tracks loading in real-time
 
+  const fetchExercises = async (url?: string, isLoadMore = false) => {
+    if (loadingRef.current === true) return;
+    loadingRef.current = true;
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
 
     try {
       const token = await getAuthToken();
-      const apiUrl = url || `http://localhost:8000/api/exercises/?primaryMuscles=${bodyPart}`;
+      const apiUrl =
+        url || `https://exerciseplus-a70aea8e1a80.herokuapp.com/api/exercises/?primaryMuscles=${bodyPart}`;
+
+      console.log(`🔹 Fetching from: ${apiUrl} (isLoadMore: ${isLoadMore})`);
 
       const response = await fetch(apiUrl, {
         method: "GET",
@@ -61,36 +67,39 @@ export const useMuscleExercise = (bodyPart: string) => {
       });
 
       const data = await response.json();
+      console.log("✅ API Response:", data);
 
       if (response.ok) {
         setBodyExercises((prevExercises) =>
           isLoadMore ? [...prevExercises, ...data.results] : data.results
         );
-        setNextUrl(data.next); // Store the next page URL
+        setNextUrl(data.next);
       } else {
         throw new Error(data.detail || "Failed to fetch exercises");
       }
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error);
-      }
+      console.error(error);
     } finally {
+      loadingRef.current = false; // 🔹 Reset ref
       if (isLoadMore) setLoadingMore(false);
       else setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (bodyPart) {
-      fetchExercises();
-    }
-  }, [bodyPart]);
-
   const loadMoreExercises = () => {
-    if (nextUrl && !loadingMore) {
-      fetchExercises(nextUrl, true);
+    console.log("📢 loadMoreExercises() called!");
+
+    if (!nextUrl || loadingRef.current) {
+      console.log("❌ Preventing duplicate fetch (already loading or no next URL)");
+      return;
     }
+
+    fetchExercises(nextUrl, true);
   };
+
+  useEffect(() => {
+    fetchExercises()
+  }, [bodyPart])
 
   return { loading, loadingMore, bodyExercises, error, loadMoreExercises, hasMore: !!nextUrl };
 };
@@ -107,7 +116,7 @@ export const useSaveWorkOuts = () => {
         throw new Error('No access token found');
       }
 
-      const response = await fetch('http://localhost:8000/api/saveWorkOuts', {
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/saveWorkOuts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +154,7 @@ export const useSavePlannedWorkouts = () => {
         throw new Error('No access token found');
       }
       const response = await fetch(
-        'http://localhost:8000/api/plannedWorkouts/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com//api/plannedWorkouts/',
         {
           method: 'POST',
           headers: {
@@ -175,9 +184,9 @@ export const useFetchedSavedWorkOuts = () => {
     const fetchSavedWorkouts = async () => {
       try {
         setLoading(true);
-        const token = await AsyncStorage.getItem('access');
+        const token = await getAuthToken()
         const response = await fetch(
-          'http://localhost:8000/api/userSavedWorkouts/',
+          'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/userSavedWorkouts/',
           {
             method: 'GET',
             headers: {
@@ -213,7 +222,7 @@ export const useFetchedPlanedWorkouts = () => {
         setLoading(true);
         const token = await AsyncStorage.getItem('access');
         const response = await fetch(
-          'http://localhost:8000/api/plannedWorkouts/',
+          'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/plannedWorkouts/',
           {
             method: 'GET',
             headers: {
@@ -251,7 +260,7 @@ export const useUploadWorkOuts = () => {
   const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
   const [publicWorkouts, setPublicWorkouts] = useState<any[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(
-    'http://localhost:8000/api/user-upload-workouts/',
+    'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user-upload-workouts/',
   );
 
   async function addWorkout(exercise: any) {
@@ -259,7 +268,7 @@ export const useUploadWorkOuts = () => {
       setLoading(true);
       const token = await getAuthToken();
       const response = await fetch(
-        'http://localhost :8000/api/user-upload-workout/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user-upload-workout/',
         {
           method: 'POST',
           headers: {
@@ -312,7 +321,7 @@ export const useUploadWorkOuts = () => {
     try {
       setLoading(true);
       setNextUrl(
-        'http://localhost:8000/api/user-upload-workouts/?is_public=true',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user-upload-workouts/?is_public=true',
       );
       if (!nextUrl || isLoading) return;
       const token = await getAuthToken();

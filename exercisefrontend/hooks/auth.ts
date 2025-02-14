@@ -58,7 +58,7 @@ export function useAuth() {
 }
 async function refreshAccessToken(refreshToken: string): Promise<boolean> {
   try {
-    const response = await fetch('http://192.168.0.8:8000/api/token/refresh/', {
+    const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/token/refresh/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ export const useVerifyToken = () => {
       setLoading(true);
 
       const response = await fetch(
-        'http://192.168.0.8:8000/api/token/verify/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/token/verify/',
         {
           method: 'POST',
           headers: {
@@ -166,7 +166,7 @@ export const useRegister = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('http:// 192.168.0.8 :8000/api/register/', {
+      const response = await fetch('http:// https://exerciseplus-a70aea8e1a80.herokuapp.com/api/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ export const useRegister = () => {
   const verifyOTP = async (userdata: any) => {
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.0.8:8000/api/verify-otp/', {
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/verify-otp/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ export const useUser = () => {
         return;
       }
       setLoading(true);
-      const response = await fetch('http://192.168.0.8:8000/api/user/', {
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user/', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +280,7 @@ export const useLogin = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        'http://192.168.0.8:8000/api/social-login/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/social-login/',
         {
           method: 'POST',
           headers: {
@@ -310,7 +310,7 @@ export const useLogin = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('http://192.168.0.8:8000/api/login/', {
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -381,7 +381,7 @@ export const useResetPassword = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        'http://192.168.0.8:8000/api/reset-password/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/reset-password/',
         {
           method: 'POST',
           headers: {
@@ -408,7 +408,7 @@ export const useResetPassword = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        'http://192.168.0.8 :8000/api/request-password-reset/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/request-password-reset/',
         {
           method: 'POST',
           headers: {
@@ -547,7 +547,7 @@ export const useSpotify = () => {
       if (track) {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
           const newSocket = new WebSocket(
-            `ws://192.168.0.8:8000/ws/spotify/${user?.username}/`,
+            `ws://https://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user?.username}/`,
           );
           setSocket(newSocket);
         }
@@ -576,19 +576,18 @@ export const useSpotify = () => {
     try {
       setLoading(true);
       const authToken = await getAuthToken();
-      const session = await SpotifyAuth.getSession();
-      if (session && session.refreshToken) {
-        console.log('Refresh Token:', session.refreshToken);
-        const spotifyToken = session.refreshToken;
+      console.log(authToken);
+      const spotify_refreshToken = await AsyncStorage.getItem('spotify_refreshToken')
+      if (spotify_refreshToken) {
         const response = await fetch(
-          'http://192.168.0.8:8000/api/token/refresh/',
+          'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/spotify-token/refresh/',
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${authToken}`,
             },
-            body: JSON.stringify({refresh_token: spotifyToken}),
+            body: JSON.stringify({refresh_token: spotify_refreshToken}),
           },
         );
         const data = await response.json();
@@ -613,7 +612,7 @@ export const useSpotify = () => {
 
       if (!track) return;
 
-      await fetch('http://192.168.0.8:8000/api/now_playing/update/', {
+      await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/now_playing/update/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -652,7 +651,7 @@ export const useUpdateUser = () => {
     try {
       setLoading(true);
       const token = await getAuthToken();
-      const response = await fetch('http://192.168.0.8:8000/api/user/update/', {
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user/update/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
