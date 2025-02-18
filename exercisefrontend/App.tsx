@@ -27,6 +27,7 @@ import OTPScreen from './screens/OTP';
 import {
   AuthStackParamList,
   BottomTabParamList,
+  CalendarParamList,
   ExploreStackParamList,
   HomeStackParamList,
   ProfileStackParamList,
@@ -55,7 +56,7 @@ const ExploreStack = createNativeStackNavigator<ExploreStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
-
+const CalendarStack = createNativeStackNavigator<CalendarParamList>();
 
 
 export const AuthNavigator = () => {
@@ -79,6 +80,18 @@ export const AuthNavigator = () => {
     </AuthStack.Navigator>
   );
 };
+
+ const CalendarNavigator = () => {
+  return (
+    <CalendarStack.Navigator 
+    initialRouteName='Calendar'
+    screenOptions={{headerShown:false}}>
+      <CalendarStack.Screen name='Calendar' component={CalendarCard} />
+      <CalendarStack.Screen name='SavedExerciseList' component={SavedWorkOuts} />
+      <CalendarStack.Screen name='SavedExercises' component={SavedExercise} />
+    </CalendarStack.Navigator>
+  )
+ }
 
 const HomeNavigator = () => {
   return (
@@ -144,7 +157,7 @@ export const TabNavigator = () => {
       />
       <Tab.Screen
         name="Calendar"
-        component={CalendarCard}
+        component={CalendarNavigator}
         options={{
           tabBarIcon: ({focused}) => {
             return <Entypo name="calendar" size={focused ? 30: 26} />;

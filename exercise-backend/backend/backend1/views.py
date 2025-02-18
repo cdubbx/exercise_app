@@ -579,3 +579,45 @@ class NowPlayingForUserView(APIView):
             return Response({"error":"User doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Internal server error {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DeletePlannedWorkoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request, planned_workout_id):
+        planned_workout = get_object_or_404(PlannedWorkout, id=planned_workout_id, user=request.user)
+        planned_workout.delete()
+        return Response({"message": "Planned workout deleted successfully."}, status=status.HTTP_200_OK)
+
+class DeleteSavedWorkoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request, saved_workout_id):
+        saved_workout = get_object_or_404(SavedWorkout, id=saved_workout_id, user=request.user)
+        saved_workout.delete()
+        return Response({"message": "Saved workout deleted successfully."}, status=status.HTTP_200_OK)    
+class DeleteUserAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request):
+        user = request.user
+        user.delete()
+class ReportIssueView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        report_type = request.data.get("report_type", "issue")  # e.g., "user" or "exercise"
+        reported_id = request.data.get("reported_id", "")
+        report_text = request.data.get("report_text", "")
+        if not report_text:
+            return Response({"error": "Report text is required."}, status=status.HTTP_400_BAD_REQUEST)
+        subject = f"Report: {report_type.capitalize()} Issue"
+        if reported_id:
+            subject += f" (ID: {reported_id})"
+            to_email = "cwwantong@gmail.com"
+            try:
+                send_mail(
+                        subject,
+                        report_text,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [to_email],
+                        fail_silently=False,
+                )
+                return Response({"message": "Report sent successfully."}, status=status.HTTP_200_OK)
+            except Exception as e:
+                    return Response({"error": "Failed to send report", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

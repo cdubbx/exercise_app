@@ -33,15 +33,29 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
   const [selectedDay, setSelectedDay] = useState<string | null>('');
   const {savePlannedWorkouts} = useSavePlannedWorkouts();
   const {addExercises, exercises} = useSetExercise();
-  const {exercise: item} = route.params;
+  const itemData = Array.isArray(route.params.exercise)
+  ? route.params.exercise[0]
+  : route.params.exercise;
+
+const item = itemData.exercise || itemData.saved_workout_details?.exercise || itemData;
 
   const selectDay = (day: any) => {
     setSelectedDay(day);
   };
 
+  useEffect(() => {
+    console.log("This is the item that is being passed through", item);
+    
+  })
+
   const onSubmit = async () => {
     try {
-      const workoutData:any = {
+      if (!selectedDay) {
+        Alert.alert('Please select a day of the week.');
+        return;
+      }
+
+      const workoutData: any = {
         exercise: item,
         reps: reps,
         day: selectedDay,

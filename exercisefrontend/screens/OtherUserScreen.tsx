@@ -6,6 +6,10 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  Alert,
+  Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {Button, HStack, Stack, Text} from '@react-native-material/core';
@@ -19,7 +23,11 @@ import {
   useSpotifyContext,
   useUserContext,
 } from '../hooks/auth';
-import {useFetchedSavedWorkOuts, useSetExercise} from '../hooks/exercises';
+import {
+  useFetchedSavedWorkOuts,
+  useReport,
+  useSetExercise,
+} from '../hooks/exercises';
 import Exercise from './ExerciseCard';
 import {
   Exercise as ExerciseInterface,
@@ -39,6 +47,7 @@ import {SPOTIFY_CLIENTID} from '@env';
 import {SpotifySong} from '../cards/SpotifySong';
 import {Song} from '../interfaces/types';
 import {NavigationProp, RouteProp} from '@react-navigation/native';
+import {MenuView, MenuComponentRef} from '@react-native-menu/menu';
 
 interface OtherUserScreenProps {
   navigation: NavigationProp<ExploreStackParamList, 'OtherUser'>;
@@ -53,24 +62,97 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
   const [showPlaying, setShowPlaying] = useState<boolean>(false);
   const [track, setTrack] = useState<Song | undefined | null>();
   const [socket, setSocket] = useState<WebSocket>();
+  const [isMenuVisible, setMenuVisible] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const {reportUser} = useReport();
 
   const streak = 5;
 
+  const handleReportUser = async (reportReason:any) => {
+    console.log(reportReason);
+    try {
+      const reportObj = {
+        report_type: 'user',
+        reported_id: user.id,
+        report_text: reportReason,
+      };
+
+      if (reportObj.report_text) {
+        const message = await reportUser(reportObj);
+        Alert.alert(
+          'Success',
+          `You have successfully reported ${user.username}`,
+        );
+      }
+    } catch (error) {
+      Alert.alert('An error has occurred.');
+    }
+  };
+
   const joinDate = formatDate(user?.date_joined, 'full');
+  const handleMenuAction = (actionId: string) => {
+    switch (actionId) {
+      case 'report':
+        Alert.alert(
+          'Report User',
+          'Are you sure you want to report this user?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Report',
+              onPress: async () => {
+                // setModalVisible(true);
+                Alert.prompt(
+                  'Report User',
+                  'Please provide a reason for reporting this user:',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'Submit',
+                      onPress: (reason) => {
+                        if (reason) {
+                          handleReportUser(reason); // ✅ Save input to state
+                        }
+                      },
+                      style: 'destructive',
+                    },
+                  ],
+                  'plain-text'
+                );
+              },
+              style: 'destructive',
+            },
+          ],
+          {cancelable: true},
+        );
+        break;
+      default:
+        Alert.alert('Unknown action selected');
+    }
+  };
 
   const newSocket = new WebSocket(
-    `ws://192.168.0.8/ws/spotify/${user.username}/`,
+    `ws://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user.username}/`,
   );
 
   useEffect(() => {
     newSocket.onopen = () => {
       console.log('Connected to WebSocket');
     };
+    
     newSocket.onmessage = event => {
       const data = JSON.parse(event.data);
-      console.log('Received song update:', data);
-      if (data.track) {
-        setTrack(data.track);
+      // console.log('Received song update:', data);
+      if (data) {
+        setShowPlaying(true);
+        setTrack(data);
       }
     };
     setSocket(newSocket);
@@ -89,9 +171,29 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
             }}>
             <AntDesign name="leftcircle" size={24} color={'black'} />
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Entypo name="dots-three-vertical" size={15} color={'black'} />
-          </TouchableOpacity>
+          {Platform.OS === 'ios' && (
+            <MenuView
+              actions={[
+                {
+                  id: 'report',
+                  title: 'Report User',
+                  image: Platform.select({
+                    ios: 'exclamationmark.bubble',
+                  }),
+                  imageColor: '#000000',
+                },
+              ]}
+              onPressAction={event =>
+                handleMenuAction(event.nativeEvent.event)
+              }>
+              <TouchableOpacity
+                onPress={() => {
+                  setMenuVisible(true);
+                }}>
+                <Entypo name="dots-three-vertical" size={15} color={'black'} />
+              </TouchableOpacity>
+            </MenuView>
+          )}
         </HStack>
         <HStack p={20} spacing={20} items="center" justify="end"></HStack>
         <Stack style={styles.profileStack}>
@@ -146,6 +248,37 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
         </HStack>
         {showPlaying && <SpotifySong song={track} />}
       </Stack>
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Report User</Text>
+            <TextInput
+              placeholder="Enter reason for report..."
+              value={reportReason}
+              onChangeText={setReportReason}
+              style={styles.input}
+            />
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancel"
+                onPress={() => setModalVisible(false)}
+                color="gray"
+              />
+              <Button
+                title="Submit"
+                onPress={() => {
+                  if (reportReason.trim() !== '') {
+                    setModalVisible(false);
+                  } else {
+                    Alert.alert('Error', 'Please provide a reason.');
+                  }
+                }}
+                color="red"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -190,11 +323,46 @@ const styles = StyleSheet.create({
   weightText: {
     fontSize: 13,
   },
-  headerStack:{
-    justifyContent:'space-between',
-    alignItems:'center',
-    marginHorizontal:10,
-  }
+  headerStack: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  button: {
+    backgroundColor: 'black',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    // backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    borderBottomWidth: 1,
+    borderColor: 'gray',
+    padding: 8,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
 });
 
 export default OtherUserScreen;

@@ -91,7 +91,6 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   const streak = 5;
 
   const showNowPlaying = async (track: any) => {
-    const sessionIsValid = await getCurrentSession();
     if (track) {
       setShowPlaying(true);
     } else {

@@ -36,6 +36,7 @@ const ExploreScreen: React.FC<ExploreScreenProps> = ({navigation}) => {
       users.filter(
         user =>
           user?.username &&
+          user.is_searchable &&
           user.username.toLowerCase().startsWith(trimmedQuery),
       ),
     );
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   },
   publicExerciseCard: {
     marginBottom: 20,
-    marginLeft:10,
+    marginLeft: 10,
   },
 });
 

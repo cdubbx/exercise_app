@@ -45,4 +45,11 @@ export type AuthStackParamList = {
     Explore1: undefined;
     Calendar: undefined;
   };
+
+  export type CalendarParamList = {
+    Calendar: undefined; 
+    SavedExerciseList: {exercises: any[]};
+    SavedExercises: { exercise: any };
+  };
+
   

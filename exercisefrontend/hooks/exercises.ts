@@ -106,6 +106,7 @@ export const useMuscleExercise = (bodyPart: string) => {
 
 export const useSaveWorkOuts = () => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('')
 
   const saveWorkouts = async (item: any) => {
     try {
@@ -128,11 +129,11 @@ export const useSaveWorkOuts = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('Error response:', errorText); // Debugging line
-        throw new Error('Network error');
+        const errorText = await response.json();
+        console.log('Error response:', errorText.error); // Debugging line
+        setError(errorText.error)
+        throw new Error(errorText.error || 'Network error');
       }
-
       setLoading(false);
     } catch (error: any) {
       console.log('Save workout error:', error.message);
@@ -140,7 +141,7 @@ export const useSaveWorkOuts = () => {
     }
   };
 
-  return {saveWorkouts, loading};
+  return {saveWorkouts, loading, error};
 };
 
 export const useSavePlannedWorkouts = () => {
@@ -154,7 +155,7 @@ export const useSavePlannedWorkouts = () => {
         throw new Error('No access token found');
       }
       const response = await fetch(
-        'https://exerciseplus-a70aea8e1a80.herokuapp.com//api/plannedWorkouts/',
+        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/plannedWorkouts/',
         {
           method: 'POST',
           headers: {
@@ -351,3 +352,150 @@ export const useUploadWorkOuts = () => {
   }, []);
   return {addWorkout, isLoading, userWorkouts, publicWorkouts};
 };
+export const useDeleteWorkout = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const deleteSavedWorkout = async (workoutId: any) => {
+    try {
+      setLoading(true);
+      const token = await getAuthToken();
+      const response = await fetch(`https://exerciseplus-a70aea8e1a80.herokuapp.com/api/delete-saved-workout/${workoutId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.json();
+        setError(errorText.error || 'Failed to delete workout');
+        throw new Error(errorText.error || 'Failed to delete workout');
+      }
+    } catch (error: any) {
+      console.error('Delete workout error:', error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deletePlannedWorkout = async (workoutId: any) => {
+    try {
+      setLoading(true);
+      const token = await getAuthToken();
+      const response = await fetch(`https://exerciseplus-a70aea8e1a80.herokuapp.com/api/delete-planned-workout/${workoutId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.json();
+        setError(errorText.error || 'Failed to delete workout');
+        throw new Error(errorText.error || 'Failed to delete workout');
+      }
+    } catch (error: any) {
+      console.error('Delete workout error:', error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteUserSavedWorkout = async (workoutId: any) => {
+    try {
+      setLoading(true);
+      const token = await getAuthToken();
+      const response = await fetch(`https://exerciseplus-a70aea8e1a80.herokuapp.com/api/delete-user-workout/${workoutId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.json();
+        setError(errorText.error || 'Failed to delete workout');
+        throw new Error(errorText.error || 'Failed to delete workout');
+      }
+    } catch (error: any) {
+      console.error('Delete workout error:', error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  return {deleteSavedWorkout, deletePlannedWorkout, deleteUserSavedWorkout, loading, error};
+};
+
+export const useReport = () => {
+  const [message, setMessage] = useState<string | any>('');
+  const [isLoading, setLoading] = useState<boolean>(false);
+  const reportUser = async (reportObj:any) => {
+    try {
+      setLoading(true);
+      const token = await getAuthToken();
+      const response = await fetch(`https://exerciseplus-a70aea8e1a80.herokuapp.com/api/report/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reportObj }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.json();
+        setMessage(errorText.error || 'Failed to report user');
+        throw new Error(errorText.error || 'Failed to report user');
+      }
+      setMessage('User reported successfully');
+    } catch (error: any) {
+      console.error('Report user error:', error.message);
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { reportUser, message, isLoading };
+  
+}
+
+// export const useReportWorkout = () => {
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+
+//   const reportWorkout = async (workoutId: string, reason: string) => {
+//     try {
+//       setLoading(true);
+//       const token = await getAuthToken();
+//       const response = await fetch(`https://exerciseplus-a70aea8e1a80.herokuapp.com/api/workouts/${workoutId}/report/`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({ reason }),
+//       });
+
+//       if (!response.ok) {
+//         const errorText = await response.json();
+//         setError(errorText.error || 'Failed to report workout');
+//         throw new Error(errorText.error || 'Failed to report workout');
+//       }
+//     } catch (error: any) {
+//       console.error('Report workout error:', error.message);
+//       setError(error.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return {reportWorkout, loading, error};
+// };

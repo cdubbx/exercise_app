@@ -16,6 +16,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import {useSaveWorkOuts, useSetExercise} from '../hooks/exercises';
 import {HomeStackParamList} from '../interfaces/screentypes';
 import {NavigationProp, RouteProp} from '@react-navigation/native';
+import {Alert} from 'react-native';
 
 interface Props {
   navigation: NavigationProp<HomeStackParamList, 'ExerciseCard'>;
@@ -25,21 +26,25 @@ interface Props {
 // Note the correction in the prop name from 'exericse' to 'exercise' and the typing syntax
 const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const {addExercises} = useSetExercise();
-  const {saveWorkouts} = useSaveWorkOuts();
+  const {saveWorkouts, error} = useSaveWorkOuts();
   const [showMore, setShowMore] = useState<boolean>(false);
   const [showMoreText, setShowMoreText] = useState<string>('Show more');
 
   const exerciseItems = route.params?.item;
   useEffect(() => {
-    console.log("These are the exercise items", exerciseItems);
-    
-  })
+    console.log('These are the exercise items', exerciseItems);
+  });
 
   const onSaveWorkout = async () => {
-    if (exerciseItems !== undefined) {
+    try {
+      if (exerciseItems !== undefined) {
       addExercises(exerciseItems);
+      saveWorkouts(exerciseItems);
     }
-    saveWorkouts(exerciseItems);
+    } catch (err: any) {
+      console.log(error);
+      Alert.alert('Error', err.message || 'An error occurred while saving the workout.');
+    }
   };
 
   const toggleShowMore = () => {
@@ -55,14 +60,13 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
     <ScrollView style={styles.container}>
       <Stack spacing={10}>
         <HStack ph={25} pv={15} spacing={20} items="center" justify="between">
-          <TouchableOpacity onPress={() => {
-            navigation.goBack()
-          }}>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.goBack();
+            }}>
             <AntDesign name="leftcircle" size={20} color={'black'} />
           </TouchableOpacity>
-          <Text
-            color="black"
-            style={styles.headerText}>
+          <Text color="black" style={styles.headerText}>
             {exerciseItems?.name}
           </Text>
           <Box mr={-10}>
@@ -81,15 +85,17 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
           style={{height: 300, width: 'auto'}}
         />
         <Stack p={10} style={styles.contentContainer} spacing={20}>
-          <Text
-            style={styles.categoryText}>
-            Category: {exerciseItems?.category.charAt(0).toUpperCase() + exerciseItems?.category.slice(1)}
+          <Text style={styles.categoryText}>
+            Category:{' '}
+            {exerciseItems?.category.charAt(0).toUpperCase() +
+              exerciseItems?.category.slice(1)}
           </Text>
           <Text style={styles.equipmentText}>
-            Equipment: {exerciseItems?.equipment.charAt(0).toUpperCase() + exerciseItems?.equipment.slice(1)}
+            Equipment:{' '}
+            {exerciseItems?.equipment.charAt(0).toUpperCase() +
+              exerciseItems?.equipment.slice(1)}
           </Text>
 
-        
           <Text
             numberOfLines={showMore ? undefined : 3}
             style={styles.instructions}>
@@ -98,11 +104,14 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
           <TouchableOpacity onPress={toggleShowMore}>
             <Text>{showMoreText}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton}
+          <TouchableOpacity
+            style={styles.saveButton}
             onPress={() => {
               onSaveWorkout();
             }}>
-              <Text style={styles.saveButtonText} color="white">Save</Text>
+            <Text style={styles.saveButtonText} color="white">
+              Save
+            </Text>
           </TouchableOpacity>
         </Stack>
       </Stack>
@@ -118,37 +127,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     color: '#323131',
-    textAlign:'left'
+    textAlign: 'left',
   },
   saveButton: {
-    paddingHorizontal:20,
-    paddingVertical:5,
-    backgroundColor:'black',
-    borderRadius:10,
-    width:'70%',
-    alignSelf:'center',
-    marginTop:20,
-  }, 
-  saveButtonText:{
-    textAlign:'center',
-    fontWeight:'700',
-    fontSize:18
-  }, 
+    paddingHorizontal: 20,
+    paddingVertical: 5,
+    backgroundColor: 'black',
+    borderRadius: 10,
+    width: '70%',
+    alignSelf: 'center',
+    marginTop: 20,
+  },
+  saveButtonText: {
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 18,
+  },
   contentContainer: {
-    paddingHorizontal: 20
-  }, 
+    paddingHorizontal: 20,
+  },
   equipmentText: {
     fontSize: 20,
     color: 'black',
-  }, 
+  },
   categoryText: {
     fontSize: 20,
     color: 'black',
-  }, 
+  },
   headerText: {
     fontSize: 20,
-    width:'70%',
-    textAlign:'center',
+    width: '70%',
+    textAlign: 'center',
   },
 });
 export default ExerciseCard;

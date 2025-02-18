@@ -1,15 +1,21 @@
-import {StyleSheet, Text, TouchableOpacity, View, Switch} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Switch,
+  Alert,
+} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
-
-
 import {HStack, Stack} from '@react-native-material/core';
 import {
   useAuth,
+  useDeleteProfile,
   useLogout,
   useSpotify,
   useSpotifyContext,
@@ -30,9 +36,9 @@ interface UserPrivacySettings {
 const Settings: React.FC<SettingsProp> = ({navigation}) => {
   const {isPlaying, toggleIsPlaying} = useSpotifyContext();
   const {updateUser, isLoading: settingsLoading} = useUpdateUser();
-  const {logout} = useLogout()
-  const {user,  isAuthenticated, setIsAuthenticated} = useUserContext();
-
+  const {logout} = useLogout();
+  const {user, isAuthenticated, setIsAuthenticated} = useUserContext();
+  const {deleteProfile, isLoading: deleteLoading} = useDeleteProfile();
   const {
     isLoading,
     authenticateWithSpotify,
@@ -43,7 +49,7 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
     is_private: user?.is_private,
     is_searchable: user?.is_searchable,
   });
-  const {checkToken} = useAuth()
+  const {checkToken} = useAuth();
 
   const toggeIsPrivate = () => {
     setUserInfo(prev => ({
@@ -53,13 +59,13 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
   };
 
   const handleLogout = async () => {
-    const isLoggedOut =  await logout();
-    await checkToken()
+    const isLoggedOut = await logout();
+    await checkToken();
     // if(isLoggedOut && !isAuthenticated)  navigation.reset({
     //   index: 0,
     //   routes: [{ name: 'Login1' }],
     // });;
-  }
+  };
 
   const toggeIsSearchable = () => {
     setUserInfo(prev => ({
@@ -69,15 +75,21 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
   };
 
   useEffect(() => {
+    if(userInfo.is_private != user?.is_private || userInfo.is_searchable != user?.is_searchable )
     updateUser(userInfo);
   }, [userInfo.is_private, userInfo.is_searchable]);
   return (
     <View style={styles.container}>
       <HStack style={styles.settingsHeaderStack}>
-        <TouchableOpacity onPress={() => {
-          navigation.goBack()
-        }}>
-        <Ionicons style={{alignSelf:'flex-start'}} name='arrow-back-circle' size={26} />
+        <TouchableOpacity
+          onPress={() => {
+            navigation.goBack();
+          }}>
+          <Ionicons
+            style={{alignSelf: 'flex-start'}}
+            name="arrow-back-circle"
+            size={26}
+          />
         </TouchableOpacity>
       </HStack>
       <Text style={styles.settingsHeader}>Settings Screen</Text>
@@ -101,18 +113,37 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
         </HStack>
         <HStack style={styles.toggleStack}>
           <Text>Logout</Text>
-          <TouchableOpacity onPress={() => {
-            handleLogout();
-          }}>
-             <MaterialCommunityIcons name="logout" size={26} />
+          <TouchableOpacity
+            onPress={() => {
+              handleLogout();
+            }}>
+            <MaterialCommunityIcons name="logout" size={26} />
           </TouchableOpacity>
         </HStack>
 
         <HStack style={styles.toggleStack}>
           <Text>Delete Profile</Text>
-          <TouchableOpacity onPress={() => {
-          }}>
-             <AntDesign name="deleteuser" size={30} />
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                'Delete Account',
+                'Are you sure you want to delete your account? This action cannot be undone.',
+                [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'Delete',
+                    onPress: async () => {
+                      await deleteProfile();
+                    },
+                    style: 'destructive',
+                  },
+                ],
+              );
+            }}>
+            <AntDesign name="deleteuser" size={30} />
           </TouchableOpacity>
         </HStack>
       </Stack>
@@ -130,7 +161,7 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
         onPress={() => {
           navigation.navigate('AddWorkoutScreen');
         }}>
-        <Text>Upload a workout</Text>
+        <Text>Upload a work</TouchableOpacity>out</Text>
       </TouchableOpacity> */}
     </View>
   );
@@ -146,9 +177,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
     borderRadius: 10,
     padding: 10,
-    width:'50%',
+    width: '50%',
     gap: 10,
-    marginTop:50,
+    marginTop: 50,
   },
   textListen: {
     color: 'green',
@@ -175,16 +206,16 @@ const styles = StyleSheet.create({
   settingsHeader: {
     fontSize: 20,
     fontWeight: '600',
-    textAlign:'center',
-    marginLeft:-10,
+    textAlign: 'center',
+    marginLeft: -10,
     marginBottom: 20,
     // alignSelf:'center'
     // textAlign:'center',
   },
   settingsHeaderStack: {
-    width:'100%',
-    marginLeft:20
-  }
+    width: '100%',
+    marginLeft: 20,
+  },
 });
 
 export default Settings;

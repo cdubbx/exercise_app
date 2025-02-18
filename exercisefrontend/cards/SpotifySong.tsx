@@ -37,6 +37,8 @@ export const SpotifySong: React.FC<SongProps> = ({song}) => {
   //     }
   //   };
 
+
+
   return (
     <Stack style={styles.container}>
       <Text style={styles.nowPlayingText}>Now Playing</Text>

@@ -4,6 +4,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -15,7 +16,11 @@ import {HStack, Stack, Text} from '@react-native-material/core';
 import {ProfileStackParamList} from '../interfaces/screentypes';
 import {NavigationProp, RouteProp} from '@react-navigation/native';
 import FetchedExercise from '../cards/FetchedExercise';
-import {useUploadWorkOuts} from '../hooks/exercises';
+import {
+  useDeleteWorkout,
+  useFetchedSavedWorkOuts,
+  useUploadWorkOuts,
+} from '../hooks/exercises';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface SavedWorkoutsScreenProps {
@@ -28,12 +33,26 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
   navigation,
 }) => {
   const {exercises} = route.params ?? []; // Provide a default value if params is undefined
+
+  const {fetchedExercises} = useFetchedSavedWorkOuts();
+
   const [isCustom, setCustom] = useState<boolean>(false);
+  const [localExercises, setLocalExercises] = useState<any[]>();
   const {userWorkouts} = useUploadWorkOuts();
+  const {deleteSavedWorkout, deleteUserSavedWorkout} = useDeleteWorkout();
   const [selected, setSelected] = useState({
     exercises: true,
     customExercises: false,
   });
+
+  let combinedExercises = [...fetchedExercises, ...exercises];
+  useEffect(() => {
+    setLocalExercises(combinedExercises);
+    setLocalExercises((prevLocalExercises: any) => [
+      ...prevLocalExercises,
+      ...userWorkouts,
+    ])
+  }, [fetchedExercises, exercises]);
 
   const toggleCustom = (workoutType: 'custom' | 'regular') => {
     switch (workoutType) {
@@ -56,14 +75,30 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
         break;
     }
   };
-  const selectedExercises = isCustom ? userWorkouts : exercises;
+  const selectedExercises = isCustom ? userWorkouts : localExercises;
+  const flattenedExercises = selectedExercises?.flat().filter(Boolean);
+
+  const handleDelete = async (id: any) => {
+    if (id && !isCustom) {
+      setLocalExercises((prevLocalExercises: any) =>
+        prevLocalExercises.filter((exercise: any) => exercise?.id !== id),
+      );
+      await deleteSavedWorkout(id);
+    } else { 
+      setLocalExercises((prevLocalExercises: any) =>
+        prevLocalExercises.filter((exercise: any) => exercise?.id !== id),
+      );
+      await deleteUserSavedWorkout(id);
+    }
+  };
+
   return (
     <SafeAreaView>
       <FlatList
         ListHeaderComponent={
           <View>
             <TouchableOpacity
-              style={{marginLeft:10}}
+              style={{marginLeft: 10}}
               onPress={() => {
                 navigation.goBack();
               }}>
@@ -73,7 +108,9 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
                 size={26}
               />
             </TouchableOpacity>
-            <Text style={{textAlign: 'center', marginBottom: 20, fontSize:18}} color="Black">
+            <Text
+              style={{textAlign: 'center', marginBottom: 20, fontSize: 18}}
+              color="Black">
               Saved Workouts
             </Text>
             <HStack style={styles.tabButtonContainer}>
@@ -118,19 +155,41 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
             </HStack>
           </View>
         }
-        data={selectedExercises}
+        data={flattenedExercises}
         renderItem={({item}): any => (
           <TouchableOpacity
             style={{marginLeft: 10}}
             onPress={() => {
               navigation.navigate('SavedExercises', {
-                exercise: item.exercise ?? item,
+                exercise: item.exercise || item,
               });
+            }}
+            onLongPress={() => {
+              if (item.id)
+                Alert.alert(
+                  'Delete Workout',
+                  'Are you sure you want to delete this workout?',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'Delete',
+                      onPress: () => {
+                        if (item.id) handleDelete(item?.id);
+                      },
+                      style: 'destructive',
+                    },
+                  ],
+                );
             }}>
             <FetchedExercise item={item} />
           </TouchableOpacity>
         )}
-        keyExtractor={item => item.id.toString()} // Ensure each item has a unique id
+        keyExtractor={(item, index) =>
+          item?.id ? item.id.toString() + index : `fallback-key-${index}`
+        }
       />
     </SafeAreaView>
   );
@@ -140,13 +199,12 @@ const styles = StyleSheet.create({
   tabButton1: {
     paddingHorizontal: 50,
     paddingVertical: 10,
-    borderRadius:1,
-
+    borderRadius: 1,
   },
   tabButton2: {
     paddingHorizontal: 50,
     paddingVertical: 10,
-    borderRadius:1,
+    borderRadius: 1,
   },
   tabButtonContainer: {
     alignItems: 'center',

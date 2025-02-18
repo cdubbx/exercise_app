@@ -77,10 +77,10 @@ const styles = StyleSheet.create({
   },
   otpInput: {
     borderBottomWidth: 2,
-    borderColor: '#007bff',
+    borderColor: 'black',
   },
   submitButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: 'black',
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 8,

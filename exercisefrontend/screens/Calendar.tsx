@@ -5,19 +5,31 @@ import {
   ActivityIndicator,
   FlatList,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {Calendar, CalendarList, Agenda} from 'react-native-calendars';
 import {HStack, Stack, Text} from '@react-native-material/core';
 import LinearGradient from 'react-native-linear-gradient';
-import {useFetchedPlanedWorkouts, useSetExercise} from '../hooks/exercises';
+import {
+  useDeleteWorkout,
+  useFetchedPlanedWorkouts,
+  useSetExercise,
+} from '../hooks/exercises';
 import Exercise from './ExerciseCard';
 import {SavedWorkout, PlannedWorkout} from '../interfaces/interfaces'; // Ensure this path is correct
 import PlannedExercise from '../cards/PlannedExercise';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import {NavigationProp} from '@react-navigation/native';
+import {CalendarParamList} from '../interfaces/screentypes';
 
-export default function CalendarCard() {
+interface CalendarScreenProps {
+  navigation: NavigationProp<CalendarParamList, 'Calendar'>;
+}
+const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const {fetchedExercises, loading} = useFetchedPlanedWorkouts();
+  const [localExercises, setLocalExercises] = useState<any[]>();
   const {exercises} = useSetExercise();
   const daysOfTheWeek = {
     Mon: 'Monday',
@@ -29,75 +41,126 @@ export default function CalendarCard() {
     Sun: 'Sunday',
   };
 
-  useEffect(()=> {
-    console.log(exercises);
-  }, [exercises])
 
+  const {deletePlannedWorkout} = useDeleteWorkout();
+
+  const flattenedExercises = fetchedExercises.map(
+    (exercise: any) => exercise.saved_workout_details,
+  );
   const combinedExercises = exercises
     ? [
         ...exercises,
         ...fetchedExercises.filter(
-          (ex: any) => !exercises?.some(existing => existing?.exercise?.id === ex?.saved_workout_details?.exercise?.id),
+          (ex: any) =>
+            !exercises?.some(
+              existing =>
+                existing?.exercise?.id ===
+                ex?.saved_workout_details?.exercise?.id,
+            ),
         ),
       ]
     : fetchedExercises;
-  const filteredExercises = selectedDay
-    ? combinedExercises.filter(
-        (workout: PlannedWorkout) =>
-          workout.day_of_the_week ===
-          daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek],
-      )
-    : combinedExercises;
+    useEffect(() => {
+      if (selectedDay) {
+        const filtered = combinedExercises.filter(
+          (workout: any) =>
+            workout.day_of_the_week ===
+            daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek]
+        );
+        setLocalExercises(filtered);
+      }
+    }, [selectedDay, fetchedExercises ]);
 
-  const selectDay = (day: string) => {
-    setSelectedDay(day);
-  };
 
-  useEffect(() => {
-    console.log(filteredExercises, selectedDay);
-  }, [exercises]);
+    const handleDelete = (id: any) => {
+      if (id) {
+        setLocalExercises((prevExercises) =>
+          prevExercises?.filter((exercise: any) => exercise.id !== id)
+        );
+        deletePlannedWorkout(id);
+      }
+    };
 
   return (
     <SafeAreaView style={{padding: 10}}>
-        <Stack h={900}>
-          <HStack spacing={10} p={5} justify="center">
-            {Object.keys(daysOfTheWeek).map((day, index) => (
+      <Stack>
+        <HStack style={styles.plusButtonContainer}>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('SavedExerciseList', {
+                exercises: [flattenedExercises, exercises],
+              });
+            }}>
+            <AntDesign name="pluscircle" size={26} />
+          </TouchableOpacity>
+        </HStack>
+        <HStack spacing={10} p={5} justify="center">
+          {Object.keys(daysOfTheWeek).map((day, index) => (
+            <TouchableOpacity
+              key={index} // Add a key prop
+              style={{
+                backgroundColor: selectedDay === day ? 'black' : 'transparent',
+                height: 30,
+                borderRadius: 5,
+                padding: 5,
+              }}
+              onPress={() => setSelectedDay(day)}>
+              <Text color={selectedDay === day ? 'white' : 'black'}>{day}</Text>
+            </TouchableOpacity>
+          ))}
+        </HStack>
+        {selectedDay ? (
+          <FlatList
+            data={localExercises}
+            renderItem={({item}) => (
               <TouchableOpacity
-                key={index} // Add a key prop
-                style={{
-                  backgroundColor:
-                    selectedDay === day ? 'black' : 'transparent',
-                  height: 30,
-                  borderRadius: 5,
-                  padding: 5,
+                onLongPress={() => {
+                  if (item.id)
+                    Alert.alert(
+                      'Delete Workout',
+                      'Are you sure you want to delete this workout?',
+                      [
+                        {
+                          text: 'Cancel',
+                          style: 'cancel',
+                        },
+                        {
+                          text: 'Delete',
+                          onPress: () => {
+                            if (item.id) handleDelete(item?.id);
+                          },
+                          style: 'destructive',
+                        },
+                      ],
+                    );
                 }}
-                onPress={() => {
-                  selectDay(day);
-                }}>
-                <Text color={selectedDay === day ? 'white' : 'black'}>{day}</Text>
+                style={styles.exerciseContainer}>
+                <PlannedExercise item={item} />
               </TouchableOpacity>
-            ))}
-          </HStack>
-          {selectedDay ? (
-            <FlatList
-              data={filteredExercises}
-              renderItem={({item}) => 
-              <View style={styles.exerciseContainer}>
-                 <PlannedExercise item={item} />
-              </View>
+            )}
+            keyExtractor={(item: PlannedWorkout, index) =>
+              item + index.toString()
             }
-              keyExtractor={(item: PlannedWorkout, index) => item + index.toString()}
-            />
-          ) : (
-            <Text style={{textAlign:'center'}}>Choose a day to see the plan</Text>
-          )}
-        </Stack>
+          />
+        ) : (
+          <Text style={{textAlign: 'center'}}>
+            Choose a day to see the plan
+          </Text>
+        )}
+      </Stack>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   exerciseContainer: {
-    margin:10
-  }
-})
+    margin: 10,
+  },
+  plusButtonContainer: {
+    marginBottom: 20,
+    justifyContent: 'flex-end',
+    marginRight: 10,
+  },
+});
+
+export default CalendarCard;

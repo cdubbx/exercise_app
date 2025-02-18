@@ -95,7 +95,7 @@ interface Props{
         />
       )}
       {bodyExercises.length === 0 && (
-        <ScrollView>
+        <SafeAreaView>
           <Stack spacing={10}>
             <HStack p={20} spacing={20} items="center" justify="between">
               <TouchableOpacity
@@ -154,7 +154,7 @@ interface Props{
               </HStack>
             </TouchableOpacity>
           </Stack>
-        </ScrollView>
+        </SafeAreaView>
       )}
     </>
   );

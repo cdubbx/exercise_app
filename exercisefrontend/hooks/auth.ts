@@ -161,12 +161,14 @@ export const useLogout = () => {
 export const useRegister = () => {
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const {user, setUser} = useUserContext()
+  const {getUser} = useUser()
 
   const register = async (userData: RegisterRequest) => {
     try {
       setLoading(true);
 
-      const response = await fetch('http:// https://exerciseplus-a70aea8e1a80.herokuapp.com/api/register/', {
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,6 +217,33 @@ export const useRegister = () => {
       if (data.user && data.refresh && data.access) {
         await AsyncStorage.setItem('access', data.access);
         await AsyncStorage.setItem('refresh', data.refresh);
+        const token = await getAuthToken();
+        if (token) {
+          const userData = await getUser(token);
+          setUser(prevUser => ({
+            ...userData,
+            height:
+              typeof userData?.height === 'string'
+                ? parseFloat(userData.height)
+                : (prevUser?.height ?? 0),
+            weight:
+              typeof userData?.weight === 'string'
+                ? parseFloat(userData.weight)
+                : (userData?.weight ?? 0),
+            goal_weight:
+              typeof userData?.goal_weight === 'string'
+                ? parseFloat(userData.goal_weight)
+                : (userData?.goal_weight ?? 0),
+            id: userData?.id ?? prevUser?.id ?? '', // Ensure id is always a string
+            email: userData?.email ?? prevUser?.email ?? '',
+            username: userData?.username ?? prevUser?.username ?? '',
+            image_url: userData?.image_url ?? prevUser?.image_url ?? '',
+            phone_number: userData?.phone_number ?? prevUser?.phone_number ?? '',
+            is_private: userData?.is_private ?? prevUser?.is_private ?? false,
+            is_searchable:
+              userData?.is_searchable ?? prevUser?.is_searchable ?? false,
+          }));
+        }
       }
       setLoading(false);
     } catch (error) {
@@ -297,6 +326,33 @@ export const useLogin = () => {
       }
       await AsyncStorage.setItem('access', data.access);
       await AsyncStorage.setItem('refresh', data.refresh);
+      const token = await getAuthToken()
+      if (token) {
+        const userData = await getUser(token);
+        setUser(prevUser => ({
+          ...userData,
+          height:
+            typeof userData?.height === 'string'
+              ? parseFloat(userData.height)
+              : (prevUser?.height ?? 0),
+          weight:
+            typeof userData?.weight === 'string'
+              ? parseFloat(userData.weight)
+              : (userData?.weight ?? 0),
+          goal_weight:
+            typeof userData?.goal_weight === 'string'
+              ? parseFloat(userData.goal_weight)
+              : (userData?.goal_weight ?? 0),
+          id: userData?.id ?? prevUser?.id ?? '', // Ensure id is always a string
+          email: userData?.email ?? prevUser?.email ?? '',
+          username: userData?.username ?? prevUser?.username ?? '',
+          image_url: userData?.image_url ?? prevUser?.image_url ?? '',
+          phone_number: userData?.phone_number ?? prevUser?.phone_number ?? '',
+          is_private: userData?.is_private ?? prevUser?.is_private ?? false,
+          is_searchable:
+            userData?.is_searchable ?? prevUser?.is_searchable ?? false,
+        }));
+      }
 
       return true;
     } catch (error: any) {
@@ -530,7 +586,7 @@ export const useSpotify = () => {
         return fetchNowPlaying(true);
       }
       const data = await response.json();
-      console.log('✅ Parsed JSON Response:', data);
+      // console.log('✅ Parsed JSON Response:', data);
       if (!data || !data.item) {
         console.warn('⚠️ No track currently playing');
         return null;
@@ -547,7 +603,7 @@ export const useSpotify = () => {
       if (track) {
         if (!socket || socket.readyState !== WebSocket.OPEN) {
           const newSocket = new WebSocket(
-            `ws://https://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user?.username}/`,
+            `ws://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user?.username}/`,
           );
           setSocket(newSocket);
         }
@@ -674,4 +730,41 @@ export const useUpdateUser = () => {
   };
 
   return {updateUser, isLoading};
+};
+
+export const useDeleteProfile = () => {
+  const [isLoading, setLoading] = useState(false);
+  const {logout} = useLogout();
+  const {checkToken} = useAuth()
+
+  const deleteProfile = async () => {
+    try {
+      setLoading(true);
+      const token = await getAuthToken();
+      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user/delete/', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.json();
+        console.error('Delete profile error response:', errorText);
+        throw new Error(errorText.error || 'Network error');
+      }
+
+      await logout();
+      await checkToken();
+      setLoading(false);
+      return true;
+    } catch (error: any) {
+      console.error('Error:', error.message);
+      setLoading(false);
+      return false;
+    }
+  };
+
+  return {deleteProfile, isLoading};
 };
