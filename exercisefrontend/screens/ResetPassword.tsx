@@ -9,7 +9,7 @@ import {
   } from 'react-native';
   import React, {useState} from 'react';
   import {NavigationProp, RouteProp} from '@react-navigation/native';
-  import {AuthStackParamList} from '../types/screentypes';
+  import {AuthStackParamList} from '../interfaces/screentypes';
   import {useResetPassword} from '../hooks/auth';
   
   interface ResetPasswordScreenProps {

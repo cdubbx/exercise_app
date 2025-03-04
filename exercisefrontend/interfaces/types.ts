@@ -56,3 +56,29 @@ export interface RegisterRequest {
      */
   otp?: string;
 }
+
+export interface User {
+   email?: string; 
+   id: string;
+   username?:string;
+   image_url?:string;
+   height?:number | string;
+   weight?:number | string;
+   goal_weight?:number | string;
+   phone_number?:string;
+   is_private?:boolean;
+   is_searchable?:boolean;
+   [key: string]: any;
+}
+
+export interface Song {
+   track_name?:string;
+   artist_name?:string;
+   album_image_url?:string;
+   [key:string]: any;
+}
+
+export interface authTokenObj {
+   access: string | undefined;
+   refresh: string | undefined;
+}

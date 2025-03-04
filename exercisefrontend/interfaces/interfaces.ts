@@ -1,13 +1,14 @@
 export interface Exercise {
-    id: string;
-    name: string;
-    category: string;
-    equipment: string;
-    level: string;
-    mechanic: string;
-    primaryMuscles: string[];
-    img_url: string[]; // Assuming img_url is an array of strings
+    id?: string;
+    name?: string; 
+    category?: string;
+    equipment?: string; 
+    level?: string;
+    mechanic?: string; 
+    primaryMuscles?: string[]; 
+    img_url?: string[]; // Assuming img_url is an array of strings 
     // Add other fields as needed
+    [key:string]: any;
   }
   
   // Define the type for the data structure you receive
