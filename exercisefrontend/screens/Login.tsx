@@ -6,11 +6,14 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import {Stack, VStack, Text} from '@react-native-material/core';
+import {Stack, VStack, Text, HStack} from '@react-native-material/core';
 import React, {useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useLogin, useResetPassword} from '../hooks/auth';
+import appleAuth, {
+  AppleButton,
+} from '@invertase/react-native-apple-authentication';
 
 type RootStackParamList = {
   Register: undefined; // Add other screens as needed
@@ -25,7 +28,7 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 
 export default function Login(): React.JSX.Element {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const {login} = useLogin();
+  const {login, appleLogin} = useLogin();
   const {requestPasswordReset} = useResetPassword(); // Hook for reset password
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -43,9 +46,34 @@ export default function Login(): React.JSX.Element {
     }
   };
 
+  async function onAppleButtonPress() {
+    try {
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
+      });
+
+      const {user, email, identityToken} = appleAuthRequestResponse;
+      const appleObject = {
+        email: email,
+        id_token: identityToken,
+      };
+
+      await appleLogin(appleObject);
+      navigation.navigate('Tabs');
+    } catch (error: any) {
+      if (error?.code === appleAuth.Error.CANCELED) {
+        console.warn('User canceled Apple Sign');
+      } else console.error(error);
+    }
+  }
+
   const handleForgotPassword = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address to reset your password.');
+      Alert.alert(
+        'Error',
+        'Please enter your email address to reset your password.',
+      );
       return;
     }
 
@@ -64,25 +92,14 @@ export default function Login(): React.JSX.Element {
   return (
     <SafeAreaView>
       <Stack mt={80}>
-        <Stack
-          justify="center"
-          items="center"
-          spacing={10}
-          pb={40}
-          direction="row">
-          <Text>Sign in to</Text>
-          <Text>Exercise App</Text>
+        <Stack style={styles.headerStack}>
+          <Text style={styles.signInText}>Sign in</Text>
         </Stack>
-        <Stack
-          justify="center"
-          items="center"
-          mt={20}
-          spacing={5}
-          direction="column">
+        <Stack style={styles.inputStack}>
           <TextInput
             style={styles.input}
             placeholder="Email"
-            onChangeText={(text) => setEmail(text)}
+            onChangeText={text => setEmail(text)}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -91,17 +108,20 @@ export default function Login(): React.JSX.Element {
             style={styles.input}
             placeholder="Password"
             secureTextEntry={true}
-            onChangeText={(text) => setPassword(text)}
+            onChangeText={text => setPassword(text)}
           />
         </Stack>
 
-        <VStack mt={-30} items="center" p={40} justify="center">
-          <TouchableOpacity onPress={onSubmit} style={styles.button}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
+        <VStack style={styles.buttonStack}>
+          <Stack style={styles.buttonContainer}>
+            <TouchableOpacity onPress={onSubmit} style={styles.button}>
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+          </Stack>
+
           <TouchableOpacity
             onPress={() => {
-              navigation.navigate('RequestResetPassword')
+              navigation.navigate('RequestResetPassword');
             }}
             style={styles.link}>
             <Text style={styles.linkText}>
@@ -114,6 +134,18 @@ export default function Login(): React.JSX.Element {
             style={styles.link}>
             <Text style={styles.linkText}>Create account</Text>
           </TouchableOpacity>
+          <HStack style={styles.divider}>
+            <View style={styles.dividerLine}></View>
+            <Text style={styles.dividerText}>Or</Text>
+            <View style={styles.dividerLine}></View>
+          </HStack>
+          
+          <AppleButton
+            buttonStyle={AppleButton.Style.BLACK}
+            buttonType={AppleButton.Type.SIGN_IN}
+            style={styles.appleButton}
+            onPress={onAppleButtonPress}
+          />
         </VStack>
       </Stack>
     </SafeAreaView>
@@ -129,26 +161,76 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ccc',
+    marginBottom: 50,
   },
   button: {
-    backgroundColor: '#007BFF',
+    backgroundColor: 'black',
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 80,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   link: {
     marginTop: 10,
   },
   linkText: {
-    color: '#007BFF',
+    color: 'black',
     fontSize: 14,
-    textDecorationLine: 'underline',
+  },
+  headerStack: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    paddingBottom: 40,
+    flexDirection: 'row',
+  },
+  inputStack: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 5,
+    flexDirection: 'column',
+  },
+  buttonStack: {
+    marginTop: -30,
+    alignItems: 'center',
+    padding: 40,
+    justifyContent: 'center',
+  },
+  buttonContainer: {
+    gap: 10,
+  },
+  signInText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  appleButton: {
+    width: 200,
+    height: 44,
+    marginTop: 50,
+  },
+  divider: {
+    width: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 5,
+    marginVertical: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ccc',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: '#666',
+    fontWeight: 'bold',
   },
 });

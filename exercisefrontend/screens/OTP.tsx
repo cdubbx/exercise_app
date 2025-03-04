@@ -2,10 +2,10 @@ import {NavigationProp, RouteProp} from '@react-navigation/native';
 import React, {useState} from 'react';
 import {View, Text, TouchableOpacity, Alert, StyleSheet} from 'react-native';
 import OTPTextInput from 'react-native-otp-textinput';
-import {AuthStackParamList} from '../types/screentypes';
+import {AuthStackParamList} from '../interfaces/screentypes';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import { useRegister } from '../hooks/auth';
-import { RegisterRequest } from '../types/types';
+import { RegisterRequest } from '../interfaces/types';
 
 interface OTPScreenProps {
   route: RouteProp<AuthStackParamList, 'OTP'>;

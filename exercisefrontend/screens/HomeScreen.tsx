@@ -5,9 +5,10 @@ import {
   SafeAreaView,
   Image,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 import React, {useEffect} from 'react';
-import {useAuth, useLogout} from '../hooks/auth';
+import {useAuth, useLogout, useUserContext} from '../hooks/auth';
 import LinearGradient from 'react-native-linear-gradient';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -30,7 +31,7 @@ type HomeStackParamList = {
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
 export default function HomeScreen({navigation}: Props): React.JSX.Element {
- 
+  const {user} = useUserContext();
   const armImage = require('../assets/AdobeStock_261117493.jpeg');
   const chestImage = require('../assets/AdobeStock_476125371.jpeg');
   const legImage = require('../assets/AdobeStock_310385765.jpeg');
@@ -69,141 +70,124 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
 
   // const navigation = useNavigation<HomeScreenNavigationProp>()
 
-  const {exercises, loading} = useExercises();
-  const {logout} = useLogout()
-
-  if (loading) {
-    return <Text>Loading</Text>;
-  }
-
   return (
     //@ts-ignore
     <SafeAreaView
       //@ts-ignore
       style={{display: 'flex', justifyContent: 'center', direction: 'row'}}>
-      <LinearGradient
-        colors={['rgba(67,67,101,1)', 'rgba(32,31,66,1)', 'rgba(2,0,36,1)']}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
-        <ScrollView>
-          <HStack justify="between" items="center" m={10} mb={-3} mr={10}>
-            <Avatar
-              image={{
-                uri: 'https://miro.medium.com/v2/resize:fit:720/format:webp/1*W35QUSvGpcLuxPo3SRTH4w.png',
-              }}
-              size={30}
-            />
-            <TouchableOpacity
-              onPress={async () => {
-                  await logout()
-                  navigation.navigate('Register')
-              }}>
-              <FontAwesome name="bell" size={24} color={'white'} />
-            </TouchableOpacity>
-          </HStack>
+      <ScrollView>
+        <HStack justify="end" items="center" m={10} mb={-3} mr={10}>
+          <TouchableOpacity>
+            <FontAwesome name="bell" size={18} color={'black'} />
+          </TouchableOpacity>
+        </HStack>
 
-          <HStack m={13} mb={20} justify="start">
-            //@ts-ignore
-            <Text
-              color="white"
-              style={{fontWeight: 'bold', fontFamily: 'Arial'}}>
-              Welcome User
-            </Text>
-          </HStack>
-          {Object.entries(imageCard).map(([key, card]) => (
-            <TouchableOpacity
-              key={key}
-              activeOpacity={1}
-              style={{marginBottom: 10}}
-              onPress={() => {
-                navigation.navigate('BodyPart', {
-                  bodyParts: card.bodyParts,
-                });
-              }}>
-              <HStack
-                p={10}
-                style={{
-                  borderColor: '#494949',
-                  borderWidth: 1,
-                  borderRadius: 10,
-                  height: 200,
-                }}>
-                //@ts-ignore
-                <View
-                  style={{width: '100%', height: 150, position: 'relative'}}>
-                  <Text
-                    style={{
-                      top: 10,
-                      left: 10,
-                      color: 'white',
-                      position: 'absolute',
-                      zIndex: 1,
-                      fontWeight: 'bold',
-                      fontSize: 18,
-                    }}>
-                    {card.name}
-                  </Text>
+        <HStack style={styles.headerStack}>
+          <Avatar
+            image={{
+              uri: user?.image_url,
+            }}
+            size={30}
+          />
+          <Text style={styles.welcomeUserText}>
+            Welcome {user?.username || user?.email}
+          </Text>
+        </HStack>
+        {Object.entries(imageCard).map(([key, card]) => (
+          <TouchableOpacity
+            key={key}
+            activeOpacity={1}
+            style={{marginBottom: 10}}
+            onPress={() => {
+              navigation.navigate('BodyPart', {
+                bodyParts: card.bodyParts,
+              });
+            }}>
+            <HStack
+              style={styles.exerciseCardContainerContainer}>
+              <View style={styles.exerciseCardContainer}>
+                <Text style={styles.exerciseName}>{card.name}</Text>
+                <Image
+                  source={card.img_url}
+                  style={styles.exerciseImage}
+                />
+                <HStack
+                 style={styles.categoryStack}>
+                  <Box style={styles.exerciseCard}>
+                    <Text style={styles.exerciseCategory}>Strength</Text>
+                  </Box>
+                  <Box style={styles.exerciseCard}>
+                    <Text style={styles.exerciseCategory}>Power Lifting</Text>
+                  </Box>
 
-                  <Image
-                    source={card.img_url}
-                    style={{
-                      width: '100%',
-                      height: 198,
-                      borderRadius: 10,
-                      padding: 10,
-                      opacity: 0.5,
-                    }}
-                  />
-
-                  <HStack
-                    spacing={10}
-                    p={10}
-                    justify="center"
-                    style={{position: 'absolute', bottom: -50}}>
-                    <Box
-                      border={0.3}
-                      borderColor={'#9A9B9B'}
-                      ph={8}
-                      pv={3}
-                      style={{borderRadius: 20}}>
-                      <Text
-                        color="white"
-                        style={{fontSize: 12, fontWeight: 'bold'}}>
-                        Strength
-                      </Text>
-                    </Box>
-                    <Box
-                      border={0.3}
-                      borderColor={'#9A9B9B'}
-                      ph={8}
-                      pv={3}
-                      style={{borderRadius: 20}}>
-                      <Text
-                        color="white"
-                        style={{fontSize: 12, fontWeight: 'bold'}}>
-                        Power Lifting
-                      </Text>
-                    </Box>
-
-                    <Box
-                      border={0.3}
-                      borderColor={'#9A9B9B'}
-                      ph={8}
-                      pv={3}
-                      style={{borderRadius: 20}}>
-                      <Text
-                        color="white"
-                        style={{fontSize: 12, fontWeight: 'bold'}}>
-                        Stretching
-                      </Text>
-                    </Box>
-                  </HStack>
-                </View>
-              </HStack>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </LinearGradient>
+                  <Box style={styles.exerciseCard}>
+                    <Text style={styles.exerciseCategory}>Stretching</Text>
+                  </Box>
+                </HStack>
+              </View>
+            </HStack>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  exerciseName: {
+    top: 15,
+    left: 15,
+    color: 'white',
+    position: 'absolute',
+    zIndex: 1,
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  exerciseCategory: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  exerciseCard: {
+    borderWidth: 0.3,
+    borderColor: '#9A9B9B',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  exerciseImage: {
+    width: '100%',
+    height: 198,
+    borderRadius: 10,
+    padding: 10,
+  }, 
+  exerciseCardContainer: {
+    width: '100%', 
+    height: 150, 
+    position: 'relative'
+  },
+  exerciseCardContainerContainer: {
+    borderRadius: 10,
+    height: 200,
+    padding:10
+  },
+  welcomeUserText: {
+    fontWeight: 'bold', 
+    fontFamily: 'Arial',
+    color:'black'
+  },
+  categoryStack: {
+    position: 'absolute', 
+    bottom: -50,
+    padding:10, 
+    gap:10,
+    justifyContent:'center',
+  },
+  headerStack: {
+    margin:13,
+     marginBottom:20,
+    gap:10, 
+    alignItems:"center",
+    justifyContent:"flex-start"
+  },
+});
