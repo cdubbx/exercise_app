@@ -135,9 +135,11 @@ export const useSaveWorkOuts = () => {
         throw new Error(errorText.error || 'Network error');
       }
       setLoading(false);
+      return true;
     } catch (error: any) {
       console.log('Save workout error:', error.message);
       setLoading(false);
+      throw error;
     }
   };
 
@@ -167,11 +169,14 @@ export const useSavePlannedWorkouts = () => {
           }),
         },
       );
+      
       if (!response.ok) {
         throw new Error('Network error');
       }
+      return true;
     } catch (error) {
       console.log(error);
+      return false;
     }
   };
   return {savePlannedWorkouts, loading};
@@ -215,9 +220,7 @@ export const useFetchedSavedWorkOuts = () => {
 
 export const useFetchedPlanedWorkouts = () => {
   const [loading, setLoading] = useState(false);
-  const [fetchedExercises, setFetchedExercises] = useState([]);
-  useEffect(() => {
-    let isMounted = true;
+  // const [fetchedExercises, setFetchedExercises] = useState([]);
     const fetchPlannedWorkouts = async () => {
       try {
         setLoading(true);
@@ -236,16 +239,12 @@ export const useFetchedPlanedWorkouts = () => {
           throw new Error('Network Error');
         }
         const data = await response.json();
-        setFetchedExercises(data);
+        return data;
       } catch (error) {
         console.log(error);
       }
     };
-
-    fetchPlannedWorkouts();
-  }, []);
-
-  return {fetchedExercises, loading};
+  return {loading, fetchPlannedWorkouts};
 };
 
 export const useSetExercise = () => {

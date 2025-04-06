@@ -114,7 +114,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     }
   };
 
-  const handleImageUpload = useCallback(async () => {
+  const handleImageUpload = useCallback(async (file:any) => {
     if (!file) {
       Alert.alert('No file selected');
       return;
@@ -125,6 +125,10 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
 
       if (url) {
         setImageUrl(url);
+        setUserInfo((prev => ({
+          ...prev, 
+          image_url:url
+        })))
       }
     } catch (err) {
       if (err instanceof Error) {
@@ -310,8 +314,11 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             style={styles.modalProfilePic}
             onPress={async () => {
               const result = await pickFile();
-              if (file || result) {
-                await handleImageUpload();
+               // Wait for file selection
+              if (result) {
+                await handleImageUpload(result); // Call handleImageUpload only if a file is selected
+              } else {
+                Alert.alert('No file selected');
               }
             }}>
             <Avatar size={undefined} imageUrl={file ? file : user?.image_url} />

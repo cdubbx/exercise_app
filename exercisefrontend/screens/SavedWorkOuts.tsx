@@ -45,7 +45,7 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
     customExercises: false,
   });
 
-  let combinedExercises = [...fetchedExercises, ...exercises];
+  let combinedExercises = [...fetchedExercises];
   useEffect(() => {
     setLocalExercises(combinedExercises);
     setLocalExercises((prevLocalExercises: any) => [

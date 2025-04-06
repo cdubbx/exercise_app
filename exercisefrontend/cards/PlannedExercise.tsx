@@ -33,10 +33,10 @@ export default function PlannedExercise({item}: any) {
                 {exercise?.name}
               </Text>
               <Text style={{fontSize: 11, color: 'black', fontWeight: 'bold'}}>
-                {exercise?.category}
+                {exercise?.category.charAt(0).toUpperCase() + exercise?.category.slice(1)}
               </Text>
               <Text style={{fontSize: 11, color: 'black', fontWeight: 'bold'}}>
-                {exercise?.reps}
+                {item?.reps}
               </Text>
             </Stack>
           </HStack>

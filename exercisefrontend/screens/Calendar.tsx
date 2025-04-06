@@ -20,7 +20,7 @@ import Exercise from './ExerciseCard';
 import {SavedWorkout, PlannedWorkout} from '../interfaces/interfaces'; // Ensure this path is correct
 import PlannedExercise from '../cards/PlannedExercise';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {NavigationProp} from '@react-navigation/native';
+import {NavigationProp, useFocusEffect} from '@react-navigation/native';
 import {CalendarParamList} from '../interfaces/screentypes';
 
 interface CalendarScreenProps {
@@ -28,8 +28,9 @@ interface CalendarScreenProps {
 }
 const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const {fetchedExercises, loading} = useFetchedPlanedWorkouts();
+  const { loading, fetchPlannedWorkouts } = useFetchedPlanedWorkouts(); // Ensure refetch is available
   const [localExercises, setLocalExercises] = useState<any[]>();
+  const [fetchedExercises, setFetchedExercises] = useState<any[]>();
   const {exercises} = useSetExercise();
   const daysOfTheWeek = {
     Mon: 'Monday',
@@ -44,32 +45,32 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
 
   const {deletePlannedWorkout} = useDeleteWorkout();
 
-  const flattenedExercises = fetchedExercises.map(
+  const flattenedExercises = fetchedExercises?.map(
     (exercise: any) => exercise.saved_workout_details,
   );
-  const combinedExercises = exercises
-    ? [
-        ...exercises,
-        ...fetchedExercises.filter(
-          (ex: any) =>
-            !exercises?.some(
-              existing =>
-                existing?.exercise?.id ===
-                ex?.saved_workout_details?.exercise?.id,
-            ),
-        ),
-      ]
-    : fetchedExercises;
+
+  const combinedExercises = fetchedExercises;
     useEffect(() => {
-      if (selectedDay) {
-        const filtered = combinedExercises.filter(
-          (workout: any) =>
-            workout.day_of_the_week ===
-            daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek]
-        );
-        setLocalExercises(filtered);
-      }
-    }, [selectedDay, fetchedExercises ]);
+      const fetchAndFilterExercises = async () => {
+        await handleFetchedExercises();
+    
+        if (selectedDay) {
+          const filtered = fetchedExercises?.filter(
+            (workout: any) =>
+              workout.day_of_the_week ===
+              daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek]
+          );
+          setLocalExercises(filtered);
+        }
+      };
+    
+      const handleFetchedExercises = async () => {
+        const result = await fetchPlannedWorkouts();
+        setFetchedExercises(result);
+      };
+    
+      fetchAndFilterExercises();
+    }, [selectedDay]);
 
 
     const handleDelete = (id: any) => {

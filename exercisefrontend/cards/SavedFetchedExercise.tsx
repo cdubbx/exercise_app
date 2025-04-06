@@ -34,19 +34,19 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
   const {savePlannedWorkouts} = useSavePlannedWorkouts();
   const {addExercises, exercises} = useSetExercise();
   const itemData = Array.isArray(route.params.exercise)
-  ? route.params.exercise[0]
-  : route.params.exercise;
+    ? route.params.exercise[0]
+    : route.params.exercise;
 
-const item = itemData.exercise || itemData.saved_workout_details?.exercise || itemData;
+  const item =
+    itemData.exercise || itemData.saved_workout_details?.exercise || itemData;
 
   const selectDay = (day: any) => {
     setSelectedDay(day);
   };
 
   useEffect(() => {
-    console.log("This is the item that is being passed through", item);
-    
-  })
+    console.log('This is the item that is being passed through', item);
+  });
 
   const onSubmit = async () => {
     try {
@@ -60,14 +60,19 @@ const item = itemData.exercise || itemData.saved_workout_details?.exercise || it
         reps: reps,
         day: selectedDay,
       };
-      await savePlannedWorkouts(workoutData);
-      workoutData["day_of_the_week"] = selectedDay
-      addExercises(workoutData);
-      console.log(
-        'These are the exercises that are being added to state',
-        exercises,
-      );
-      // navigation.goBack();
+      const result = await savePlannedWorkouts(workoutData);
+      if (result) {
+        workoutData['day_of_the_week'] = selectedDay;
+        addExercises(workoutData);
+        console.log("This is the saved workout", workoutData);
+        Alert.alert("Success", `Workout ${workoutData?.saved_workout_details?.exercise?.name}`)
+        navigation.goBack();
+      }
+      // console.log(
+      //   'These are the exercises that are being added to state',
+      //   exercises,
+      // );
+      navigation.goBack();
     } catch (error) {
       Alert.alert(`${error}`);
     }
@@ -108,7 +113,6 @@ const item = itemData.exercise || itemData.saved_workout_details?.exercise || it
         />
         <Box style={{right: 120}}>
           <RNPickerSelect
-            
             value={selectedDay} // ✅ Ensures correct selection
             onValueChange={selectDay}
             items={[
@@ -120,7 +124,7 @@ const item = itemData.exercise || itemData.saved_workout_details?.exercise || it
               {label: 'Saturday', value: 'Saturday'},
               {label: 'Sunday', value: 'Sunday'},
             ]}
-            textInputProps={{ pointerEvents: "none",}}
+            textInputProps={{pointerEvents: 'none'}}
             placeholder={{label: 'Select a day', value: null}} // ✅ Fix placeholder format
             style={{
               inputIOS: {

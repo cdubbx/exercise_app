@@ -96,35 +96,39 @@ export const useFilePicker = () => {
         mediaType: 'photo',
         quality: 1,
       };
-
+  
       const result = await launchImageLibrary(options);
       if (result.didCancel) {
         setError('File selection canceled');
         setFile(null);
-        return false;
+        return null;
       }
       if (result.errorMessage) {
         setError(result.errorMessage);
         setFile(null);
-        return false;
+        return null;
       }
-
+  
       if (result.assets && result.assets.length > 0) {
         const selectedAsset = result.assets[0];
-        setFile({
+        const file = {
           uri: selectedAsset.uri!,
           name: selectedAsset.fileName || 'unknown',
           type: selectedAsset.type || 'image/jpeg',
-        });
-        return true;
+        };
+        setFile(file);
+        return file; // ✅ return the file here
       }
+  
+      return null;
     } catch (error) {
       setError(`An error has occurred while picking the file: ${error}`);
       console.error(error);
       setFile(null);
+      return null;
     }
   };
-  return {file, error, pickFile, setFile};
+  return {error, pickFile, setFile, file};
 };
 
 export const useUsers = () => {

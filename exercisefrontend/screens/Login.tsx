@@ -101,12 +101,14 @@ export default function Login(): React.JSX.Element {
             placeholder="Email"
             onChangeText={text => setEmail(text)}
             keyboardType="email-address"
+            placeholderTextColor={"black"}
             autoCapitalize="none"
             autoCorrect={false}
           />
           <TextInput
             style={styles.input}
             placeholder="Password"
+            placeholderTextColor={"black"}
             secureTextEntry={true}
             onChangeText={text => setPassword(text)}
           />

@@ -26,7 +26,7 @@ interface Props {
 // Note the correction in the prop name from 'exericse' to 'exercise' and the typing syntax
 const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const {addExercises} = useSetExercise();
-  const {saveWorkouts, error} = useSaveWorkOuts();
+  const {saveWorkouts, error, loading} = useSaveWorkOuts();
   const [showMore, setShowMore] = useState<boolean>(false);
   const [showMoreText, setShowMoreText] = useState<string>('Show more');
 
@@ -38,12 +38,16 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const onSaveWorkout = async () => {
     try {
       if (exerciseItems !== undefined) {
-      addExercises(exerciseItems);
-      saveWorkouts(exerciseItems);
-    }
+        const result = await saveWorkouts(exerciseItems);
+        if(result)
+        addExercises(exerciseItems);
+      }
     } catch (err: any) {
-      console.log(error);
-      Alert.alert('Error', err.message || 'An error occurred while saving the workout.');
+      console.log(err);
+      Alert.alert(
+        'Error',
+        err.message || 'An error occurred while saving the workout.',
+      );
     }
   };
 
@@ -72,7 +76,6 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
           <Box mr={-10}>
             <Entypo name="dots-three-vertical" size={15} color={'black'} />
           </Box>
-          '
         </HStack>
         <Image
           source={{
@@ -106,6 +109,7 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.saveButton}
+            disabled={loading}
             onPress={() => {
               onSaveWorkout();
             }}>

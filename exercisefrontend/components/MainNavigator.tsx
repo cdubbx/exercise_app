@@ -11,7 +11,6 @@ export default function MainNavigator() {
         const handleToken = async () => {
             const accessToken = await AsyncStorage.getItem("access");
             const refreshToken = await AsyncStorage.getItem("refresh");
-          
             if (accessToken && refreshToken) {
               setToken({ access: accessToken, refresh: refreshToken });
             } else {
