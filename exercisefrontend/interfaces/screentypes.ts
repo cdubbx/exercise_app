@@ -20,7 +20,19 @@ export type AuthStackParamList = {
   export type ExploreStackParamList = {
     Explore: undefined;
     OtherUser: {user: User}
+    BodyPart: { bodyParts: string };
     PublicWorkoutsScreen: {publicWorkouts: any[]};
+    ExplorePage:undefined;
+    ExerciseCard: { item: string };
+  };
+
+   export type SocialStackParamList = {
+    Explore: undefined;
+    OtherUser: {user: User}
+    BodyPart: { bodyParts: string };
+    PublicWorkoutsScreen: {publicWorkouts: any[]};
+    ExplorePage:undefined;
+    ExerciseCard: { item: string };
   };
   
   export type ProfileStackParamList = {
@@ -37,6 +49,7 @@ export type AuthStackParamList = {
     BodyPart: { bodyParts: string };
     ExerciseCard: { item: string };
     Register: undefined;
+    BotScreen: undefined;
   };
   
   export type BottomTabParamList = {
@@ -44,6 +57,7 @@ export type AuthStackParamList = {
     Profile1: undefined;
     Explore1: undefined;
     Calendar: undefined;
+    Social1:undefined;
   };
 
   export type CalendarParamList = {

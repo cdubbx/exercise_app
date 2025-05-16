@@ -16,13 +16,13 @@
       "name": "Python Debugger: Django",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/exercise-backend/backend/manage.py",
+      "program": "${workspaceFolder}/exercise-backend-production/backend/manage.py",
       "args": [
         "runserver", 
         "0.0.0.0:8000"
       ],
       "django": true,
       "justMyCode": true
-    }
+    }, 
   ]
 }

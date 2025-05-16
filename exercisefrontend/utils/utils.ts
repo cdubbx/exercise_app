@@ -33,3 +33,7 @@ export const formatWeight = (dirtyWeight: number | undefined) => {
     if (dirtyWeight === undefined || isNaN(dirtyWeight)) return "Invalid weight";
     return Number(dirtyWeight.toPrecision(4));
   };
+
+export const getImageUrl = (url: string) => {
+  return url.replace("github.com", "raw.githubusercontent.com").replace("/blob", "");
+};

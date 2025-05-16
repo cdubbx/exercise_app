@@ -90,13 +90,13 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
         <Stack p={10} style={styles.contentContainer} spacing={20}>
           <Text style={styles.categoryText}>
             Category:{' '}
-            {exerciseItems?.category.charAt(0).toUpperCase() +
-              exerciseItems?.category.slice(1)}
+            {exerciseItems?.category?.charAt(0)?.toUpperCase() +
+              exerciseItems?.category?.slice(1)}
           </Text>
           <Text style={styles.equipmentText}>
             Equipment:{' '}
-            {exerciseItems?.equipment.charAt(0).toUpperCase() +
-              exerciseItems?.equipment.slice(1)}
+            {exerciseItems?.equipment ? exerciseItems?.equipment?.charAt(0)?.toUpperCase() +
+              exerciseItems?.equipment?.slice(1) : "No Equipment Required"}
           </Text>
 
           <Text

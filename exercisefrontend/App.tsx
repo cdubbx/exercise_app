@@ -32,6 +32,7 @@ import {
   HomeStackParamList,
   ProfileStackParamList,
   ResetPasswordList,
+  SocialStackParamList,
 } from './interfaces/screentypes';
 import ResetPassword from './screens/ResetPassword';
 import ResetPasswordScreen from './screens/ResetPassword';
@@ -45,9 +46,11 @@ import OtherUserScreen from './screens/OtherUserScreen';
 import WorkoutForm from './screens/WorkoutForm';
 import PublicExercises from './components/PublicExercises';
 import Entypo from 'react-native-vector-icons/Entypo';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MainNavigator from './components/MainNavigator';
+import BotScreen from './screens/BotScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -57,6 +60,7 @@ const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const CalendarStack = createNativeStackNavigator<CalendarParamList>();
+const SocialStack = createNativeStackNavigator<SocialStackParamList>()
 
 
 export const AuthNavigator = () => {
@@ -93,12 +97,15 @@ export const AuthNavigator = () => {
   )
  }
 
+
+
 const HomeNavigator = () => {
   return (
     <HomeStack.Navigator
-      initialRouteName="Home"
+      initialRouteName="BotScreen"
       screenOptions={{headerShown: false}}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
+      {/* <HomeStack.Screen name="Home" component={HomeScreen} /> */}
+      <HomeStack.Screen name="BotScreen" component={BotScreen} />
       <HomeStack.Screen name="BodyPart" component={BodyPart} />
       <HomeStack.Screen name="ExerciseCard" component={ExerciseCard} />
       <HomeStack.Screen name="Register" component={Register} />
@@ -109,15 +116,40 @@ const HomeNavigator = () => {
 const ExploreNavigator = () => {
   return (
     <ExploreStack.Navigator
-      initialRouteName="Explore"
+      initialRouteName="ExplorePage"
       screenOptions={{headerShown: false}}>
       <ExploreStack.Screen name="Explore" component={ExploreScreen} />
       <ExploreStack.Screen name="OtherUser" component={OtherUserScreen} />
+      <ExploreStack.Screen name="BodyPart" component={BodyPart} />
+      <ExploreStack.Screen name="ExerciseCard" component={ExerciseCard} />
+
       <ExploreStack.Screen
         name="PublicWorkoutsScreen"
         component={PublicExercises}
       />
+      <ExploreStack.Screen name="ExplorePage" component={HomeScreen} />
     </ExploreStack.Navigator>
+  );
+};
+
+
+
+const SocialNavigator = () => {
+  return (
+    <SocialStack.Navigator
+      initialRouteName="Explore"
+      screenOptions={{headerShown: false}}>
+      <SocialStack.Screen name="Explore" component={ExploreScreen} />
+      <SocialStack.Screen name="OtherUser" component={OtherUserScreen} />
+      <SocialStack.Screen name="BodyPart" component={BodyPart} />
+      <SocialStack.Screen name="ExerciseCard" component={ExerciseCard} />
+
+      <SocialStack.Screen
+        name="PublicWorkoutsScreen"
+        component={PublicExercises}
+      />
+      <SocialStack.Screen name="ExplorePage" component={HomeScreen} />
+    </SocialStack.Navigator>
   );
 };
 
@@ -174,6 +206,18 @@ export const TabNavigator = () => {
             return <AntDesign name="search1" size={focused ? 30: 26} />;
           },
           tabBarLabel: 'Explore',
+          tabBarLabelStyle: {color: 'black'},
+        }}
+      />
+
+        <Tab.Screen
+        name="Social1"
+        component={SocialNavigator}
+        options={{
+          tabBarIcon: ({focused}) => {
+            return <FontAwesome name="group" size={focused ? 30: 26} />;
+          },
+          tabBarLabel: 'Social',
           tabBarLabelStyle: {color: 'black'},
         }}
       />

@@ -5,7 +5,7 @@ from django.conf import settings
 import random 
 from datetime import date, timedelta
 import string
-
+from pgvector.django import VectorField
 from uuid import uuid4
 import uuid
 # Create your models here.
@@ -69,6 +69,7 @@ class Exercise(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     img_url = models.JSONField(null=True, blank=True)
+    embedding = VectorField(dimensions=1536, null=True, blank=True)  # Assuming you want to use pgvector for embeddings
 
     def __str__(self):
         return self.name
@@ -104,7 +105,7 @@ class SavedWorkout(models.Model):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='saved_workouts')
     date_saved = models.DateTimeField(auto_now_add=True)
     reps = models.CharField(max_length=250, null=True, blank=True)
-
+    
     class Meta:
         unique_together = ('user', 'exercise')  # Optional: ensures a user can't save the same exercise multiple times
 
