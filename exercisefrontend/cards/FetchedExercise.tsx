@@ -17,6 +17,7 @@ export default function FetchedExercise({item}: any) {
               Array.isArray(exercise?.img_url) && exercise?.img_url.length > 0
                 ? exercise?.img_url[0]
                 : 'fall-back.png',
+                cache:'default'
           }}
           style={{height: 60, width: 60, borderRadius: 10}}
         />

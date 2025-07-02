@@ -9,12 +9,7 @@ interface PlannedExerciseProps {
 
 export default function PlannedExercise({item}: any) {
   const exercise = item?.saved_workout_details?.exercise ?? item?.exercise;
-  useEffect(() => {
-    console.log(
-      'This is the item that is being passed through as a prop',
-      item,
-    );
-  }, [item]);
+
 
   return (
     <SafeAreaView>

@@ -30,30 +30,25 @@ export function useAuth() {
       if (accessToken) {
         const isValid = await verifyToken(accessToken);
         if (isValid) {
-          setIsAuthenticated(true);
+          // setIsAuthenticated(true);
+          return true; 
         } else if (refreshToken) {
           const refreshed = await refreshAccessToken(refreshToken);
-          setIsAuthenticated(refreshed);
+          // setIsAuthenticated(refreshed);
+          if (refreshed) return true;
         } else {
-          setIsAuthenticated(false);
+          // setIsAuthenticated(false);
+          return false;
         }
-      } else if (refreshToken) {
-        const refreshed = await refreshAccessToken(refreshToken);
-        setIsAuthenticated(refreshed);
-      } else {
-        setIsAuthenticated(false);
-      }
+      } 
     } catch (error) {
       console.error('Error checking token:', error);
-      setIsAuthenticated(false);
+      return false; 
     } finally {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    checkToken();
-  }, []);
-
+ 
   return {isAuthenticated, isLoading, checkToken, setIsAuthenticated};
 }
 async function refreshAccessToken(refreshToken: string): Promise<boolean> {

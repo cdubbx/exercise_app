@@ -31,9 +31,7 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const [showMoreText, setShowMoreText] = useState<string>('Show more');
 
   const exerciseItems = route.params?.item;
-  useEffect(() => {
-    console.log('These are the exercise items', exerciseItems);
-  });
+
 
   const onSaveWorkout = async () => {
     try {
@@ -78,14 +76,17 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
           </Box>
         </HStack>
         <Image
+        
           source={{
             uri:
               Array.isArray(exerciseItems?.img_url) &&
               exerciseItems?.img_url.length > 0
                 ? exerciseItems?.img_url[0]
                 : 'fallback_image_url_here',
+                cache:'default'
           }}
           style={{height: 300, width: 'auto'}}
+          
         />
         <Stack p={10} style={styles.contentContainer} spacing={20}>
           <Text style={styles.categoryText}>

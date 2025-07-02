@@ -44,7 +44,7 @@ export const SpotifySong: React.FC<SongProps> = ({song}) => {
       <Text style={styles.nowPlayingText}>Now Playing</Text>
       <HStack style={styles.songStack}>
         <Image
-          source={{uri: song?.album_image_url}}
+          source={{uri: song?.album_image_url,cache:'default'}}
           style={styles.albumCover}
         />
         <Stack>

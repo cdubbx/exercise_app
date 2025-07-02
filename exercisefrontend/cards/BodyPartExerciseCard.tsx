@@ -19,6 +19,7 @@ export default function BodyPartExercise({item}: any) {
           item?.img_url && Array.isArray(item?.img_url) && item?.img_url.length > 0
             ? getImageUrl(item?.img_url[0])
             : item?.img_url,
+            cache:'default'
       }}
       style={{ height: 60, width: 60, borderRadius: 10 }}
     />

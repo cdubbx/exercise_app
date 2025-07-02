@@ -44,9 +44,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
     setSelectedDay(day);
   };
 
-  useEffect(() => {
-    console.log('This is the item that is being passed through', item);
-  });
+
 
   const onSubmit = async () => {
     try {
@@ -101,6 +99,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
               Array.isArray(item?.img_url) && item?.img_url.length > 0
                 ? item?.img_url[0]
                 : 'fallback_image_url_here',
+                cache:'default'
           }}
           style={{height: 300, width: 300, borderRadius: 20}}
         />

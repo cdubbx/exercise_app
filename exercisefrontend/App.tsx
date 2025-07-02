@@ -51,6 +51,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MainNavigator from './components/MainNavigator';
 import BotScreen from './screens/BotScreen';
+import SplashScreen from 'react-native-splash-screen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -236,24 +237,31 @@ export const TabNavigator = () => {
   );
 };
 export default function App(): React.JSX.Element {
-  const {checkToken, isAuthenticated} = useAuth();
+  const {checkToken} = useAuth();
   const [token, setToken] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean| undefined>(false);
+  const [isAppReady, setIsAppReady] = useState(false);
 
 
 
 
   
-  useEffect(() => {
-    const handleGetAuth = async () => {
-      checkToken()
-     const fetchedToken = await AsyncStorage.getItem("access");
-     console.log(fetchedToken); 
-     if(!fetchedToken) setToken(null);
+useEffect(() => {
+  const initialize = async () => {
+    try {
+      const result = await checkToken();
+      setIsAuthenticated(result);
+    } catch (error) {
+      console.log("An error has occurred:", error);
+      setIsAuthenticated(false);
+    } finally {
+      SplashScreen.hide();
+      setIsAppReady(true); // ✅ This line WILL run — only if you call initialize()
     }
-    console.log("Token is null", token);
-    
-    handleGetAuth();
-  }, [token])
+  };
+
+  initialize(); // ✅ Don't forget to call the async function
+}, []); // ✅ Only run once
   const linking = {
     prefixes: ['exercisefrontend://'],
     config: {
@@ -270,13 +278,15 @@ export default function App(): React.JSX.Element {
     },
   };
 
+  if (!isAppReady) return <></>; // show native splash
+
 
   return (
     <NowPlayingProvider>
       <UserContextProvider>
         <ExerciseProvider>
           <NavigationContainer linking={linking}>
-            <MainNavigator />
+            <MainNavigator isAuthenticated={isAuthenticated} />
           </NavigationContainer>
         </ExerciseProvider>
       </UserContextProvider>

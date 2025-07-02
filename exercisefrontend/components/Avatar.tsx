@@ -16,7 +16,7 @@ export const Avatar:React.FC<AvatarProps> = ({imageUrl,size}) => {
   const profileImage = require('../assets/images/profileImage.jpg');
   return (
     <View>
-      <Image source={resolvedImageUrl ?  {uri: resolvedImageUrl} : profileImage} style={[styles.avatar, size ? {height:size.height, width:size.width}: undefined]} />
+      <Image source={resolvedImageUrl ?  {uri: resolvedImageUrl, cache:'default'} : profileImage} style={[styles.avatar, size ? {height:size.height, width:size.width}: undefined]} />
     </View>
   );
 };
