@@ -1,7 +1,12 @@
 #import "AppDelegate.h"
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h> // Required for deep linking
-#import <RNSpotifyRemote.h> // Required for Spotify Remote SDK
+// Spotify Remote SDK (optional)
+#if __has_include(<RNSpotifyRemote/RNSpotifyRemote.h>)
+#import <RNSpotifyRemote/RNSpotifyRemote.h>
+#elif __has_include(<RNSpotifyRemote.h>)
+#import <RNSpotifyRemote.h>
+#endif
 
 @implementation AppDelegate
 
@@ -17,9 +22,11 @@
             openURL:(NSURL *)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
 {
+#if __has_include(<RNSpotifyRemote/RNSpotifyRemote.h>) || __has_include(<RNSpotifyRemote.h>)
   if ([[RNSpotifyRemoteAuth sharedInstance] application:application openURL:url options:options]) {
     return YES; // If Spotify handled it, return YES
   }
+#endif
   return [RCTLinkingManager application:application openURL:url options:options]; // Handle other deep links
 }
 
