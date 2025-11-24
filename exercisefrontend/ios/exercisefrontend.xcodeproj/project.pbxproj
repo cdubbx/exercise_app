@@ -16,35 +16,17 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		204F042CD4B34D7BA5587507 /* Roboto-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 78CAD172031F4E9FB0D08F0A /* Roboto-Bold.ttf */; };
+		256E85814E940F4C03095E05 /* libPods-exercisefrontend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E2A762521E6F5A465E822AA /* libPods-exercisefrontend.a */; };
 		2CCAE24AF6B04FE9B14D4159 /* Roboto-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 94D23F5E70C449A99736CF46 /* Roboto-Light.ttf */; };
 		403AF476C6EF45A3B249FA29 /* Roboto-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A89E081AAC774FB7A4848D99 /* Roboto-Thin.ttf */; };
+		4F2E984FB920DD2276C29851 /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19A57DE5D2446A8386C44E7A /* libPods-exercisefrontend-exercisefrontendTests.a */; };
 		4FFC829638514CD6980CEE57 /* Roboto-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0EF651DFF7C3458EABB1E3EE /* Roboto-BoldItalic.ttf */; };
 		70167D4CF3684ADFB836E6A2 /* Roboto-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8037BD0F10104EFABD9A55C6 /* Roboto-ThinItalic.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		8C6B27F72D492D6200596320 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
-		8C6B27F82D492D6200596320 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		8C6B27FC2D492D6200596320 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		8C6B27FD2D492D6200596320 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		8C6B27FE2D492D6200596320 /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29F1E81FD49E45E9B486BD72 /* Roboto-Black.ttf */; };
-		8C6B27FF2D492D6200596320 /* Roboto-BlackItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 847E186577B846D1ACF0ADBD /* Roboto-BlackItalic.ttf */; };
-		8C6B28002D492D6200596320 /* Roboto-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 78CAD172031F4E9FB0D08F0A /* Roboto-Bold.ttf */; };
-		8C6B28012D492D6200596320 /* Roboto-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0EF651DFF7C3458EABB1E3EE /* Roboto-BoldItalic.ttf */; };
-		8C6B28022D492D6200596320 /* Roboto-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 957C2F9402984BAD8EE602E4 /* Roboto-Italic.ttf */; };
-		8C6B28032D492D6200596320 /* Roboto-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 94D23F5E70C449A99736CF46 /* Roboto-Light.ttf */; };
-		8C6B28042D492D6200596320 /* Roboto-LightItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F4A6D29225174898A00F9E96 /* Roboto-LightItalic.ttf */; };
-		8C6B28052D492D6200596320 /* Roboto-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0DFE6CA626F44239A3AD386D /* Roboto-Medium.ttf */; };
-		8C6B28062D492D6200596320 /* Roboto-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41C4696B9039447AB130FE13 /* Roboto-MediumItalic.ttf */; };
-		8C6B28072D492D6200596320 /* Roboto-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 74A38031B9A1486F8DBA2945 /* Roboto-Regular.ttf */; };
-		8C6B28082D492D6200596320 /* Roboto-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A89E081AAC774FB7A4848D99 /* Roboto-Thin.ttf */; };
-		8C6B28092D492D6200596320 /* Roboto-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8037BD0F10104EFABD9A55C6 /* Roboto-ThinItalic.ttf */; };
-		8C6B280A2D492D6200596320 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = D5BF814B87364F83956F9135 /* LICENSE.txt */; };
-		8C6B280B2D492D6200596320 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A4BFCDC3F89B9129FFA11480 /* PrivacyInfo.xcprivacy */; };
 		A9C11EF8C5D34050A4B284C3 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = D5BF814B87364F83956F9135 /* LICENSE.txt */; };
-		B19949CFFD968F543F7D27F2 /* libPods-exercisefrontend.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FEA778FF79C64095207550D /* libPods-exercisefrontend.a */; };
 		B7FAB3B00CFC4D0D8C69C451 /* Roboto-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41C4696B9039447AB130FE13 /* Roboto-MediumItalic.ttf */; };
 		D8CDFA8E0620101CDD2CD86B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A4BFCDC3F89B9129FFA11480 /* PrivacyInfo.xcprivacy */; };
 		EA77896C2444490488628ADD /* Roboto-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 957C2F9402984BAD8EE602E4 /* Roboto-Italic.ttf */; };
-		EBC8CCE941A1F8CFBD1424F0 /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FEA40731CEF2654BCAF87293 /* libPods-exercisefrontend-exercisefrontendTests.a */; };
 		FBA84DFDF3A546E6955E4664 /* Roboto-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 74A38031B9A1486F8DBA2945 /* Roboto-Regular.ttf */; };
 /* End PBXBuildFile section */
 
@@ -62,37 +44,129 @@
 		00E356EE1AD99517003FC87E /* exercisefrontendTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = exercisefrontendTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* exercisefrontendTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = exercisefrontendTests.m; sourceTree = "<group>"; };
+		0297205B4FEB7F9AA6084A32 /* Pods-exercisefrontend-common-exercisefrontendSimulator.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-common-exercisefrontendSimulator.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-common-exercisefrontendSimulator/Pods-exercisefrontend-common-exercisefrontendSimulator.debug.xcconfig"; sourceTree = "<group>"; };
 		0DFE6CA626F44239A3AD386D /* Roboto-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Medium.ttf"; path = "../assets/fonts/Roboto/Roboto-Medium.ttf"; sourceTree = "<group>"; };
 		0EF651DFF7C3458EABB1E3EE /* Roboto-BoldItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-BoldItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-BoldItalic.ttf"; sourceTree = "<group>"; };
+		0F7CA38937EB805A247A4D76 /* Pods-exercisefrontend-common-exercisefrontendTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-common-exercisefrontendTests.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-common-exercisefrontendTests/Pods-exercisefrontend-common-exercisefrontendTests.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* exercisefrontend.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = exercisefrontend.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = exercisefrontend/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = exercisefrontend/AppDelegate.mm; sourceTree = "<group>"; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = exercisefrontend/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = exercisefrontend/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = exercisefrontend/main.m; sourceTree = "<group>"; };
+		17481FC22441A8DA3175F67C /* Pods-Common-exercisefrontend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Common-exercisefrontend.release.xcconfig"; path = "Target Support Files/Pods-Common-exercisefrontend/Pods-Common-exercisefrontend.release.xcconfig"; sourceTree = "<group>"; };
+		19A57DE5D2446A8386C44E7A /* libPods-exercisefrontend-exercisefrontendTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend-exercisefrontendTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		29F1E81FD49E45E9B486BD72 /* Roboto-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Black.ttf"; path = "../assets/fonts/Roboto/Roboto-Black.ttf"; sourceTree = "<group>"; };
+		2D0CD809632355FA69DD55B9 /* Pods-Common-exercisefrontendSimulator.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Common-exercisefrontendSimulator.debug.xcconfig"; path = "Target Support Files/Pods-Common-exercisefrontendSimulator/Pods-Common-exercisefrontendSimulator.debug.xcconfig"; sourceTree = "<group>"; };
+		3E2A762521E6F5A465E822AA /* libPods-exercisefrontend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		41C4696B9039447AB130FE13 /* Roboto-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-MediumItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-MediumItalic.ttf"; sourceTree = "<group>"; };
 		422FA983F020B10392512AB1 /* Pods-exercisefrontend.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend.debug.xcconfig"; sourceTree = "<group>"; };
+		513E3BC9F0D5EA931622179B /* Pods-Common-exercisefrontendSimulator.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Common-exercisefrontendSimulator.release.xcconfig"; path = "Target Support Files/Pods-Common-exercisefrontendSimulator/Pods-Common-exercisefrontendSimulator.release.xcconfig"; sourceTree = "<group>"; };
 		6902A2DD73981235B346EACF /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig"; sourceTree = "<group>"; };
+		6C286986D0F983C373A399ED /* libPods-exercisefrontendSimulator.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontendSimulator.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		74A38031B9A1486F8DBA2945 /* Roboto-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Regular.ttf"; path = "../assets/fonts/Roboto/Roboto-Regular.ttf"; sourceTree = "<group>"; };
+		76B6A5F2C672B6146E5D5308 /* Pods-exercisefrontend-common-exercisefrontend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-common-exercisefrontend.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-common-exercisefrontend/Pods-exercisefrontend-common-exercisefrontend.release.xcconfig"; sourceTree = "<group>"; };
 		78CAD172031F4E9FB0D08F0A /* Roboto-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Bold.ttf"; path = "../assets/fonts/Roboto/Roboto-Bold.ttf"; sourceTree = "<group>"; };
+		79C3544C63ABA431E52C7C33 /* Pods-exercisefrontend-common-exercisefrontendSimulator.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-common-exercisefrontendSimulator.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-common-exercisefrontendSimulator/Pods-exercisefrontend-common-exercisefrontendSimulator.release.xcconfig"; sourceTree = "<group>"; };
 		8037BD0F10104EFABD9A55C6 /* Roboto-ThinItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-ThinItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-ThinItalic.ttf"; sourceTree = "<group>"; };
+		8193ACB7F61B9FC69081F4DD /* Pods-Common-exercisefrontend.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Common-exercisefrontend.debug.xcconfig"; path = "Target Support Files/Pods-Common-exercisefrontend/Pods-Common-exercisefrontend.debug.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = exercisefrontend/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		847E186577B846D1ACF0ADBD /* Roboto-BlackItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-BlackItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-BlackItalic.ttf"; sourceTree = "<group>"; };
-		8C6B28122D492D6200596320 /* exercisefrontendSimulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = exercisefrontendSimulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C6B28132D492D6200596320 /* exercisefrontend copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "exercisefrontend copy-Info.plist"; path = "/Users/cdubbx/Desktop/exercise_app/exercisefrontend/ios/exercisefrontend copy-Info.plist"; sourceTree = "<absolute>"; };
+		8CA7E26F2ED4AEC90054AA16 /* boost_privacy.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = boost_privacy.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2702ED4AEC90054AA16 /* glog_privacy.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = glog_privacy.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2712ED4AEC90054AA16 /* hermes.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = hermes.xcframework; path = "Pods/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework"; sourceTree = "<group>"; };
+		8CA7E2722ED4AEC90054AA16 /* libBVLinearGradient.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libBVLinearGradient.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2732ED4AEC90054AA16 /* libDoubleConversion.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libDoubleConversion.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2742ED4AEC90054AA16 /* libfmt.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libfmt.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2752ED4AEC90054AA16 /* libglog.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libglog.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2762ED4AEC90054AA16 /* liblottie-ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "liblottie-ios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2772ED4AEC90054AA16 /* liblottie-react-native.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "liblottie-react-native.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E27A2ED4AEC90054AA16 /* libRCT-Folly.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libRCT-Folly.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E27B2ED4AEC90054AA16 /* libRCTDeprecation.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRCTDeprecation.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E27C2ED4AEC90054AA16 /* libRCTTypeSafety.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRCTTypeSafety.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E27D2ED4AEC90054AA16 /* libReact-Core.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-Core.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E27E2ED4AEC90054AA16 /* libReact-CoreModules.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-CoreModules.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E27F2ED4AEC90054AA16 /* libReact-cxxreact.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-cxxreact.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2802ED4AEC90054AA16 /* libReact-debug.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-debug.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2812ED4AEC90054AA16 /* libReact-defaultsnativemodule.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-defaultsnativemodule.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2822ED4AEC90054AA16 /* libReact-domnativemodule.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-domnativemodule.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2832ED4AEC90054AA16 /* libReact-Fabric.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-Fabric.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2842ED4AEC90054AA16 /* libReact-FabricComponents.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-FabricComponents.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2852ED4AEC90054AA16 /* libReact-FabricImage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-FabricImage.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2862ED4AEC90054AA16 /* libReact-featureflags.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-featureflags.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2872ED4AEC90054AA16 /* libReact-featureflagsnativemodule.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-featureflagsnativemodule.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2882ED4AEC90054AA16 /* libReact-graphics.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-graphics.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2892ED4AEC90054AA16 /* libReact-hermes.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-hermes.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E28A2ED4AEC90054AA16 /* libReact-idlecallbacksnativemodule.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-idlecallbacksnativemodule.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E28B2ED4AEC90054AA16 /* libReact-ImageManager.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-ImageManager.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E28C2ED4AEC90054AA16 /* libReact-jserrorhandler.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-jserrorhandler.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E28D2ED4AEC90054AA16 /* libReact-jsi.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-jsi.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E28E2ED4AEC90054AA16 /* libReact-jsiexecutor.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-jsiexecutor.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E28F2ED4AEC90054AA16 /* libReact-jsinspector.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-jsinspector.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2902ED4AEC90054AA16 /* libReact-logger.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-logger.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2912ED4AEC90054AA16 /* libReact-Mapbuffer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-Mapbuffer.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2922ED4AEC90054AA16 /* libReact-microtasksnativemodule.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-microtasksnativemodule.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2932ED4AEC90054AA16 /* libreact-native-blob-util.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libreact-native-blob-util.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2942ED4AEC90054AA16 /* libreact-native-image-picker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libreact-native-image-picker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2952ED4AEC90054AA16 /* libreact-native-menu.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libreact-native-menu.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2962ED4AEC90054AA16 /* libreact-native-safe-area-context.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libreact-native-safe-area-context.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2972ED4AEC90054AA16 /* libreact-native-splash-screen.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libreact-native-splash-screen.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2982ED4AEC90054AA16 /* libReact-nativeconfig.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-nativeconfig.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2992ED4AEC90054AA16 /* libReact-NativeModulesApple.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-NativeModulesApple.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E29A2ED4AEC90054AA16 /* libReact-perflogger.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-perflogger.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E29B2ED4AEC90054AA16 /* libReact-performancetimeline.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-performancetimeline.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E29C2ED4AEC90054AA16 /* libReact-RCTAnimation.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTAnimation.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E29D2ED4AEC90054AA16 /* libReact-RCTAppDelegate.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTAppDelegate.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E29E2ED4AEC90054AA16 /* libReact-RCTBlob.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTBlob.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E29F2ED4AEC90054AA16 /* libReact-RCTFabric.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTFabric.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A02ED4AEC90054AA16 /* libReact-RCTImage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTImage.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A12ED4AEC90054AA16 /* libReact-RCTLinking.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTLinking.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A22ED4AEC90054AA16 /* libReact-RCTNetwork.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTNetwork.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A32ED4AEC90054AA16 /* libReact-RCTSettings.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTSettings.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A42ED4AEC90054AA16 /* libReact-RCTText.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTText.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A52ED4AEC90054AA16 /* libReact-RCTVibration.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RCTVibration.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A62ED4AEC90054AA16 /* libReact-rendererconsistency.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-rendererconsistency.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A72ED4AEC90054AA16 /* libReact-rendererdebug.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-rendererdebug.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A82ED4AEC90054AA16 /* libReact-RuntimeApple.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RuntimeApple.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2A92ED4AEC90054AA16 /* libReact-RuntimeCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RuntimeCore.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2AA2ED4AEC90054AA16 /* libReact-RuntimeHermes.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-RuntimeHermes.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2AB2ED4AEC90054AA16 /* libReact-runtimescheduler.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-runtimescheduler.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2AC2ED4AEC90054AA16 /* libReact-utils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libReact-utils.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2AD2ED4AEC90054AA16 /* libReactCodegen.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libReactCodegen.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2AE2ED4AEC90054AA16 /* libReactCommon.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libReactCommon.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2AF2ED4AEC90054AA16 /* libRNAppleAuthentication.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNAppleAuthentication.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B02ED4AEC90054AA16 /* libRNCAsyncStorage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNCAsyncStorage.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B12ED4AEC90054AA16 /* libRNCPicker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNCPicker.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B22ED4AEC90054AA16 /* libRNEventEmitter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNEventEmitter.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B32ED4AEC90054AA16 /* libRNFlashList.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNFlashList.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B42ED4AEC90054AA16 /* libRNFS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNFS.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B52ED4AEC90054AA16 /* libRNScreens.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNScreens.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B62ED4AEC90054AA16 /* libRNSound.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNSound.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B72ED4AEC90054AA16 /* libRNSpotifyRemote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNSpotifyRemote.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B82ED4AEC90054AA16 /* libRNVectorIcons.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNVectorIcons.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2B92ED4AEC90054AA16 /* libSocketRocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSocketRocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2BA2ED4AEC90054AA16 /* libYoga.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libYoga.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2BB2ED4AEC90054AA16 /* RCT-Folly_privacy.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = "RCT-Folly_privacy.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2BC2ED4AEC90054AA16 /* React-Core_privacy.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = "React-Core_privacy.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2BD2ED4AEC90054AA16 /* React-cxxreact_privacy.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = "React-cxxreact_privacy.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2BE2ED4AEC90054AA16 /* ReactNativeBlobUtilPrivacyInfo.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = ReactNativeBlobUtilPrivacyInfo.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2BF2ED4AEC90054AA16 /* RNCAsyncStorage_resources.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = RNCAsyncStorage_resources.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CA7E2C02ED4AEC90054AA16 /* RNImagePickerPrivacyInfo.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = RNImagePickerPrivacyInfo.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CFFACBD2D291D250022B3B7 /* exercisefrontend.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = exercisefrontend.entitlements; path = exercisefrontend/exercisefrontend.entitlements; sourceTree = "<group>"; };
-		8FEA778FF79C64095207550D /* libPods-exercisefrontend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		94D23F5E70C449A99736CF46 /* Roboto-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Light.ttf"; path = "../assets/fonts/Roboto/Roboto-Light.ttf"; sourceTree = "<group>"; };
 		957C2F9402984BAD8EE602E4 /* Roboto-Italic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Italic.ttf"; path = "../assets/fonts/Roboto/Roboto-Italic.ttf"; sourceTree = "<group>"; };
 		A4BFCDC3F89B9129FFA11480 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = exercisefrontend/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A89E081AAC774FB7A4848D99 /* Roboto-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-Thin.ttf"; path = "../assets/fonts/Roboto/Roboto-Thin.ttf"; sourceTree = "<group>"; };
+		A962538AA6B4BC689440700A /* Pods-Common-exercisefrontendTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Common-exercisefrontendTests.debug.xcconfig"; path = "Target Support Files/Pods-Common-exercisefrontendTests/Pods-Common-exercisefrontendTests.debug.xcconfig"; sourceTree = "<group>"; };
+		D2786AAC5700C00FAC98CEA2 /* Pods-exercisefrontend-common-exercisefrontend.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-common-exercisefrontend.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-common-exercisefrontend/Pods-exercisefrontend-common-exercisefrontend.debug.xcconfig"; sourceTree = "<group>"; };
 		D5BF814B87364F83956F9135 /* LICENSE.txt */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = LICENSE.txt; path = ../assets/fonts/Roboto/LICENSE.txt; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		EE0F06A9B433E1D4B3A14A88 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-exercisefrontendTests.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests.release.xcconfig"; sourceTree = "<group>"; };
 		F4A6D29225174898A00F9E96 /* Roboto-LightItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-LightItalic.ttf"; path = "../assets/fonts/Roboto/Roboto-LightItalic.ttf"; sourceTree = "<group>"; };
+		F4EFDB05336D10345448CA40 /* Pods-Common-exercisefrontendTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Common-exercisefrontendTests.release.xcconfig"; path = "Target Support Files/Pods-Common-exercisefrontendTests/Pods-Common-exercisefrontendTests.release.xcconfig"; sourceTree = "<group>"; };
 		F8EA29E40D584061E87CB4CD /* Pods-exercisefrontend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend.release.xcconfig"; path = "Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend.release.xcconfig"; sourceTree = "<group>"; };
-		FEA40731CEF2654BCAF87293 /* libPods-exercisefrontend-exercisefrontendTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-exercisefrontend-exercisefrontendTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB905E5DFF85C238E2225441 /* Pods-exercisefrontend-common-exercisefrontendTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-exercisefrontend-common-exercisefrontendTests.debug.xcconfig"; path = "Target Support Files/Pods-exercisefrontend-common-exercisefrontendTests/Pods-exercisefrontend-common-exercisefrontendTests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,7 +174,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EBC8CCE941A1F8CFBD1424F0 /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */,
+				4F2E984FB920DD2276C29851 /* libPods-exercisefrontend-exercisefrontendTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -108,14 +182,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B19949CFFD968F543F7D27F2 /* libPods-exercisefrontend.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8C6B27F92D492D6200596320 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				256E85814E940F4C03095E05 /* libPods-exercisefrontend.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,9 +224,90 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8CA7E26F2ED4AEC90054AA16 /* boost_privacy.bundle */,
+				8CA7E2702ED4AEC90054AA16 /* glog_privacy.bundle */,
+				8CA7E2712ED4AEC90054AA16 /* hermes.xcframework */,
+				8CA7E2722ED4AEC90054AA16 /* libBVLinearGradient.a */,
+				8CA7E2732ED4AEC90054AA16 /* libDoubleConversion.a */,
+				8CA7E2742ED4AEC90054AA16 /* libfmt.a */,
+				8CA7E2752ED4AEC90054AA16 /* libglog.a */,
+				8CA7E2762ED4AEC90054AA16 /* liblottie-ios.a */,
+				8CA7E2772ED4AEC90054AA16 /* liblottie-react-native.a */,
+				8CA7E27A2ED4AEC90054AA16 /* libRCT-Folly.a */,
+				8CA7E27B2ED4AEC90054AA16 /* libRCTDeprecation.a */,
+				8CA7E27C2ED4AEC90054AA16 /* libRCTTypeSafety.a */,
+				8CA7E27D2ED4AEC90054AA16 /* libReact-Core.a */,
+				8CA7E27E2ED4AEC90054AA16 /* libReact-CoreModules.a */,
+				8CA7E27F2ED4AEC90054AA16 /* libReact-cxxreact.a */,
+				8CA7E2802ED4AEC90054AA16 /* libReact-debug.a */,
+				8CA7E2812ED4AEC90054AA16 /* libReact-defaultsnativemodule.a */,
+				8CA7E2822ED4AEC90054AA16 /* libReact-domnativemodule.a */,
+				8CA7E2832ED4AEC90054AA16 /* libReact-Fabric.a */,
+				8CA7E2842ED4AEC90054AA16 /* libReact-FabricComponents.a */,
+				8CA7E2852ED4AEC90054AA16 /* libReact-FabricImage.a */,
+				8CA7E2862ED4AEC90054AA16 /* libReact-featureflags.a */,
+				8CA7E2872ED4AEC90054AA16 /* libReact-featureflagsnativemodule.a */,
+				8CA7E2882ED4AEC90054AA16 /* libReact-graphics.a */,
+				8CA7E2892ED4AEC90054AA16 /* libReact-hermes.a */,
+				8CA7E28A2ED4AEC90054AA16 /* libReact-idlecallbacksnativemodule.a */,
+				8CA7E28B2ED4AEC90054AA16 /* libReact-ImageManager.a */,
+				8CA7E28C2ED4AEC90054AA16 /* libReact-jserrorhandler.a */,
+				8CA7E28D2ED4AEC90054AA16 /* libReact-jsi.a */,
+				8CA7E28E2ED4AEC90054AA16 /* libReact-jsiexecutor.a */,
+				8CA7E28F2ED4AEC90054AA16 /* libReact-jsinspector.a */,
+				8CA7E2902ED4AEC90054AA16 /* libReact-logger.a */,
+				8CA7E2912ED4AEC90054AA16 /* libReact-Mapbuffer.a */,
+				8CA7E2922ED4AEC90054AA16 /* libReact-microtasksnativemodule.a */,
+				8CA7E2932ED4AEC90054AA16 /* libreact-native-blob-util.a */,
+				8CA7E2942ED4AEC90054AA16 /* libreact-native-image-picker.a */,
+				8CA7E2952ED4AEC90054AA16 /* libreact-native-menu.a */,
+				8CA7E2962ED4AEC90054AA16 /* libreact-native-safe-area-context.a */,
+				8CA7E2972ED4AEC90054AA16 /* libreact-native-splash-screen.a */,
+				8CA7E2982ED4AEC90054AA16 /* libReact-nativeconfig.a */,
+				8CA7E2992ED4AEC90054AA16 /* libReact-NativeModulesApple.a */,
+				8CA7E29A2ED4AEC90054AA16 /* libReact-perflogger.a */,
+				8CA7E29B2ED4AEC90054AA16 /* libReact-performancetimeline.a */,
+				8CA7E29C2ED4AEC90054AA16 /* libReact-RCTAnimation.a */,
+				8CA7E29D2ED4AEC90054AA16 /* libReact-RCTAppDelegate.a */,
+				8CA7E29E2ED4AEC90054AA16 /* libReact-RCTBlob.a */,
+				8CA7E29F2ED4AEC90054AA16 /* libReact-RCTFabric.a */,
+				8CA7E2A02ED4AEC90054AA16 /* libReact-RCTImage.a */,
+				8CA7E2A12ED4AEC90054AA16 /* libReact-RCTLinking.a */,
+				8CA7E2A22ED4AEC90054AA16 /* libReact-RCTNetwork.a */,
+				8CA7E2A32ED4AEC90054AA16 /* libReact-RCTSettings.a */,
+				8CA7E2A42ED4AEC90054AA16 /* libReact-RCTText.a */,
+				8CA7E2A52ED4AEC90054AA16 /* libReact-RCTVibration.a */,
+				8CA7E2A62ED4AEC90054AA16 /* libReact-rendererconsistency.a */,
+				8CA7E2A72ED4AEC90054AA16 /* libReact-rendererdebug.a */,
+				8CA7E2A82ED4AEC90054AA16 /* libReact-RuntimeApple.a */,
+				8CA7E2A92ED4AEC90054AA16 /* libReact-RuntimeCore.a */,
+				8CA7E2AA2ED4AEC90054AA16 /* libReact-RuntimeHermes.a */,
+				8CA7E2AB2ED4AEC90054AA16 /* libReact-runtimescheduler.a */,
+				8CA7E2AC2ED4AEC90054AA16 /* libReact-utils.a */,
+				8CA7E2AD2ED4AEC90054AA16 /* libReactCodegen.a */,
+				8CA7E2AE2ED4AEC90054AA16 /* libReactCommon.a */,
+				8CA7E2AF2ED4AEC90054AA16 /* libRNAppleAuthentication.a */,
+				8CA7E2B02ED4AEC90054AA16 /* libRNCAsyncStorage.a */,
+				8CA7E2B12ED4AEC90054AA16 /* libRNCPicker.a */,
+				8CA7E2B22ED4AEC90054AA16 /* libRNEventEmitter.a */,
+				8CA7E2B32ED4AEC90054AA16 /* libRNFlashList.a */,
+				8CA7E2B42ED4AEC90054AA16 /* libRNFS.a */,
+				8CA7E2B52ED4AEC90054AA16 /* libRNScreens.a */,
+				8CA7E2B62ED4AEC90054AA16 /* libRNSound.a */,
+				8CA7E2B72ED4AEC90054AA16 /* libRNSpotifyRemote.a */,
+				8CA7E2B82ED4AEC90054AA16 /* libRNVectorIcons.a */,
+				8CA7E2B92ED4AEC90054AA16 /* libSocketRocket.a */,
+				8CA7E2BA2ED4AEC90054AA16 /* libYoga.a */,
+				8CA7E2BB2ED4AEC90054AA16 /* RCT-Folly_privacy.bundle */,
+				8CA7E2BC2ED4AEC90054AA16 /* React-Core_privacy.bundle */,
+				8CA7E2BD2ED4AEC90054AA16 /* React-cxxreact_privacy.bundle */,
+				8CA7E2BE2ED4AEC90054AA16 /* ReactNativeBlobUtilPrivacyInfo.bundle */,
+				8CA7E2BF2ED4AEC90054AA16 /* RNCAsyncStorage_resources.bundle */,
+				8CA7E2C02ED4AEC90054AA16 /* RNImagePickerPrivacyInfo.bundle */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				8FEA778FF79C64095207550D /* libPods-exercisefrontend.a */,
-				FEA40731CEF2654BCAF87293 /* libPods-exercisefrontend-exercisefrontendTests.a */,
+				6C286986D0F983C373A399ED /* libPods-exercisefrontendSimulator.a */,
+				3E2A762521E6F5A465E822AA /* libPods-exercisefrontend.a */,
+				19A57DE5D2446A8386C44E7A /* libPods-exercisefrontend-exercisefrontendTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -193,7 +341,6 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* exercisefrontend.app */,
 				00E356EE1AD99517003FC87E /* exercisefrontendTests.xctest */,
-				8C6B28122D492D6200596320 /* exercisefrontendSimulator.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -225,6 +372,18 @@
 				F8EA29E40D584061E87CB4CD /* Pods-exercisefrontend.release.xcconfig */,
 				6902A2DD73981235B346EACF /* Pods-exercisefrontend-exercisefrontendTests.debug.xcconfig */,
 				EE0F06A9B433E1D4B3A14A88 /* Pods-exercisefrontend-exercisefrontendTests.release.xcconfig */,
+				D2786AAC5700C00FAC98CEA2 /* Pods-exercisefrontend-common-exercisefrontend.debug.xcconfig */,
+				76B6A5F2C672B6146E5D5308 /* Pods-exercisefrontend-common-exercisefrontend.release.xcconfig */,
+				0297205B4FEB7F9AA6084A32 /* Pods-exercisefrontend-common-exercisefrontendSimulator.debug.xcconfig */,
+				79C3544C63ABA431E52C7C33 /* Pods-exercisefrontend-common-exercisefrontendSimulator.release.xcconfig */,
+				FB905E5DFF85C238E2225441 /* Pods-exercisefrontend-common-exercisefrontendTests.debug.xcconfig */,
+				0F7CA38937EB805A247A4D76 /* Pods-exercisefrontend-common-exercisefrontendTests.release.xcconfig */,
+				8193ACB7F61B9FC69081F4DD /* Pods-Common-exercisefrontend.debug.xcconfig */,
+				17481FC22441A8DA3175F67C /* Pods-Common-exercisefrontend.release.xcconfig */,
+				2D0CD809632355FA69DD55B9 /* Pods-Common-exercisefrontendSimulator.debug.xcconfig */,
+				513E3BC9F0D5EA931622179B /* Pods-Common-exercisefrontendSimulator.release.xcconfig */,
+				A962538AA6B4BC689440700A /* Pods-Common-exercisefrontendTests.debug.xcconfig */,
+				F4EFDB05336D10345448CA40 /* Pods-Common-exercisefrontendTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -236,12 +395,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "exercisefrontendTests" */;
 			buildPhases = (
-				A829FC070748453D80652783 /* [CP] Check Pods Manifest.lock */,
+				E2DE870E8FC9FF54A52780A2 /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
 				00E356EB1AD99517003FC87E /* Frameworks */,
 				00E356EC1AD99517003FC87E /* Resources */,
-				7737DFF33CCE89B9ECA1A10F /* [CP] Embed Pods Frameworks */,
-				A5126F2079481D9502CAEB10 /* [CP] Copy Pods Resources */,
+				17A8EB51AB5E36ABFD826647 /* [CP] Embed Pods Frameworks */,
+				F84281DF12C7D50EC2428B3B /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -272,24 +431,6 @@
 			name = exercisefrontend;
 			productName = exercisefrontend;
 			productReference = 13B07F961A680F5B00A75B9A /* exercisefrontend.app */;
-			productType = "com.apple.product-type.application";
-		};
-		8C6B27F42D492D6200596320 /* exercisefrontendSimulator */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 8C6B280F2D492D6200596320 /* Build configuration list for PBXNativeTarget "exercisefrontendSimulator" */;
-			buildPhases = (
-				8C6B27F62D492D6200596320 /* Sources */,
-				8C6B27F92D492D6200596320 /* Frameworks */,
-				8C6B27FB2D492D6200596320 /* Resources */,
-				8C6B280C2D492D6200596320 /* Bundle React Native code and images */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = exercisefrontendSimulator;
-			productName = exercisefrontend;
-			productReference = 8C6B28122D492D6200596320 /* exercisefrontendSimulator.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -325,7 +466,6 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* exercisefrontend */,
 				00E356ED1AD99517003FC87E /* exercisefrontendTests */,
-				8C6B27F42D492D6200596320 /* exercisefrontendSimulator */,
 			);
 		};
 /* End PBXProject section */
@@ -361,29 +501,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C6B27FB2D492D6200596320 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8C6B27FC2D492D6200596320 /* LaunchScreen.storyboard in Resources */,
-				8C6B27FD2D492D6200596320 /* Images.xcassets in Resources */,
-				8C6B27FE2D492D6200596320 /* Roboto-Black.ttf in Resources */,
-				8C6B27FF2D492D6200596320 /* Roboto-BlackItalic.ttf in Resources */,
-				8C6B28002D492D6200596320 /* Roboto-Bold.ttf in Resources */,
-				8C6B28012D492D6200596320 /* Roboto-BoldItalic.ttf in Resources */,
-				8C6B28022D492D6200596320 /* Roboto-Italic.ttf in Resources */,
-				8C6B28032D492D6200596320 /* Roboto-Light.ttf in Resources */,
-				8C6B28042D492D6200596320 /* Roboto-LightItalic.ttf in Resources */,
-				8C6B28052D492D6200596320 /* Roboto-Medium.ttf in Resources */,
-				8C6B28062D492D6200596320 /* Roboto-MediumItalic.ttf in Resources */,
-				8C6B28072D492D6200596320 /* Roboto-Regular.ttf in Resources */,
-				8C6B28082D492D6200596320 /* Roboto-Thin.ttf in Resources */,
-				8C6B28092D492D6200596320 /* Roboto-ThinItalic.ttf in Resources */,
-				8C6B280A2D492D6200596320 /* LICENSE.txt in Resources */,
-				8C6B280B2D492D6200596320 /* PrivacyInfo.xcprivacy in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -403,7 +520,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		7737DFF33CCE89B9ECA1A10F /* [CP] Embed Pods Frameworks */ = {
+		17A8EB51AB5E36ABFD826647 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -411,30 +528,18 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
-		};
-		8C6B280C2D492D6200596320 /* Bundle React Native code and images */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/.xcode.env",
-			);
-			name = "Bundle React Native code and images";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"../node_modules/react-native/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"../node_modules/react-native/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
 		A22746E927421068A0BE86D5 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -444,52 +549,17 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
+			outputPaths = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		A5126F2079481D9502CAEB10 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		A829FC070748453D80652783 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-exercisefrontend-exercisefrontendTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		BDA55BDD10CECE8B21983675 /* [CP] Check Pods Manifest.lock */ = {
@@ -522,13 +592,60 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
+			outputPaths = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend/Pods-exercisefrontend-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E2DE870E8FC9FF54A52780A2 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-exercisefrontend-exercisefrontendTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F84281DF12C7D50EC2428B3B /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-exercisefrontend-exercisefrontendTests/Pods-exercisefrontend-exercisefrontendTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -548,15 +665,6 @@
 			files = (
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8C6B27F62D492D6200596320 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8C6B27F72D492D6200596320 /* AppDelegate.mm in Sources */,
-				8C6B27F82D492D6200596320 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -635,7 +743,6 @@
 				DEVELOPMENT_TEAM = 8Q66V476N4;
 				ENABLE_BITCODE = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				INFOPLIST_FILE = exercisefrontend/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -663,10 +770,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = exercisefrontend/exercisefrontend.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Q66V476N4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				INFOPLIST_FILE = exercisefrontend/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -680,6 +788,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = exercisefrontend;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -755,10 +864,7 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -828,70 +934,11 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		8C6B28102D492D6200596320 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = exercisefrontend/exercisefrontend.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8Q66V476N4;
-				ENABLE_BITCODE = NO;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
-				INFOPLIST_FILE = "exercisefrontend copy-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-			};
-			name = Debug;
-		};
-		8C6B28112D492D6200596320 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = exercisefrontend/exercisefrontend.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8Q66V476N4;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
-				INFOPLIST_FILE = "exercisefrontend copy-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
 		};
@@ -921,15 +968,6 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		8C6B280F2D492D6200596320 /* Build configuration list for PBXNativeTarget "exercisefrontendSimulator" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				8C6B28102D492D6200596320 /* Debug */,
-				8C6B28112D492D6200596320 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

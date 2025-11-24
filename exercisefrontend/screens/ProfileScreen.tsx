@@ -138,12 +138,12 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
 
   const joinDate = formatDate(user?.date_joined, 'full');
   useEffect(() => {
-    const handleShowPlaying = async () => {
-      const track: Song | undefined | null = await fetchNowPlaying();
-      await showNowPlaying(track);
-      setTrack(track);
-    };
-    handleShowPlaying();
+    // const handleShowPlaying = async () => {
+    //   const track: Song | undefined | null = await fetchNowPlaying();
+    //   await showNowPlaying(track);
+    //   setTrack(track);
+    // };
+    // handleShowPlaying();
   }, [exercises, fetchedExercises, track]);
 
   const onClose = () => {
