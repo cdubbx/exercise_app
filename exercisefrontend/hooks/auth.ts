@@ -485,215 +485,215 @@ export const useResetPassword = () => {
   return {requestPasswordReset, resetPassword, isLoading};
 };
 
-export const useSpotify = () => {
-  const [isLoading, setLoading] = useState<boolean>(false);
-  const SPOTIFY_REDIRECT_URL = 'exercisefrontend://spotify-auth';
-  const [socket, setSocket] = useState<WebSocket>();
-  const {user} = useUserContext();
-  const webApiScopes = [
-    'user-read-playback-state',
-    'user-read-currently-playing',
-    'user-modify-playback-state',
-  ];
+// export const useSpotify = () => {
+//   const [isLoading, setLoading] = useState<boolean>(false);
+//   const SPOTIFY_REDIRECT_URL = 'exercisefrontend://spotify-auth';
+//   const [socket, setSocket] = useState<WebSocket>();
+//   const {user} = useUserContext();
+//   const webApiScopes = [
+//     'user-read-playback-state',
+//     'user-read-currently-playing',
+//     'user-modify-playback-state',
+//   ];
 
-  const config: ApiConfig = {
-    clientID: SPOTIFY_CLIENTID,
-    redirectURL: SPOTIFY_REDIRECT_URL,
-    tokenRefreshURL: SPOTIFY_TOKEN_REFRESH_URL,
-    tokenSwapURL: SPOTIFY_TOKEN_SWAP_URL,
-    scopes: [
-      ApiScope.AppRemoteControlScope, // ✅ Required for remote playback control
-      ApiScope.UserReadPlaybackStateScope, // ✅ Equivalent to 'user-read-playback-state'
-      ApiScope.UserReadCurrentlyPlayingScope, // ✅ Equivalent to 'user-read-currently-playing'
-    ],
+//   const config: ApiConfig = {
+//     clientID: SPOTIFY_CLIENTID,
+//     redirectURL: SPOTIFY_REDIRECT_URL,
+//     tokenRefreshURL: SPOTIFY_TOKEN_REFRESH_URL,
+//     tokenSwapURL: SPOTIFY_TOKEN_SWAP_URL,
+//     scopes: [
+//       ApiScope.AppRemoteControlScope, // ✅ Required for remote playback control
+//       ApiScope.UserReadPlaybackStateScope, // ✅ Equivalent to 'user-read-playback-state'
+//       ApiScope.UserReadCurrentlyPlayingScope, // ✅ Equivalent to 'user-read-currently-playing'
+//     ],
 
-    authType: 'CODE',
-    showDialog: true,
-  };
+//     authType: 'CODE',
+//     showDialog: true,
+//   };
 
-  const authenticateWithSpotify = async () => {
-    try {
-      setLoading(true);
-      console.log('Starting Spotify Authentication...');
+  // const authenticateWithSpotify = async () => {
+  //   try {
+  //     setLoading(true);
+  //     console.log('Starting Spotify Authentication...');
 
-      const auth = await SpotifyAuth.authorize(config);
-      console.log('Spotify Auth Response:', auth); // ✅ Debugging the response
-      if (auth.accessToken) {
-        await AsyncStorage.setItem('spotify_accessToken', auth.accessToken);
-        console.log('Spotify Access Token Saved:', auth.accessToken);
-      } else {
-        console.warn('No access token received from Spotify.');
-      }
+  //     const auth = await SpotifyAuth.authorize(config);
+  //     console.log('Spotify Auth Response:', auth); // ✅ Debugging the response
+  //     if (auth.accessToken) {
+  //       await AsyncStorage.setItem('spotify_accessToken', auth.accessToken);
+  //       console.log('Spotify Access Token Saved:', auth.accessToken);
+  //     } else {
+  //       console.warn('No access token received from Spotify.');
+  //     }
 
-      if (auth.refreshToken) {
-        await AsyncStorage.setItem('spotify_refreshToken', auth.refreshToken);
-        console.log('Spotify Refresh Token Saved:', auth.refreshToken);
-      } else {
-        console.warn('No refresh token received from Spotify.');
-      }
+  //     if (auth.refreshToken) {
+  //       await AsyncStorage.setItem('spotify_refreshToken', auth.refreshToken);
+  //       console.log('Spotify Refresh Token Saved:', auth.refreshToken);
+  //     } else {
+  //       console.warn('No refresh token received from Spotify.');
+  //     }
 
-      console.log('Successfully authenticated with Spotify!');
-    } catch (error) {
-      console.error('An error occurred during Spotify authentication:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log('Successfully authenticated with Spotify!');
+  //   } catch (error) {
+  //     console.error('An error occurred during Spotify authentication:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const getCurrentSession = async () => {
-    try {
-      const session = await SpotifyAuth.getSession();
-      if (session && session.refreshToken) {
-        console.log('Refresh Token:', session.refreshToken);
-        return true;
-      } else {
-        return false;
-        console.log('No active session or refresh token found.');
-      }
-    } catch (error) {
-      console.error('Error retrieving session:', error);
-    }
-  };
+  // const getCurrentSession = async () => {
+  //   try {
+  //     const session = await SpotifyAuth.getSession();
+  //     if (session && session.refreshToken) {
+  //       console.log('Refresh Token:', session.refreshToken);
+  //       return true;
+  //     } else {
+  //       return false;
+  //       console.log('No active session or refresh token found.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error retrieving session:', error);
+  //   }
+  // };
 
-  const fetchNowPlaying = async (retry = false) => {
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem('spotify_accessToken');
-      if (!token) throw new Error('Access token not found');
-      let inactivityTimeout;
-      const response = await fetch(
-        'https://api.spotify.com/v1/me/player/currently-playing',
-        {
-          method: 'GET',
-          headers: {Authorization: `Bearer ${token}`},
-        },
-      );
+  // const fetchNowPlaying = async (retry = false) => {
+  //   try {
+  //     setLoading(true);
+  //     const token = await AsyncStorage.getItem('spotify_accessToken');
+  //     if (!token) throw new Error('Access token not found');
+  //     let inactivityTimeout;
+  //     const response = await fetch(
+  //       'https://api.spotify.com/v1/me/player/currently-playing',
+  //       {
+  //         method: 'GET',
+  //         headers: {Authorization: `Bearer ${token}`},
+  //       },
+  //     );
 
-      if (response.status === 204) {
-        console.warn(
-          '⚠️ No track currently playing - Spotify returned 204 No Content.',
-        );
-        return null;
-      }
-      if (response.status === 401 && !retry) {
-        console.warn('🔄 Access token expired. Refreshing token...');
-        await refreshToken();
-        return fetchNowPlaying(true);
-      }
-      const data = await response.json();
-      // console.log('✅ Parsed JSON Response:', data);
-      if (!data || !data.item) {
-        console.warn('⚠️ No track currently playing');
-        return null;
-      }
-      const track: Song = {
-        track_name: data.item.name,
-        artist_name: data.item.artists
-          .map((artist: any) => artist.name)
-          .join(', '),
-        album_image_url: data.item.album.images[0].url, // Highest quality album cover
-        album_name: data.item.album.name, // Album name
-        preview_url: data.item.preview_url,
-      };
-      if (track) {
-        if (!socket || socket.readyState !== WebSocket.OPEN) {
-          const newSocket = new WebSocket(
-            `ws://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user?.username}/`,
-          );
-          setSocket(newSocket);
-        }
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({track}));
-        }
-        if (inactivityTimeout) clearTimeout(inactivityTimeout);
-      } else {
-        inactivityTimeout = setTimeout(() => {
-          if (socket) {
-            socket.close();
-            setSocket(undefined);
-          }
-        }, 60000);
-      }
-      return track;
-    } catch (error: any) {
-      console.error('❌ Error fetching now playing:', error);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (response.status === 204) {
+  //       console.warn(
+  //         '⚠️ No track currently playing - Spotify returned 204 No Content.',
+  //       );
+  //       return null;
+  //     }
+  //     if (response.status === 401 && !retry) {
+  //       console.warn('🔄 Access token expired. Refreshing token...');
+  //       await refreshToken();
+  //       return fetchNowPlaying(true);
+  //     }
+  //     const data = await response.json();
+  //     // console.log('✅ Parsed JSON Response:', data);
+  //     if (!data || !data.item) {
+  //       console.warn('⚠️ No track currently playing');
+  //       return null;
+  //     }
+  //     const track: Song = {
+  //       track_name: data.item.name,
+  //       artist_name: data.item.artists
+  //         .map((artist: any) => artist.name)
+  //         .join(', '),
+  //       album_image_url: data.item.album.images[0].url, // Highest quality album cover
+  //       album_name: data.item.album.name, // Album name
+  //       preview_url: data.item.preview_url,
+  //     };
+  //     if (track) {
+  //       if (!socket || socket.readyState !== WebSocket.OPEN) {
+  //         const newSocket = new WebSocket(
+  //           `ws://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user?.username}/`,
+  //         );
+  //         setSocket(newSocket);
+  //       }
+  //       if (socket && socket.readyState === WebSocket.OPEN) {
+  //         socket.send(JSON.stringify({track}));
+  //       }
+  //       if (inactivityTimeout) clearTimeout(inactivityTimeout);
+  //     } else {
+  //       inactivityTimeout = setTimeout(() => {
+  //         if (socket) {
+  //           socket.close();
+  //           setSocket(undefined);
+  //         }
+  //       }, 60000);
+  //     }
+  //     return track;
+  //   } catch (error: any) {
+  //     console.error('❌ Error fetching now playing:', error);
+  //     return null;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const refreshToken = async () => {
-    try {
-      setLoading(true);
-      const authToken = await getAuthToken();
-      console.log(authToken);
-      const spotify_refreshToken = await AsyncStorage.getItem('spotify_refreshToken')
-      if (spotify_refreshToken) {
-        const response = await fetch(
-          'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/spotify-token/refresh/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify({refresh_token: spotify_refreshToken}),
-          },
-        );
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Network error');
-        }
-        await AsyncStorage.setItem('spotify_accessToken', data.access_token);
-        setLoading(false);
-      } else {
-        setLoading(false);
-        return;
-      }
-    } catch (error) {
-      setLoading(false);
-      console.error(error);
-    }
-  };
+  // const refreshToken = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const authToken = await getAuthToken();
+  //     console.log(authToken);
+  //     const spotify_refreshToken = await AsyncStorage.getItem('spotify_refreshToken')
+  //     if (spotify_refreshToken) {
+  //       const response = await fetch(
+  //         'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/spotify-token/refresh/',
+  //         {
+  //           method: 'POST',
+  //           headers: {
+  //             'Content-Type': 'application/json',
+  //             Authorization: `Bearer ${authToken}`,
+  //           },
+  //           body: JSON.stringify({refresh_token: spotify_refreshToken}),
+  //         },
+  //       );
+  //       const data = await response.json();
+  //       if (!response.ok) {
+  //         throw new Error(data.error || 'Network error');
+  //       }
+  //       await AsyncStorage.setItem('spotify_accessToken', data.access_token);
+  //       setLoading(false);
+  //     } else {
+  //       setLoading(false);
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     setLoading(false);
+  //     console.error(error);
+  //   }
+  // };
 
-  const updateNowPlaying = async (track: any) => {
-    try {
-      const token = await getAuthToken();
+//   const updateNowPlaying = async (track: any) => {
+//     try {
+//       const token = await getAuthToken();
 
-      if (!track) return;
+//       if (!track) return;
 
-      await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/now_playing/update/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(track),
-      });
-      console.log('Now playing updated on backend!');
-    } catch (error) {
-      console.error('Error updating track on backend:', error);
-    }
-  };
+//       await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/now_playing/update/', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify(track),
+//       });
+//       console.log('Now playing updated on backend!');
+//     } catch (error) {
+//       console.error('Error updating track on backend:', error);
+//     }
+//   };
 
-  return {
-    isLoading,
-    authenticateWithSpotify,
-    fetchNowPlaying,
-    getCurrentSession,
-    refreshToken,
-  };
-};
+//   return {
+//     isLoading,
+//     authenticateWithSpotify,
+//     fetchNowPlaying,
+//     getCurrentSession,
+//     refreshToken,
+//   };
+// };
 
-export const useSpotifyContext = () => {
-  const context = useContext(NowPlayingContext);
-  if (!context) {
-    throw new Error('Must be used inside of a provider');
-  } else {
-    return context;
-  }
-};
+// export const useSpotifyContext = () => {
+//   const context = useContext(NowPlayingContext);
+//   if (!context) {
+//     throw new Error('Must be used inside of a provider');
+//   } else {
+//     return context;
+//   }
+// };
 
 export const useUpdateUser = () => {
   const [isLoading, setLoading] = useState<boolean>(false);

@@ -20,8 +20,6 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   useLogout,
-  useSpotify,
-  useSpotifyContext,
   useUpdateUser,
   useUserContext,
 } from '../hooks/auth';
@@ -38,7 +36,7 @@ import {convertToDecimalFeet, formatDate, formatWeight} from '../utils/utils';
 import {AddWorkOuts} from '../components/AddWorkOuts';
 import {ProfileStackParamList} from '../interfaces/screentypes';
 import LottieView from 'lottie-react-native';
-import {SpotifySong} from '../cards/SpotifySong';
+// import {SpotifySong} from '../cards/SpotifySong';
 import {Song, User} from '../interfaces/types';
 import {useFilePicker, useS3Uploader} from '../hooks/social';
 import {Picker} from '@react-native-picker/picker';
@@ -69,8 +67,8 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   const [showMore, setShowMore] = useState<boolean>(false);
   const {uploadToS3} = useS3Uploader();
   const {user} = useUserContext();
-  const {isPlaying} = useSpotifyContext();
-  const {fetchNowPlaying, getCurrentSession} = useSpotify();
+  // const {isPlaying} = useSpotifyContext();
+  // const {fetchNowPlaying, getCurrentSession} = useSpotify();
   const [showPlaying, setShowPlaying] = useState<boolean>(false);
   const [isVisble, setIsVisible] = useState<boolean>(false);
   const [showText, setShowText] = useState<string>('Show More');
@@ -270,12 +268,12 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             </Text>
           </Stack>
         </HStack>
-        {showPlaying && <SpotifySong song={track} />}
+        {/* {showPlaying && <SpotifySong song={track} />}
         {exercises && (
           <View style={{marginTop: 15}}>
             <AddWorkOuts navigation={navigation} exercises={exercises} />
           </View>
-        )}
+        )} */}
         <Text style={{marginTop: 25}}>Saved Workouts</Text>
         {fetchedExercises &&
           fetchedExercises.length > 0 &&
