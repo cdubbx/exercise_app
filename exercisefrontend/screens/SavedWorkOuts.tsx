@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Text
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -12,7 +13,7 @@ import Exercise from './ExerciseCard';
 import {SavedWorkout} from '../interfaces/interfaces';
 import LinearGradient from 'react-native-linear-gradient';
 
-import {HStack, Stack, Text} from '@react-native-material/core';
+import {HStack, Stack} from '@react-native-material/core';
 import {ProfileStackParamList} from '../interfaces/screentypes';
 import {NavigationProp, RouteProp} from '@react-navigation/native';
 import FetchedExercise from '../cards/FetchedExercise';
@@ -109,8 +110,8 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
               />
             </TouchableOpacity>
             <Text
-              style={{textAlign: 'center', marginBottom: 20, fontSize: 18}}
-              color="Black">
+              style={{textAlign: 'center', marginBottom: 20, fontSize: 18, color:"Black"}}
+              >
               Saved Workouts
             </Text>
             <HStack style={styles.tabButtonContainer}>
@@ -148,8 +149,9 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
                   toggleCustom('custom');
                 }}>
                 <Text
-                  style={{color: selected.customExercises ? 'white' : 'black'}}>
-                  Custom Exercises
+                numberOfLines={1}
+                  style={[styles.tabLabel, {color: selected.customExercises ? 'white' : 'black', }]}>
+                  Your Exercises
                 </Text>
               </TouchableOpacity>
             </HStack>
@@ -200,16 +202,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 50,
     paddingVertical: 10,
     borderRadius: 1,
+    flex:1
+    
   },
   tabButton2: {
     paddingHorizontal: 50,
     paddingVertical: 10,
     borderRadius: 1,
+    flex:1
   },
   tabButtonContainer: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     width: '100%',
+  },
+   tabLabel: {
+    flexShrink: 1,           // allow the text to shrink to stay on one line
+    flexWrap: 'nowrap',      // avoid wrapping
+    textAlign: 'center',
   },
 });
 export default SavedWorkOuts;
