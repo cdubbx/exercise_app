@@ -1,4 +1,4 @@
-import {ActionDispatch, createContext, SetStateAction, useEffect, useState} from 'react';
+import {createContext, SetStateAction, useEffect, useState} from 'react';
 import {authTokenObj, User} from '../interfaces/types';
 import {useAuth, useUser} from '../hooks/auth';
 
@@ -45,7 +45,7 @@ export const UserContextProvider: React.FC<UserContextProps> = ({children}) => {
             : userData?.goal_weight,
       });
 
-      console.log(parseFloat(userData?.height));
+      // console.log(parseFloat(userData?.height));
     };
 
     fetchUser();
