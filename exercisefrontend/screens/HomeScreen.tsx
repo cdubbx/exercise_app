@@ -222,11 +222,13 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   searchBar: {
     backgroundColor: '#F0F0F0',
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth:0.5,
+    borderColor:'#848383ff',
     paddingHorizontal: 16,
     paddingVertical: 8,
     fontSize: 16,

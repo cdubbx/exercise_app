@@ -21,16 +21,16 @@ export default function PlannedExercise({item}: any) {
                     ? exercise?.img_url[0]
                     : 'fallback_image_url_here',
               }}
-              style={{height: 60, width: 60, borderRadius: 10}}
+              style={{height: 70, width: 70, borderRadius: 10}}
             />
             <Stack spacing={3}>
-              <Text style={{fontSize: 13, color: 'black', fontWeight: 'bold'}}>
+              <Text style={{fontSize: 16, color: 'black', fontWeight: 'bold'}}>
                 {exercise?.name}
               </Text>
-              <Text style={{fontSize: 11, color: 'black', fontWeight: 'bold'}}>
+              <Text style={{fontSize: 11, color: 'black'}}>
                 {exercise?.category.charAt(0).toUpperCase() + exercise?.category.slice(1)}
               </Text>
-              <Text style={{fontSize: 11, color: 'black', fontWeight: 'bold'}}>
+              <Text style={{fontSize: 11, color: 'black', }}>
                 {item?.reps}
               </Text>
             </Stack>

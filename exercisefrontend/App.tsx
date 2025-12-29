@@ -52,6 +52,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import MainNavigator from './components/MainNavigator';
 import BotScreen from './screens/BotScreen';
 import SplashScreen from 'react-native-splash-screen';
+import {FloatingButtonContextProvider} from './context/FloatingButtonContext';
+import FloatingButton from './components/FloatingButton';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -61,8 +63,7 @@ const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const CalendarStack = createNativeStackNavigator<CalendarParamList>();
-const SocialStack = createNativeStackNavigator<SocialStackParamList>()
-
+const SocialStack = createNativeStackNavigator<SocialStackParamList>();
 
 export const AuthNavigator = () => {
   return (
@@ -86,19 +87,21 @@ export const AuthNavigator = () => {
   );
 };
 
- const CalendarNavigator = () => {
+const CalendarNavigator = () => {
   return (
-    <CalendarStack.Navigator 
-    initialRouteName='Calendar'
-    screenOptions={{headerShown:false}}>
-      <CalendarStack.Screen name='Calendar' component={CalendarCard} />
-      <CalendarStack.Screen name='SavedExerciseList' component={SavedWorkOuts} />
-      <CalendarStack.Screen name='SavedExercises' component={SavedExercise} />
+    <CalendarStack.Navigator
+      initialRouteName="Calendar"
+      screenOptions={{headerShown: false}}>
+      <CalendarStack.Screen name="Calendar" component={CalendarCard} />
+      <CalendarStack.Screen
+        name="SavedExerciseList"
+        component={SavedWorkOuts}
+      />
+      <CalendarStack.Screen name="SavedExercises" component={SavedExercise} />
+      <CalendarStack.Screen name="BotScreen" component={BotScreen} />
     </CalendarStack.Navigator>
-  )
- }
-
-
+  );
+};
 
 const HomeNavigator = () => {
   return (
@@ -123,6 +126,7 @@ const ExploreNavigator = () => {
       <ExploreStack.Screen name="OtherUser" component={OtherUserScreen} />
       <ExploreStack.Screen name="BodyPart" component={BodyPart} />
       <ExploreStack.Screen name="ExerciseCard" component={ExerciseCard} />
+      <ExploreStack.Screen name="BotScreen" component={BotScreen} />
 
       <ExploreStack.Screen
         name="PublicWorkoutsScreen"
@@ -133,8 +137,6 @@ const ExploreNavigator = () => {
   );
 };
 
-
-
 const SocialNavigator = () => {
   return (
     <SocialStack.Navigator
@@ -144,6 +146,7 @@ const SocialNavigator = () => {
       <SocialStack.Screen name="OtherUser" component={OtherUserScreen} />
       <SocialStack.Screen name="BodyPart" component={BodyPart} />
       <SocialStack.Screen name="ExerciseCard" component={ExerciseCard} />
+      <SocialStack.Screen name="BotScreen" component={BotScreen} />
 
       <SocialStack.Screen
         name="PublicWorkoutsScreen"
@@ -161,13 +164,11 @@ const ProfileNavigator = () => {
       screenOptions={{headerShown: false}}>
       <ProfileStack.Screen name="Profile" component={ProfileScreen} />
       <ProfileStack.Screen name="SavedExercises" component={SavedExercise} />
-      <ProfileStack.Screen
-        name="SavedExerciseList"
-        component={SavedWorkOuts}
-      />
+      <ProfileStack.Screen name="SavedExerciseList" component={SavedWorkOuts} />
       <ProfileStack.Screen name="Settings" component={Settings} />
       <ProfileStack.Screen name="AddWorkoutScreen" component={WorkoutForm} />
-      <ProfileStack.Screen name= "Login1" component={AuthNavigator} />
+      <ProfileStack.Screen name="Login1" component={AuthNavigator} />
+      <ProfileStack.Screen name="BotScreen" component={BotScreen} />
     </ProfileStack.Navigator>
   );
 };
@@ -179,10 +180,10 @@ export const TabNavigator = () => {
       screenOptions={{headerShown: false}}>
       <Tab.Screen
         name="Home1"
-        component={HomeNavigator}
+        component={ExploreNavigator}
         options={{
           tabBarIcon: ({focused}) => {
-            return <Entypo name="home" size={focused ? 30: 26} />;
+            return <Entypo name="home" size={focused ? 30 : 26} />;
           },
           tabBarLabel: 'Home',
           tabBarLabelStyle: {color: 'black'},
@@ -193,13 +194,13 @@ export const TabNavigator = () => {
         component={CalendarNavigator}
         options={{
           tabBarIcon: ({focused}) => {
-            return <Entypo name="calendar" size={focused ? 30: 26} />;
+            return <Entypo name="calendar" size={focused ? 30 : 26} />;
           },
           tabBarLabel: 'Calendar',
           tabBarLabelStyle: {color: 'black'},
         }}
       />
-      <Tab.Screen
+      {/* <Tab.Screen
         name="Explore1"
         component={ExploreNavigator}
         options={{
@@ -209,14 +210,14 @@ export const TabNavigator = () => {
           tabBarLabel: 'Explore',
           tabBarLabelStyle: {color: 'black'},
         }}
-      />
+      /> */}
 
-        <Tab.Screen
+      <Tab.Screen
         name="Social1"
         component={SocialNavigator}
         options={{
           tabBarIcon: ({focused}) => {
-            return <FontAwesome name="group" size={focused ? 30: 26} />;
+            return <FontAwesome name="group" size={focused ? 30 : 26} />;
           },
           tabBarLabel: 'Social',
           tabBarLabelStyle: {color: 'black'},
@@ -227,7 +228,7 @@ export const TabNavigator = () => {
         component={ProfileNavigator}
         options={{
           tabBarIcon: ({focused}) => {
-            return <AntDesign name="user" size={focused ? 30: 26} />;
+            return <AntDesign name="user" size={focused ? 30 : 26} />;
           },
           tabBarLabel: 'Profile',
           tabBarLabelStyle: {color: 'black'},
@@ -239,29 +240,27 @@ export const TabNavigator = () => {
 export default function App(): React.JSX.Element {
   const {checkToken} = useAuth();
   const [token, setToken] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean| undefined>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
+    false,
+  );
   const [isAppReady, setIsAppReady] = useState(false);
 
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        const result = await checkToken();
+        setIsAuthenticated(result);
+      } catch (error) {
+        console.log('An error has occurred:', error);
+        setIsAuthenticated(false);
+      } finally {
+        SplashScreen.hide();
+        setIsAppReady(true); // ✅ This line WILL run — only if you call initialize()
+      }
+    };
 
-
-
-  
-useEffect(() => {
-  const initialize = async () => {
-    try {
-      const result = await checkToken();
-      setIsAuthenticated(result);
-    } catch (error) {
-      console.log("An error has occurred:", error);
-      setIsAuthenticated(false);
-    } finally {
-      SplashScreen.hide();
-      setIsAppReady(true); // ✅ This line WILL run — only if you call initialize()
-    }
-  };
-
-  initialize(); // ✅ Don't forget to call the async function
-}, []); // ✅ Only run once
+    initialize(); // ✅ Don't forget to call the async function
+  }, []); // ✅ Only run once
   const linking = {
     prefixes: ['exercisefrontend://'],
     config: {
@@ -280,14 +279,16 @@ useEffect(() => {
 
   if (!isAppReady) return <></>; // show native splash
 
-
   return (
     <NowPlayingProvider>
       <UserContextProvider>
         <ExerciseProvider>
-          <NavigationContainer linking={linking}>
-            <MainNavigator isAuthenticated={isAuthenticated} />
-          </NavigationContainer>
+          <FloatingButtonContextProvider>
+            <NavigationContainer linking={linking}>
+              <FloatingButton />
+              <MainNavigator isAuthenticated={isAuthenticated} />
+            </NavigationContainer>
+          </FloatingButtonContextProvider>
         </ExerciseProvider>
       </UserContextProvider>
     </NowPlayingProvider>

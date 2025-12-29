@@ -58,8 +58,9 @@ interface UserData {
 
 export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   const {logout} = useLogout();
-  const {exercises, removeExercise} = useSetExercise();
-  const {fetchedExercises} = useFetchedSavedWorkOuts();
+  const {exercises, removeExercise} = useSetExercise(); // this is where exercises are saved in context.
+  const {fetchedExercises} = useFetchedSavedWorkOuts(); 
+  const [localExercises, setLocalExercises] = useState<ExerciseInterface|any>()
   const [feet, setFeet] = useState<number>(5);
   const [inches, setInches] = useState<number>(0);
   const [imageUrl, setImageUrl] = useState<string>('');
@@ -136,6 +137,16 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     }
   }, [file, uploadToS3]);
 
+  const mergeExercises = () => {
+  const normalize = (items: any[] = []) =>
+    items.map(ex => (ex?.exercise ? ex.exercise : ex)).filter(Boolean);
+
+  const combined = [...normalize(fetchedExercises), ...normalize(exercises)];
+  const uniqueById = new Map(combined.map(ex => [ex?.id, ex]));
+  return Array.from(uniqueById.values());
+};
+
+
   const joinDate = formatDate(user?.date_joined, 'full');
   useEffect(() => {
     // const handleShowPlaying = async () => {
@@ -144,6 +155,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     //   setTrack(track);
     // };
     // handleShowPlaying();
+    setLocalExercises(mergeExercises());
   }, [exercises, fetchedExercises, track]);
 
   const onClose = () => {

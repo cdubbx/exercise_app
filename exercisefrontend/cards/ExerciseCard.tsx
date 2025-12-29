@@ -31,9 +31,18 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const [showMoreText, setShowMoreText] = useState<string>('Show more');
 
   const exerciseItems = route.params?.item;
+  const formatInstructions = (raw: any): string => {
+    if (Array.isArray(raw)) {
+      raw = raw.join(' ');
+    }
+    if (typeof raw !== 'string') {
+      return '';
+    }
+    // Insert a space after any period that isn't followed by whitespace or end-of-string.
+    return raw.replace(/\.(?!\s|$)/g, '. ');
+  };
 
-
-  const onSaveWorkout = async () => {
+const onSaveWorkout = async () => {
     try {
       if (exerciseItems !== undefined) {
         const result = await saveWorkouts(exerciseItems);
@@ -103,7 +112,7 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
           <Text
             numberOfLines={showMore ? undefined : 3}
             style={styles.instructions}>
-            {exerciseItems?.instructions}
+            {formatInstructions(exerciseItems?.instructions)}
           </Text>
           <TouchableOpacity onPress={toggleShowMore}>
             <Text>{showMoreText}</Text>
@@ -130,7 +139,6 @@ const styles = StyleSheet.create({
   },
   instructions: {
     fontSize: 13,
-    fontWeight: 'bold',
     color: '#323131',
     textAlign: 'left',
   },

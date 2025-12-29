@@ -100,10 +100,14 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
             <TouchableOpacity
               key={index} // Add a key prop
               style={{
-                backgroundColor: selectedDay === day ? 'black' : 'transparent',
+                backgroundColor: selectedDay === day ? '#222222ff' : 'transparent',
                 height: 30,
                 borderRadius: 5,
                 padding: 5,
+                shadowColor: selectedDay === day ? '#faf4f4ff' : '#fdfbfbff',
+                shadowRadius: selectedDay === day ? 6 : 0,
+                shadowOffset: selectedDay === day ? {width: 0, height: 4} : {width:0, height:0},
+                elevation: 6
               }}
               onPress={() => setSelectedDay(day)}>
               <Text color={selectedDay === day ? 'white' : 'black'}>{day}</Text>

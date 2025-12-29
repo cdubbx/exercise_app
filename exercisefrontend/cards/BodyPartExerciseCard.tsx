@@ -2,6 +2,8 @@ import {View, Text, SafeAreaView, Image} from 'react-native';
 import {Box, HStack, Text as MatText, Stack} from '@react-native-material/core';
 import React, {useEffect} from 'react';
 import { getImageUrl } from '../utils/utils';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
 
 export default function BodyPartExercise({item}: any) {
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function BodyPartExercise({item}: any) {
       <Text
         numberOfLines={3}
         style={{
-          fontSize: 13,
+          fontSize: 14,
           color: 'black',
           fontWeight: 'bold',
           flexShrink: 1,
@@ -36,10 +38,13 @@ export default function BodyPartExercise({item}: any) {
       >
         {item?.name}
       </Text>
-      <Text style={{ fontSize: 11, color: 'black', fontWeight: 'bold' }}>
+      <Text style={{ fontSize: 11, color: 'black', }}>
         {item?.category}
       </Text>
     </Stack>
+
+              <MaterialIcons name='keyboard-arrow-right' size={30} color={'#b1b1b1ff'}/>
+    
   </HStack>
 </SafeAreaView>
   );

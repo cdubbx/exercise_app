@@ -1,5 +1,5 @@
 // ChatScreen.js
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
   TextInput,
@@ -9,20 +9,27 @@ import {
   Platform,
   ActivityIndicator,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import {useGPTExerciseChat} from '../hooks/exercises';
 import BodyPartExercise from '../cards/BodyPartExerciseCard';
 import {HomeStackParamList} from '../interfaces/screentypes';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import { HStack } from '@react-native-material/core';
+import { HStack, Box } from '@react-native-material/core';
+import FloatingButton from '../components/FloatingButton';
+import { useFloatingButtonActions } from '../context/FloatingButtonContext';
+import Entypo from 'react-native-vector-icons/Entypo';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'BotScreen'>;
 
 const BotScreen: React.FC<Props> = ({navigation}) => {
   const [input, setInput] = useState('');
   const flatListRef = useRef<any>(null);
+  // I'm thinking about using use ref to get component (this will be a pure test to see how I can determine of the floating button)
+  const floatingButtonRef = useRef<any>(null);
   const {messages, sendMessage, loading} = useGPTExerciseChat();
-
+  const {show, hide, moveTo} = useFloatingButtonActions()
   const handleSend = () => {
     if (input.trim()) {
       sendMessage(input);
@@ -30,13 +37,31 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
     }
   };
 
+  useEffect(() => {
+    hide()
+  },[])
+
+  // on component mount I want to get the position based on the layout, part of me is thinking that use onLayout view would make more sense, 
+  // this button won't be a child component of any of these screens. 
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{flex: 1, backgroundColor: 'white', padding:10}}>
-         <HStack style={{marginTop:50, justifyContent:'center', marginBottom:40}}>
-                <Text style={{fontSize:25}}>Exercise Bot</Text>
-            </HStack>
+         <HStack ph={25} pv={15} spacing={20} mt={40} items="center" justify="between">
+          <TouchableOpacity
+            onPress={() => {
+              navigation.goBack();
+            }}>
+            <AntDesign name="leftcircle" size={20} color={'black'} />
+          </TouchableOpacity>
+          <Text  style={styles.headerText}>
+            Exercise Bot
+          </Text>
+          <Box mr={-10}>
+            <Entypo name="dots-three-vertical" size={15} color={'black'} />
+          </Box>
+        </HStack>
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -96,6 +121,7 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
             paddingVertical: 10,
           }}
         />
+        <FloatingButton />
         <TouchableOpacity
           onPress={handleSend}
           style={{marginLeft: 10, justifyContent: 'center'}}>
@@ -110,4 +136,12 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
   );
 };
 
+const styles = StyleSheet.create({
+  headerText: {
+    fontSize: 20,
+    width: '70%',
+    textAlign: 'center',
+    color: 'black'
+  },
+})
 export default BotScreen;
