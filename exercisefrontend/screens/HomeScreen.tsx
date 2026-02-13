@@ -7,15 +7,16 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  Platform,
+  StatusBar,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useAuth, useLogout, useUserContext} from '../hooks/auth';
 import LinearGradient from 'react-native-linear-gradient';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Entypo from 'react-native-vector-icons/Entypo';
-
-
+import Tooltip from 'react-native-walkthrough-tooltip';
 import {useNavigation} from '@react-navigation/native';
 import {
   NativeStackNavigationProp,
@@ -26,6 +27,7 @@ import {Avatar, Box, HStack, Text, VStack} from '@react-native-material/core';
 import ExerciseCard from '../cards/ExerciseCard';
 import {ExploreStackParamList} from '../interfaces/screentypes';
 import BodyPartExercise from '../cards/BodyPartExerciseCard';
+import {useWalkThrough} from '../utils/TutorialSystemService';
 
 type HomeStackParamList = {
   Home: undefined;
@@ -69,13 +71,42 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
     back: {
       name: 'Back',
       img_url: backImage,
-      bodyParts: 'chest',
+      bodyParts: 'back',
     },
   };
+
+  const bicepStepCardConfig = {
+    id: 'bicep-step',
+    placement:"top",
+    showChildInToolTip: true,
+    topAdjustment: 0
+  }
 
   const [search, setSearch] = useState('');
   const {loading, searchExercises} = useExercises(); // <-- add searchResults
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [tip, setTip] = useState<boolean>(false);
+  const [tip2, setTip2] = useState<boolean>(true);
+  const navigationExercise = useRef<any>(null);
+
+  const tour = useWalkThrough();
+
+  useEffect(() => {
+    tour.start();
+  }, []);
+
+  useEffect(() => {
+    tour.register(
+      {
+        id: 'individual-bicep',
+        order: 3,
+        onActivate: () => {
+          navigation.navigate('BodyPart', {bodyParts: 'biceps'});
+        },
+      },
+      true,
+    );
+  }, [navigation, tour]);
 
   useEffect(() => {
     const handleSearch = async () => {
@@ -88,13 +119,33 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
     };
     handleSearch();
   }, [search]);
+  
+
+  const searchBar = (
+          <View style={styles.searchBarHighlight}>
+            <View style={styles.searchBarContainer}>
+              <TextInput
+                style={styles.searchBar}
+                placeholder="Search exercises..."
+                value={search}
+                onChangeText={setSearch}
+                placeholderTextColor="#888"
+              />
+            </View>
+          </View>
+          );
 
   return (
     //@ts-ignore
     <SafeAreaView
       //@ts-ignore
-      style={{display: 'flex', justifyContent: 'center', direction: 'row', padding: 10}}>
-      <ScrollView style={{paddingHorizontal:10}}>
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        direction: 'row',
+        padding: 10,
+      }}>
+      <ScrollView style={{paddingHorizontal: 10}}>
         {/* Search Bar */}
 
         <HStack justify="end" items="center" m={10} mb={-3} mr={10}>
@@ -102,18 +153,17 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
             <Entypo name="dots-three-vertical" size={18} color={'black'} />
           </TouchableOpacity>
         </HStack>
+        {
 
+          tour.wrap('search-bar', searchBar, {
+            order: 1,
+            placement: 'bottom',
+            showChildInTooltip: true,
+            content: <Text>This is the search bar</Text>
+          })
+        }
 
-        <View style={styles.searchBarContainer}>
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search exercises..."
-            value={search}
-            onChangeText={setSearch}
-            placeholderTextColor="#888"
-          />
-        </View>
-
+        
         {/* Show search results if searching, else show default cards */}
         {search.length >= 3 && searchResults.length > 0
           ? searchResults.map((exercise: any, index: number) => (
@@ -126,37 +176,69 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
                 <BodyPartExercise item={exercise} />
               </TouchableOpacity>
             ))
-          : Object.entries(imageCard).map(([key, card]) => (
-              <TouchableOpacity
-                key={key}
-                activeOpacity={1}
-                style={{marginBottom: 10}}
-                onPress={() => {
-                  navigation.navigate('BodyPart', {
-                    bodyParts: card.bodyParts,
-                  });
-                }}>
-                <HStack style={styles.exerciseCardContainerContainer}>
-                  <View style={styles.exerciseCardContainer}>
-                    <Text style={styles.exerciseName}>{card.name}</Text>
-                    <Image source={card.img_url} style={styles.exerciseImage} />
-                    <HStack style={styles.categoryStack}>
-                      <Box style={styles.exerciseCard}>
-                        <Text style={styles.exerciseCategory}>Strength</Text>
-                      </Box>
-                      <Box style={styles.exerciseCard}>
-                        <Text style={styles.exerciseCategory}>
-                          Power Lifting
-                        </Text>
-                      </Box>
-                      <Box style={styles.exerciseCard}>
-                        <Text style={styles.exerciseCategory}>Stretching</Text>
-                      </Box>
-                    </HStack>
-                  </View>
-                </HStack>
-              </TouchableOpacity>
-            ))}
+          : Object.entries(imageCard).map(([key, card], index) => {
+              const cardContent = (
+                <TouchableOpacity
+                  key={key}
+                  activeOpacity={1}
+                  style={{marginBottom: 10}}
+                  onPress={() => {
+                    navigation.navigate('BodyPart', {
+                      bodyParts: card.bodyParts,
+                    });
+                    if (key === 'bicep') tour.next();
+                  }}>
+                  <HStack style={styles.exerciseCardContainerContainer}>
+                    <View style={styles.exerciseCardContainer}>
+                      <Text style={styles.exerciseName}>{card.name}</Text>
+                      <Image
+                        source={card.img_url}
+                        style={styles.exerciseImage}
+                      />
+                      <HStack style={styles.categoryStack}>
+                        <Box style={styles.exerciseCard}>
+                          <Text style={styles.exerciseCategory}>Strength</Text>
+                        </Box>
+                        <Box style={styles.exerciseCard}>
+                          <Text style={styles.exerciseCategory}>
+                            Power Lifting
+                          </Text>
+                        </Box>
+                        <Box style={styles.exerciseCard}>
+                          <Text style={styles.exerciseCategory}>
+                            Stretching
+                          </Text>
+                        </Box>
+                      </HStack>
+                    </View>
+                  </HStack>
+                </TouchableOpacity>
+              );
+              return index === 0 ? (
+                // <Tooltip
+                //   key={key}
+                //   isVisible={tip2}
+                //   placement="top"
+                //   onClose={() => setTip2(false)}
+                //   content={<Text>Tap a body part</Text>}>
+                //   {cardContent}
+                // </Tooltip>
+
+                tour.wrap('bicep-step', cardContent, {
+                  order: 2,
+                  placement: "bottom",
+                  showChildInTooltip: true, // avoids your misalignment overlay issue
+                  closeOnChildInteraction:true,
+                  content: (
+                    <Text>Tap a body part</Text>
+                  )
+                })
+
+                
+              ) : (
+                <React.Fragment key={key}>{cardContent}</React.Fragment>
+              );
+            })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -224,11 +306,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 10,
   },
+  searchBarHighlight: {
+    width: '100%',
+    paddingHorizontal: 16,
+  },
   searchBar: {
     backgroundColor: '#F0F0F0',
     borderRadius: 12,
-    borderWidth:0.5,
-    borderColor:'#848383ff',
+    borderWidth: 0.5,
+    borderColor: '#848383ff',
     paddingHorizontal: 16,
     paddingVertical: 8,
     fontSize: 16,

@@ -534,7 +534,8 @@ export const useGPTExerciseChat = () => {
       const assistantMsg = {
         role: 'assistant',
         content: data.gpt_response || 'Sorry, something went wrong.',
-        exercises: data.exercises
+        exercises: data.exercises,
+        timeStamp: Date.now()
       };
 
       setMessages([...newMessages, assistantMsg]);

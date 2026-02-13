@@ -1,3 +1,5 @@
+import { StringEmpty256 } from "aws-sdk/clients/emrcontainers";
+
 export interface Exercise {
     id?: string;
     name?: string; 
@@ -36,4 +38,13 @@ export interface Exercise {
 
 export interface PlannedWorkoutProps {
   item: PlannedWorkout
+}
+
+export interface ChatMessage {
+  id?:string;
+  role:string;
+  content:string;
+  exercises?: Exercise[] | any[];
+  timestamp: number;
+
 }

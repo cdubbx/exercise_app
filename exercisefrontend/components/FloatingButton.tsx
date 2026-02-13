@@ -73,7 +73,7 @@ const FloatingButton = () => {
       {...panResponder.panHandlers}>
       <TouchableOpacity
         style={styles.floatingButtonContainer}
-        onPress={() => navigation.navigate('BotScreen', {screen: 'BotScreen'})}>
+        onPress={() => navigation.navigate('BotScreen')}>
         <Svg width={32} height={32} viewBox="0 0 98 92">
           <Path
             d="M23.1035 43.4394L30.8046 20.3359H40.7658L48.4669 43.4394L71.5704 51.1405V61.1017L48.4669 68.8029L40.7658 91.9063H30.8046L23.1035 68.8029L0 61.1017V51.1405L23.1035 43.4394Z"
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     borderColor: '#f0f1f3ff',
     tintColor: '#cacaceff',
     padding: 5,
-    backgroundColor: '#d4d4ebff', // <-- button color
+    backgroundColor: '#c9c9d6ff', // <-- button color
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

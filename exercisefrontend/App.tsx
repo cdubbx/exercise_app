@@ -32,6 +32,7 @@ import {
   HomeStackParamList,
   ProfileStackParamList,
   ResetPasswordList,
+  RootStackParamList,
   SocialStackParamList,
 } from './interfaces/screentypes';
 import ResetPassword from './screens/ResetPassword';
@@ -54,6 +55,8 @@ import BotScreen from './screens/BotScreen';
 import SplashScreen from 'react-native-splash-screen';
 import {FloatingButtonContextProvider} from './context/FloatingButtonContext';
 import FloatingButton from './components/FloatingButton';
+import {ChatProvider} from './context/ChatContext';
+import {WalkthroughProvider} from './context/WalkthroughContext';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -64,6 +67,19 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const CalendarStack = createNativeStackNavigator<CalendarParamList>();
 const SocialStack = createNativeStackNavigator<SocialStackParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+
+export const RootStackNavigator = () => {
+  return (
+    <RootStack.Navigator
+      initialRouteName="BottomTabs"
+      screenOptions={{headerShown: false}}>
+      <RootStack.Screen name="BottomTabs" component={TabNavigator} />
+      <RootStack.Screen name="BotScreen" component={BotScreen} />
+      <RootStack.Screen name="ExerciseCard" component={ExerciseCard} />
+    </RootStack.Navigator>
+  );
+};
 
 export const AuthNavigator = () => {
   return (
@@ -98,7 +114,6 @@ const CalendarNavigator = () => {
         component={SavedWorkOuts}
       />
       <CalendarStack.Screen name="SavedExercises" component={SavedExercise} />
-      <CalendarStack.Screen name="BotScreen" component={BotScreen} />
     </CalendarStack.Navigator>
   );
 };
@@ -109,7 +124,6 @@ const HomeNavigator = () => {
       initialRouteName="BotScreen"
       screenOptions={{headerShown: false}}>
       {/* <HomeStack.Screen name="Home" component={HomeScreen} /> */}
-      <HomeStack.Screen name="BotScreen" component={BotScreen} />
       <HomeStack.Screen name="BodyPart" component={BodyPart} />
       <HomeStack.Screen name="ExerciseCard" component={ExerciseCard} />
       <HomeStack.Screen name="Register" component={Register} />
@@ -126,7 +140,6 @@ const ExploreNavigator = () => {
       <ExploreStack.Screen name="OtherUser" component={OtherUserScreen} />
       <ExploreStack.Screen name="BodyPart" component={BodyPart} />
       <ExploreStack.Screen name="ExerciseCard" component={ExerciseCard} />
-      <ExploreStack.Screen name="BotScreen" component={BotScreen} />
 
       <ExploreStack.Screen
         name="PublicWorkoutsScreen"
@@ -146,7 +159,6 @@ const SocialNavigator = () => {
       <SocialStack.Screen name="OtherUser" component={OtherUserScreen} />
       <SocialStack.Screen name="BodyPart" component={BodyPart} />
       <SocialStack.Screen name="ExerciseCard" component={ExerciseCard} />
-      <SocialStack.Screen name="BotScreen" component={BotScreen} />
 
       <SocialStack.Screen
         name="PublicWorkoutsScreen"
@@ -168,7 +180,6 @@ const ProfileNavigator = () => {
       <ProfileStack.Screen name="Settings" component={Settings} />
       <ProfileStack.Screen name="AddWorkoutScreen" component={WorkoutForm} />
       <ProfileStack.Screen name="Login1" component={AuthNavigator} />
-      <ProfileStack.Screen name="BotScreen" component={BotScreen} />
     </ProfileStack.Navigator>
   );
 };
@@ -260,6 +271,7 @@ export default function App(): React.JSX.Element {
     };
 
     initialize(); // ✅ Don't forget to call the async function
+    
   }, []); // ✅ Only run once
   const linking = {
     prefixes: ['exercisefrontend://'],
@@ -283,12 +295,16 @@ export default function App(): React.JSX.Element {
     <NowPlayingProvider>
       <UserContextProvider>
         <ExerciseProvider>
-          <FloatingButtonContextProvider>
-            <NavigationContainer linking={linking}>
-              <FloatingButton />
-              <MainNavigator isAuthenticated={isAuthenticated} />
-            </NavigationContainer>
-          </FloatingButtonContextProvider>
+          <ChatProvider>
+            <WalkthroughProvider>
+              <FloatingButtonContextProvider>
+                <NavigationContainer linking={linking}>
+                  <FloatingButton />
+                  <MainNavigator isAuthenticated={isAuthenticated} />
+                </NavigationContainer>
+              </FloatingButtonContextProvider>
+            </WalkthroughProvider>
+          </ChatProvider>
         </ExerciseProvider>
       </UserContextProvider>
     </NowPlayingProvider>
