@@ -50,6 +50,8 @@ const TourStep = ({
       placement={config.placement ?? 'top'}
       showChildInTooltip={config.showChildInTooltip ?? false}
       closeOnChildInteraction={config.closeOnChildInteraction ?? false}
+      allowChildInteraction= {false}
+      displayInsets={{top: 24, bottom: 24, left: 12, right: 12}}
       content={
         <WalkThroughContainer
           content={config.content}

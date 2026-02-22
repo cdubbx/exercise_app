@@ -159,6 +159,16 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     setLocalExercises(mergeExercises());
   }, [exercises, fetchedExercises, track]);
 
+  useEffect(() => {
+    tour.register({
+      id: 'bot-screen-tooltip',
+      order:7,
+      onActivate: () => {
+        navigation.navigate('BotScreen')
+      }
+    }, true)
+  })
+
   const onClose = () => {
     setIsVisible(false);
   };
