@@ -131,7 +131,7 @@ export const getTutorialDebugOverride = async (): Promise<boolean | null> =>
 export const setTutorialDebugOverride = setTutorialOverride;
 
 export const shouldShowTutorial = async (): Promise<boolean> => {
-  const forceShow = true // await getForceShowTutorial();
+  const forceShow = await getForceShowTutorial();
   if (forceShow) {
     logTutorial('shouldShowTutorial: forceShow=true -> show');
     return true;
