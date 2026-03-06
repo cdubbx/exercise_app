@@ -180,6 +180,8 @@ const ProfileNavigator = () => {
       <ProfileStack.Screen name="Settings" component={Settings} />
       <ProfileStack.Screen name="AddWorkoutScreen" component={WorkoutForm} />
       <ProfileStack.Screen name="Login1" component={AuthNavigator} />
+      <ProfileStack.Screen name="BotScreen" component={BotScreen} />
+
     </ProfileStack.Navigator>
   );
 };

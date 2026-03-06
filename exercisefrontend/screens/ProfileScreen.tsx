@@ -164,7 +164,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
       id: 'bot-screen-tooltip',
       order:7,
       onActivate: () => {
-        navigation.navigate('BotScreen')
+        navigation.navigate('BotScreen', )
       }
     }, true)
   })
