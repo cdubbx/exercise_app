@@ -17,6 +17,7 @@ import {useSaveWorkOuts, useSetExercise} from '../hooks/exercises';
 import {HomeStackParamList} from '../interfaces/screentypes';
 import {NavigationProp, RouteProp} from '@react-navigation/native';
 import {Alert} from 'react-native';
+import { useWalkThrough } from '../utils/TutorialSystemService';
 
 interface Props {
   navigation: NavigationProp<HomeStackParamList, 'ExerciseCard'>;
@@ -29,6 +30,7 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
   const {saveWorkouts, error, loading} = useSaveWorkOuts();
   const [showMore, setShowMore] = useState<boolean>(false);
   const [showMoreText, setShowMoreText] = useState<string>('Show more');
+  const tour = useWalkThrough();
 
   const exerciseItems = route.params?.item;
   const formatInstructions = (raw: any): string => {
@@ -41,6 +43,19 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
     // Insert a space after any period that isn't followed by whitespace or end-of-string.
     return raw.replace(/\.(?!\s|$)/g, '. ');
   };
+
+  tour.register(
+      {
+        id: 'plus-button',
+        order: 5,
+        showChildInTooltip: false,
+        placement: 'bottom',
+        onActivate: () => {
+           navigation.navigate('Calendar',)
+          }
+      },
+      true,
+    );
 
 const onSaveWorkout = async () => {
     try {
@@ -66,6 +81,19 @@ const onSaveWorkout = async () => {
       setShowMoreText('Show more');
     }
   };
+
+  const saveButton = (
+        <TouchableOpacity
+            style={styles.saveButton}
+            disabled={loading}
+            onPress={() => {
+              onSaveWorkout();
+            }}>
+            <Text style={styles.saveButtonText} color="white">
+              Save
+            </Text>
+          </TouchableOpacity>
+  )
 
   return (
     <ScrollView style={styles.container}>
@@ -117,16 +145,24 @@ const onSaveWorkout = async () => {
           <TouchableOpacity onPress={toggleShowMore}>
             <Text>{showMoreText}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.saveButton}
-            disabled={loading}
-            onPress={() => {
-              onSaveWorkout();
-            }}>
-            <Text style={styles.saveButtonText} color="white">
-              Save
-            </Text>
-          </TouchableOpacity>
+
+              
+              {
+                tour.wrap('save-button', saveButton, {
+                  order:4,
+                  placement:'bottom',
+                  showChildInTooltip:true,
+                  content: <Text>
+                    Click Save to an Exercise
+                  </Text>,
+                  onClose() {
+                    tour.stop()
+                  },
+                  
+                })
+              }
+              
+      
         </Stack>
       </Stack>
     </ScrollView>

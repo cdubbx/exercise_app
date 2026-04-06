@@ -50,7 +50,7 @@ export type ProfileStackParamList = {
 export type HomeStackParamList = {
   Home: undefined;
   BodyPart: {bodyParts: string};
-  ExerciseCard: {item: string};
+  ExerciseCard: {item: any};
   Register: undefined;
   BotScreen: undefined;
 };
@@ -75,3 +75,10 @@ export type BotScreenParams = {
   from?: 'Home' | 'Explore' | 'Social' | 'Profile' | 'Calendar'; 
   routeParams?: any
 };
+
+export type RootStackParamList = {
+  BotScreen: undefined;
+  BottomTabs:undefined;
+  ExerciseCard: {item: string};
+
+}

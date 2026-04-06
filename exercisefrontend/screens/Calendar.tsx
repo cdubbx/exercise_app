@@ -22,15 +22,18 @@ import PlannedExercise from '../cards/PlannedExercise';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {NavigationProp, useFocusEffect} from '@react-navigation/native';
 import {CalendarParamList} from '../interfaces/screentypes';
+import {useWalkThrough} from '../utils/TutorialSystemService';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CalendarScreenProps {
   navigation: NavigationProp<CalendarParamList, 'Calendar'>;
 }
 const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const { loading, fetchPlannedWorkouts } = useFetchedPlanedWorkouts(); // Ensure refetch is available
+  const {loading, fetchPlannedWorkouts} = useFetchedPlanedWorkouts(); // Ensure refetch is available
   const [localExercises, setLocalExercises] = useState<any[]>();
   const [fetchedExercises, setFetchedExercises] = useState<any[]>();
+  const tour = useWalkThrough();
   const {exercises} = useSetExercise();
   const daysOfTheWeek = {
     Mon: 'Monday',
@@ -42,72 +45,95 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
     Sun: 'Sunday',
   };
 
-
   const {deletePlannedWorkout} = useDeleteWorkout();
-
+  const insets = useSafeAreaInsets()
   const flattenedExercises = fetchedExercises?.map(
     (exercise: any) => exercise.saved_workout_details,
   );
 
   const combinedExercises = fetchedExercises;
-    useEffect(() => {
-      const fetchAndFilterExercises = async () => {
-        await handleFetchedExercises();
-    
-        if (selectedDay) {
-          const filtered = fetchedExercises?.filter(
-            (workout: any) =>
-              workout.day_of_the_week ===
-              daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek]
-          );
-          setLocalExercises(filtered);
-        }
-      };
-    
-      const handleFetchedExercises = async () => {
-        const result = await fetchPlannedWorkouts();
-        setFetchedExercises(result);
-      };
-    
-      fetchAndFilterExercises();
-    }, [selectedDay]);
+  useEffect(() => {
+    const fetchAndFilterExercises = async () => {
+      await handleFetchedExercises();
 
-
-    const handleDelete = (id: any) => {
-      if (id) {
-        setLocalExercises((prevExercises) =>
-          prevExercises?.filter((exercise: any) => exercise.id !== id)
+      if (selectedDay) {
+        const filtered = fetchedExercises?.filter(
+          (workout: any) =>
+            workout.day_of_the_week ===
+            daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek],
         );
-        deletePlannedWorkout(id);
+        setLocalExercises(filtered);
       }
     };
 
+    const handleFetchedExercises = async () => {
+      const result = await fetchPlannedWorkouts();
+      setFetchedExercises(result);
+    };
+
+    fetchAndFilterExercises();
+  }, [selectedDay]);
+
+  useEffect(() => {
+    tour.register({
+      id:'settings-menu',
+      order:6,
+      onActivate: () => 
+        navigation.navigate('Profile1', {screen: 'Profile' })
+    },
+  true)
+  })
+
+  const handleDelete = (id: any) => {
+    if (id) {
+      setLocalExercises(prevExercises =>
+        prevExercises?.filter((exercise: any) => exercise.id !== id),
+      );
+      deletePlannedWorkout(id);
+    }
+  };
+
+  const plusButton = (
+    <TouchableOpacity
+      onPress={() => {
+        navigation.navigate('SavedExerciseList', {
+          exercises: [flattenedExercises, exercises],
+        });
+      }}>
+      <AntDesign name="pluscircle" size={26} />
+    </TouchableOpacity>
+  );
   return (
-    <SafeAreaView style={{padding: 10}}>
+    <View style={{padding: 10, marginTop: Math.max(insets.top, 60)}}>
       <Stack>
         <HStack style={styles.plusButtonContainer}>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('SavedExerciseList', {
-                exercises: [flattenedExercises, exercises],
-              });
-            }}>
-            <AntDesign name="pluscircle" size={26} />
-          </TouchableOpacity>
+          {tour.wrap('plus-button', plusButton, {
+            order: 5,
+            placement: 'bottom',
+            topAdjustment:20,
+            content: (
+              <Text>Press the plus button to access the saved workouts</Text>
+            ),
+            showChildInTooltip: false,
+          })}
         </HStack>
         <HStack spacing={10} p={5} justify="center">
           {Object.keys(daysOfTheWeek).map((day, index) => (
             <TouchableOpacity
               key={index} // Add a key prop
               style={{
-                backgroundColor: selectedDay === day ? '#222222ff' : 'transparent',
+                backgroundColor:
+                  selectedDay === day ? '#222222ff' : 'transparent',
                 height: 30,
                 borderRadius: 5,
                 padding: 5,
                 shadowColor: selectedDay === day ? '#faf4f4ff' : '#fdfbfbff',
                 shadowRadius: selectedDay === day ? 6 : 0,
-                shadowOffset: selectedDay === day ? {width: 0, height: 4} : {width:0, height:0},
-                elevation: 6
+                shadowOffset:
+                  selectedDay === day
+                    ? {width: 0, height: 4}
+                    : {width: 0, height: 0},
+                elevation: 6,
               }}
               onPress={() => setSelectedDay(day)}>
               <Text color={selectedDay === day ? 'white' : 'black'}>{day}</Text>
@@ -153,7 +179,7 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
           </Text>
         )}
       </Stack>
-    </SafeAreaView>
+    </View>
   );
 };
 

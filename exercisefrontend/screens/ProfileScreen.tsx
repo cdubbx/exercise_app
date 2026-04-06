@@ -43,6 +43,7 @@ import {Picker} from '@react-native-picker/picker';
 import BodyPartExercise from '../cards/BodyPartExerciseCard';
 import FetchedExercise from '../cards/FetchedExercise';
 import {MenuView, MenuComponentRef} from '@react-native-menu/menu';
+import { useWalkThrough } from '../utils/TutorialSystemService';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 
@@ -146,7 +147,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   return Array.from(uniqueById.values());
 };
 
-
+  const tour = useWalkThrough()
   const joinDate = formatDate(user?.date_joined, 'full');
   useEffect(() => {
     // const handleShowPlaying = async () => {
@@ -157,6 +158,16 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     // handleShowPlaying();
     setLocalExercises(mergeExercises());
   }, [exercises, fetchedExercises, track]);
+
+  useEffect(() => {
+    tour.register({
+      id: 'bot-screen-tooltip',
+      order:7,
+      onActivate: () => {
+        navigation.navigate('BotScreen', )
+      }
+    }, true)
+  })
 
   const onClose = () => {
     setIsVisible(false);
@@ -177,12 +188,8 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     }
   };
 
-  return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <Stack>
-        <HStack p={20} spacing={20} items="center" justify="end">
-          {Platform.OS === 'ios' && (
-            <MenuView
+  const iphoneMenu = (
+    <MenuView
               title="Profile Settings"
               actions={[
                 {
@@ -220,6 +227,20 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
                 <Entypo name="dots-three-vertical" size={15} color={'black'} />
               </TouchableOpacity>
             </MenuView>
+  )
+
+  return (
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+      <Stack>
+        <HStack p={20} spacing={20} items="center" justify="end">
+          {Platform.OS === 'ios' && (
+            tour.wrap('settings-menu', iphoneMenu, {
+              showChildInTooltip:true,
+              order:6,
+              placement:'bottom',
+              topAdjustment:20,
+              content: <Text>Click here to select the settings menu</Text>
+            }) 
           )}
         </HStack>
         <Stack style={styles.profileStack}>
