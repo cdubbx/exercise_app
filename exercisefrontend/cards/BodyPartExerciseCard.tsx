@@ -1,48 +1,19 @@
-import {View, Text, SafeAreaView, Image} from 'react-native';
-import {Box, HStack, Text as MatText, Stack} from '@react-native-material/core';
-import React, {useEffect} from 'react';
+import React from 'react';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import {getImageUrl} from '../utils/utils';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {Exercise} from '../interfaces/interfaces';
 
-export default function BodyPartExercise({item}: any) {
-
-  return (
-    <SafeAreaView>
-      <HStack mb={10} spacing={20} items="center">
-        <Image
-          source={{
-            uri:
-              item?.img_url &&
-              Array.isArray(item?.img_url) &&
-              item?.img_url.length > 0
-                ? getImageUrl(item?.img_url[0])
-                : typeof item?.img_url === 'string' ? item.img_url : undefined,
-            cache: 'default',
-          }}
-          resizeMode="cover"
-          style={{height: 60, width: 60, borderRadius: 10, flexShrink: 0}}
-        />
-        <Stack spacing={3} style={{flex: 1}}>
-          <Text
-            numberOfLines={3}
-            style={{
-              fontSize: 14,
-              color: 'black',
-              fontWeight: 'bold',
-              flexShrink: 1,
-              flexWrap: 'wrap',
-            }}>
-            {item?.name}
-          </Text>
-          <Text style={{fontSize: 11, color: 'black'}}>{item?.category}</Text>
-        </Stack>
-
-        <MaterialIcons
-          name="keyboard-arrow-right"
-          size={30}
-          color={'#b1b1b1ff'}
-        />
-      </HStack>
-    </SafeAreaView>
-  );
+export default function BodyPartExercise({item}: {item: Exercise}) {
+  const image = Array.isArray(item.img_url) ? item.img_url[0] : item.img_url;
+  return <View style={styles.row}>
+    {image ? <Image source={{uri: getImageUrl(image)}} resizeMode="cover" style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}
+    <View style={styles.details}><Text numberOfLines={2} style={styles.name}>{item.name}</Text>{!!item.category && <Text numberOfLines={1} style={styles.category}>{item.category}</Text>}</View>
+    <Text style={styles.chevron}>›</Text>
+  </View>;
 }
+const styles = StyleSheet.create({
+  row: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  image: {width: 48, height: 48, borderRadius: 8}, placeholder: {backgroundColor: '#eee'},
+  details: {flex: 1, gap: 4}, name: {fontSize: 14, fontWeight: '600', color: 'black'},
+  category: {fontSize: 12, color: '#555'}, chevron: {fontSize: 26, color: '#777'},
+});

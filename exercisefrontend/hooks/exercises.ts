@@ -49,16 +49,21 @@ export const useMuscleExercise = (bodyPart: string) => {
     } catch (err: any) { if (generation.current === version) setError(err); }
     finally { if (generation.current === version) { busy.current = false; setLoading(false); setLoadingMore(false); } }
   };
-  useEffect(() => {
+  const refresh = useCallback(() => {
     const version = ++generation.current;
+    busy.current = false; setLoadingMore(false); setError(null);
     setBodyExercises([]); setNextUrl(null);
     // Legs is a navigation category whose existing cards select a specific muscle.
     if (bodyPart === 'legs') { setLoading(false); return; }
     void fetchPage(`${API_URL}/exercises/?primaryMuscles=${encodeURIComponent(bodyPart)}`, false, version);
-    return () => { generation.current = version + 1; };
   }, [bodyPart]);
+  useEffect(() => {
+    const requests = generation;
+    refresh();
+    return () => { requests.current++; };
+  }, [refresh]);
   const loadMoreExercises = () => { if (nextUrl && !busy.current) void fetchPage(nextUrl, true, generation.current); };
-  return {bodyExercises, loading, loadingMore, error, loadMoreExercises, hasMore: !!nextUrl};
+  return {bodyExercises, loading, loadingMore, error, loadMoreExercises, refresh, hasMore: !!nextUrl};
 };
 
 export const useSaveWorkOuts = () => {

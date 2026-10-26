@@ -1,279 +1,84 @@
-import {openTab} from '../services/navigation';
-import {
-  View,
-  SafeAreaView,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  ListRenderItemInfo,
-} from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useMuscleExercise} from '../hooks/exercises';
-import {Box, HStack, Stack, VStack, Text} from '@react-native-material/core';
-import Exercise from './ExerciseCard';
-import Entypo from 'react-native-vector-icons/Entypo';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import React, {useEffect, useRef} from 'react';
+import {ActivityIndicator, FlatList, ImageBackground, ListRenderItemInfo, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {NavigationProp, RouteProp} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import ExerciseCard from '../cards/ExerciseCard';
+import {useMuscleExercise} from '../hooks/exercises';
 import BodyPartExercise from '../cards/BodyPartExerciseCard';
 import {HomeStackParamList} from '../interfaces/screentypes';
-import {NavigationProp, RouteProp} from '@react-navigation/native';
-import {FlashList} from '@shopify/flash-list';
-import {Exercise as ExerciseInterface} from '../interfaces/interfaces';
-import Tooltip from 'react-native-walkthrough-tooltip';
+import {Exercise} from '../interfaces/interfaces';
 import {useWalkThrough} from '../utils/TutorialSystemService';
+import {openTab} from '../services/navigation';
 
 interface Props {
   navigation: NavigationProp<HomeStackParamList, 'BodyPart'>;
   route: RouteProp<HomeStackParamList, 'BodyPart'>;
 }
-
-const BodyPart: React.FC<Props> = ({route, navigation}) => {
-  const quadImg = require('../assets/AdobeStock_442546175.jpeg');
-  const gluteImg = require('../assets/AdobeStock_379171391.jpeg');
-  const hamstringImg = require('../assets/AdobeStock_287421213.jpeg');
-
+const legGroups = [
+  {name: 'Glutes', muscle: 'glutes', image: require('../assets/AdobeStock_379171391.jpeg')},
+  {name: 'Hamstrings', muscle: 'hamstrings', image: require('../assets/AdobeStock_287421213.jpeg')},
+  {name: 'Quads', muscle: 'quadriceps', image: require('../assets/AdobeStock_442546175.jpeg')},
+];
+export default function BodyPart({route, navigation}: Props) {
   const parts = route.params.bodyParts;
-  const {loading, bodyExercises, loadMoreExercises, loadingMore, error} =
-    useMuscleExercise(parts);
-  const [tip, setTip] = useState<boolean>(true);
+  const title = parts.charAt(0).toUpperCase() + parts.slice(1);
+  const {top} = useSafeAreaInsets();
+  const {loading, bodyExercises, loadMoreExercises, loadingMore, error, hasMore, refresh} = useMuscleExercise(parts);
   const tour = useWalkThrough();
-  const exerciseRef = useRef<any>(null);
-
-  const [hasExercises, setHasExercises] = useState(false);
-  const fakeExercises = new Array(50).fill({id: 1, name: 'Fake Exercise'});
-  // console.log(parts);
-
+  const {register} = tour;
+  const exerciseRef = useRef<FlatList<Exercise>>(null);
   useEffect(() => {
-    tour.register(
-      {
-        id: 'save-button',
-        order: 4,
-        showChildInTooltip: false,
-        placement: 'bottom',
-        onActivate: () => {
-          const first = bodyExercises[0];
-          if (!first) return;
-          exerciseRef?.current?.scrollToIndex({index: 0, animated:true})
-           openTab('Home1', {screen: 'ExerciseCard', params: {item: first}})
-          }
-      },
-      true,
-    );
-  }, [tour.register, bodyExercises, navigation]);
+    register({id: 'save-button', order: 4, showChildInTooltip: false, placement: 'bottom', onActivate: () => {
+      const first = bodyExercises[0];
+      if (!first) { return; }
+      exerciseRef.current?.scrollToOffset({offset: 0, animated: true});
+      openTab('Home1', {screen: 'ExerciseCard', params: {item: first}});
+    }}, true);
+  }, [register, bodyExercises]);
 
-  if (loading) {
-    return <Text>Loading...</Text>;
-  }
-
-  const renderItem = ({item, index}: ListRenderItemInfo<ExerciseInterface>) => {
-    const card = (
-      <View collapsable={false}>
-        <TouchableOpacity
-          style={{marginLeft: 10, width: '100%'}}
-          onPress={() => {
-            navigation.navigate('ExerciseCard', {
-              item: item,
-            });
-          }}>
-          <BodyPartExercise item={item} />
-        </TouchableOpacity>
-      </View>
-    );
-
-    if (index === 0) {
-      return tour.wrap(`individual-bicep`, card, {
-        order: 3,
-        placement: 'bottom',
-        showChildInTooltip: false, // avoids your misalignment overlay issue
-        content: (
-          <Text>
-            Tap to see {parts.charAt(0).toUpperCase() + parts.slice(1)}{' '}
-            exercises
-          </Text>
-        ),
-        onClose: () => setTip(false),
-      });
-    }
-     return card;
+  const button = (label: string, onPress: () => void) => <TouchableOpacity accessibilityRole="button" onPress={onPress} style={styles.button}><Text style={styles.buttonText}>{label}</Text></TouchableOpacity>;
+  const renderItem = ({item, index}: ListRenderItemInfo<Exercise>) => {
+    const card = <View collapsable={false}><TouchableOpacity accessibilityRole="button" accessibilityLabel={`View ${item.name}`} style={styles.row} onPress={() => navigation.navigate('ExerciseCard', {item})}><BodyPartExercise item={item} /></TouchableOpacity></View>;
+    return index === 0 ? tour.wrap('individual-bicep', card, {order: 3, placement: 'bottom', showChildInTooltip: false, content: <Text>Tap an exercise to see its instructions and save it.</Text>}) : card;
   };
-
-  return (
-    <>
-      {bodyExercises.length > 0 && (
-        <FlatList
-          contentContainerStyle={styles.flatListContainer}
-          inverted={false}
-          data={bodyExercises}
-          ref={exerciseRef}
-          keyExtractor={(item: any, index) =>
-            item.id ? item.id.toString() + index : `index-${index}`
-          }
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore ? <ActivityIndicator /> : null}
-          onEndReached={() => {
-            console.log('This function is being called');
-            loadMoreExercises();
-          }}
-          ListHeaderComponent={
-            <View style={styles.headerButtons}>
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.goBack();
-                }}>
-                <AntDesign
-                  style={styles.goBackButton}
-                  name="leftcircle"
-                  size={24}
-                  color={'black'}
-                />
-              </TouchableOpacity>
-              <Text style={styles.headerTextFlatlist}>
-                {parts.charAt(0).toUpperCase() + parts.slice(1)}
-              </Text>
-            </View>
-          }
-          showsVerticalScrollIndicator={false}
-          renderItem={renderItem}
-        />
-      )}
-      {bodyExercises.length === 0 && parts !== 'legs' && (<SafeAreaView><TouchableOpacity onPress={() => navigation.goBack()}><Text>Back</Text></TouchableOpacity><Text>{parts.charAt(0).toUpperCase() + parts.slice(1)}</Text><Text>{error?.message || 'No exercises found.'}</Text></SafeAreaView>)}
-      {bodyExercises.length === 0 && parts === 'legs' && (
-        <SafeAreaView>
-          <Stack spacing={10}>
-            <HStack p={20} spacing={20} items="center" justify="between">
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.goBack();
-                }}>
-                <AntDesign name="leftcircle" size={24} color={'black'} />
-              </TouchableOpacity>
-              <Text
-                color="black"
-                style={{fontSize: 26, fontFamily: 'Roboto-Medium'}}>
-                Legs
-              </Text>
-              <Entypo name="dots-three-vertical" size={15} color={'black'} />
-            </HStack>
-
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('BodyPart', {
-                  bodyParts: 'glutes',
-                });
-              }}>
-              <HStack style={styles.exerciseCardContainerContainer}>
-                <View style={styles.exerciseCardContainer}>
-                  <Text style={styles.exerciseName}>Glutes</Text>
-                  <Image source={gluteImg} style={styles.exerciseImage} />
-                </View>
-              </HStack>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('BodyPart', {
-                  bodyParts: 'hamstrings',
-                });
-              }}>
-              <HStack style={styles.exerciseCardContainerContainer}>
-                <View style={styles.exerciseCardContainer}>
-                  <Text style={styles.exerciseName}>Hamstring</Text>
-                  <Image source={hamstringImg} style={styles.exerciseImage} />
-                </View>
-              </HStack>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('BodyPart', {
-                  bodyParts: 'quadriceps',
-                });
-              }}>
-              <HStack style={styles.exerciseCardContainerContainer}>
-                <View style={styles.exerciseCardContainer}>
-                  <Text style={styles.exerciseName}>Quads</Text>
-                  <Image source={quadImg} style={styles.exerciseImage} />
-                </View>
-              </HStack>
-            </TouchableOpacity>
-          </Stack>
-        </SafeAreaView>
-      )}
-    </>
-  );
-};
-
+  return <View style={[styles.screen, {paddingTop: top}]}>
+    <View style={styles.header}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" onPress={() => navigation.goBack()} style={styles.back}><Text style={styles.backText}>‹</Text></TouchableOpacity>
+      <View style={styles.heading}><Text style={styles.title}>{title}</Text><Text style={styles.subtitle}>{parts === 'legs' ? 'Choose a muscle group' : 'Find an exercise to add to your workouts'}</Text></View>
+    </View>
+    {parts === 'legs' ? <ScrollView contentContainerStyle={styles.groups} showsVerticalScrollIndicator={false}>
+      {legGroups.map(group => <TouchableOpacity key={group.muscle} accessibilityRole="button" accessibilityLabel={`Browse ${group.name} exercises`} onPress={() => navigation.navigate('BodyPart', {bodyParts: group.muscle})}>
+        <ImageBackground source={group.image} style={styles.group} imageStyle={styles.groupImage}>
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={StyleSheet.absoluteFill} />
+          <View style={styles.groupLabel}><Text style={styles.groupName}>{group.name}</Text><Text style={styles.groupArrow}>↗</Text></View>
+        </ImageBackground>
+      </TouchableOpacity>)}
+    </ScrollView> : <FlatList key={parts} ref={exerciseRef} data={bodyExercises} renderItem={renderItem} keyExtractor={item => String(item.id)} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}
+      refreshing={loading && bodyExercises.length > 0} onRefresh={refresh}
+      onEndReachedThreshold={0.3} onEndReached={() => { if (hasMore && !error && !loading) { loadMoreExercises(); } }}
+      ListEmptyComponent={<View style={styles.message}>{loading ? <><ActivityIndicator color="black" /><Text style={styles.messageText}>Loading exercises…</Text></> : <><Text style={styles.messageTitle}>{error ? 'Couldn’t load exercises' : 'No exercises yet'}</Text><Text style={styles.messageText}>{error ? 'Check your connection and try again.' : 'Try another muscle group or check again later.'}</Text>{button('Try again', refresh)}</>}</View>}
+      ListFooterComponent={bodyExercises.length > 0 ? <View style={styles.footer}>{loadingMore ? <ActivityIndicator color="black" /> : error ? <><Text style={styles.messageText}>Couldn’t load more exercises.</Text>{button('Retry loading more', loadMoreExercises)}</> : hasMore ? button('Load more exercises', loadMoreExercises) : <Text style={styles.messageText}>You’ve reached the end</Text>}</View> : null}
+    />}
+  </View>;
+}
 const styles = StyleSheet.create({
-  goBackButton: {
-    marginLeft: 10,
-  },
-  headerButtons: {
-    justifyContent: 'space-between',
-    marginBottom: 30,
-    width: '100%',
-    marginRight: 20,
-  },
-  exerciseName: {
-    top: 15,
-    left: 15,
-    color: 'gray',
-    position: 'absolute',
-    zIndex: 1,
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  exerciseCategory: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  exerciseCard: {
-    borderWidth: 0.3,
-    borderColor: '#9A9B9B',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  exerciseImage: {
-    width: '100%',
-    height: 198,
-    borderRadius: 10,
-    padding: 10,
-  },
-  exerciseCardContainer: {
-    width: '100%',
-    height: 150,
-    position: 'relative',
-  },
-  exerciseCardContainerContainer: {
-    borderRadius: 10,
-    height: 200,
-    padding: 10,
-  },
-  welcomeUserText: {
-    fontWeight: 'bold',
-    fontFamily: 'Arial',
-    color: 'black',
-  },
-  categoryStack: {
-    position: 'absolute',
-    bottom: -50,
-    padding: 10,
-    justifyContent: 'center',
-  },
-  flatListContainer: {
-    // marginLeft: 10,
-    marginTop: 50,
-  },
-  headerTextFlatlist: {
-    textAlign: 'center',
-    fontSize: 20,
-  },
+  screen: {flex: 1, backgroundColor: '#f2f2f2'},
+  header: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12},
+  back: {width: 44, height: 44, borderRadius: 22, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center'},
+  backText: {fontSize: 30, lineHeight: 34, color: 'black'},
+  heading: {flex: 1, gap: 4}, title: {fontSize: 20, fontWeight: '600', color: 'black'},
+  subtitle: {fontSize: 12, color: '#555'},
+  list: {paddingHorizontal: 20, paddingTop: 4, paddingBottom: 90, flexGrow: 1},
+  row: {padding: 10, backgroundColor: 'white', borderRadius: 12, marginBottom: 8},
+  message: {padding: 22, borderRadius: 12, backgroundColor: 'white', alignItems: 'center', gap: 12, marginTop: 8},
+  messageTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
+  messageText: {fontSize: 13, lineHeight: 20, color: '#555', textAlign: 'center'},
+  button: {minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', borderRadius: 10},
+  buttonText: {fontSize: 13, fontWeight: '600', color: 'white'},
+  footer: {alignItems: 'center', paddingVertical: 18, gap: 10},
+  groups: {paddingHorizontal: 20, paddingTop: 4, paddingBottom: 90, gap: 12},
+  group: {height: 144, borderRadius: 14, overflow: 'hidden', justifyContent: 'flex-end'},
+  groupImage: {borderRadius: 14},
+  groupLabel: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16},
+  groupName: {fontSize: 18, fontWeight: '600', color: 'white'}, groupArrow: {fontSize: 22, color: 'white'},
 });
-
-export default BodyPart;

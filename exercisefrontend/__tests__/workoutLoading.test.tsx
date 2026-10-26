@@ -27,3 +27,22 @@ test('an old load cannot overwrite a newer refresh', async () => {
   await act(async () => { resolve({payload: [{id: 'old'}]}); });
   expect(saved.fetchedExercises).toEqual([{id: 'new'}]); expect(saved.loading).toBe(false);
 });
+
+test('muscle refresh ignores an older page and allows another load after failure', async () => {
+  const {useMuscleExercise} = require('../hooks/exercises');
+  let muscle: ReturnType<typeof useMuscleExercise>;
+  function Muscle() { muscle = useMuscleExercise('biceps'); return null; }
+  let resolve!: (data: any) => void;
+  mockFetch.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  await act(async () => { tree = renderer.create(<Muscle />); });
+  mockFetch.mockResolvedValueOnce({payload: {results: [{id: 'fresh'}], next: 'page-two'}});
+  await act(async () => { muscle.refresh(); });
+  await act(async () => { resolve({payload: {results: [{id: 'stale'}], next: null}}); });
+  expect(muscle.bodyExercises).toEqual([{id: 'fresh'}]);
+  mockFetch.mockRejectedValueOnce(new Error('Offline'));
+  await act(async () => { muscle.loadMoreExercises(); });
+  expect(muscle.bodyExercises).toEqual([{id: 'fresh'}]); expect(muscle.error?.message).toBe('Offline');
+  mockFetch.mockResolvedValueOnce({payload: {results: [{id: 'fresh'}, {id: 'second'}], next: null}});
+  await act(async () => { muscle.loadMoreExercises(); });
+  expect(muscle.bodyExercises).toEqual([{id: 'fresh'}, {id: 'second'}]); expect(muscle.error).toBeNull(); expect(muscle.hasMore).toBe(false);
+});
