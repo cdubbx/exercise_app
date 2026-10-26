@@ -1,50 +1,25 @@
-import {View, Text, SafeAreaView, Image, StyleSheet} from 'react-native';
-import {Box, HStack, Text as MatText, Stack} from '@react-native-material/core';
-import React, {useEffect} from 'react';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-export default function FetchedExercise({item}: any) {
-  const exercise = Array.isArray(item)
-    ? item[0].exercise
-    : item?.exercise || item?.saved_workout_details?.exercise || item;
-  useEffect(() => {}, []);
+import React from 'react';
+import {Image, StyleSheet, Text, View} from 'react-native';
 
-  return (
-    <View style={styles.container}>
-      <HStack spacing={14} items="center" style={{flex: 1}}>
-        <Image
-          source={{
-            uri:
-              Array.isArray(exercise?.img_url) && exercise?.img_url.length > 0
-                ? exercise?.img_url[0]
-                : 'fall-back.png',
-            cache: 'default',
-          }}
-          style={{height: 60, width: 60, borderRadius: 10}}
-        />
-        <Stack spacing={3} style={{flex: 1}}>
-          <Text style={{fontSize: 16, color: 'black', fontWeight: 'bold'}}>
-            {exercise?.name}
-          </Text>
-          <Text style={{fontSize: 11, color: 'black'}}>
-            {exercise?.category}
-          </Text>
-        </Stack>
-      </HStack>
-
-      <MaterialIcons
-        name="keyboard-arrow-right"
-        size={30}
-        color={'#b1b1b1ff'}
-      />
+export default function FetchedExercise({item, showChevron = true}: {item: any; showChevron?: boolean}) {
+  const entry = Array.isArray(item) ? item[0] : item;
+  const exercise = entry?.exercise || entry?.saved_workout_details?.exercise || entry;
+  const image = Array.isArray(exercise?.img_url) ? exercise.img_url[0] : exercise?.img_url;
+  return <View style={styles.row}>
+    {image ? <Image source={{uri: image, cache: 'default'}} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}
+    <View style={styles.details}>
+      <Text numberOfLines={2} style={styles.name}>{exercise?.name || 'Workout'}</Text>
+      {!!exercise?.category && <Text style={styles.category}>{exercise.category}</Text>}
     </View>
-  );
+    {showChevron && <Text style={styles.chevron}>›</Text>}
+  </View>;
 }
-
 const styles = StyleSheet.create({
-  container: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  row: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12},
+  image: {width: 48, height: 48, borderRadius: 8},
+  placeholder: {backgroundColor: '#eee'},
+  details: {flex: 1, gap: 4},
+  name: {fontSize: 14, fontWeight: '600', color: 'black'},
+  category: {fontSize: 12, color: '#555'},
+  chevron: {fontSize: 26, color: '#777'},
 });

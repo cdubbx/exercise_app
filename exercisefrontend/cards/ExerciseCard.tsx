@@ -1,207 +1,107 @@
-import {openTab} from '../services/navigation';
-import {
-  View,
-  Image,
-  StyleProp,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
-import React, {useEffect, useState} from 'react';
-import {Box, HStack, Stack, Text} from '@react-native-material/core';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import LinearGradient from 'react-native-linear-gradient';
-import Entypo from 'react-native-vector-icons/Entypo';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import React, {useEffect, useRef, useState} from 'react';
+import {ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {NavigationProp, RouteProp} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useSaveWorkOuts, useSetExercise} from '../hooks/exercises';
 import {HomeStackParamList} from '../interfaces/screentypes';
-import {NavigationProp, RouteProp} from '@react-navigation/native';
-import {Alert} from 'react-native';
-import { useWalkThrough } from '../utils/TutorialSystemService';
+import {useWalkThrough} from '../utils/TutorialSystemService';
+import {openTab} from '../services/navigation';
 
 interface Props {
   navigation: NavigationProp<HomeStackParamList, 'ExerciseCard'>;
   route: RouteProp<HomeStackParamList, 'ExerciseCard'>;
 }
+const capitalise = (value?: string) => value ? value.charAt(0).toUpperCase() + value.slice(1) : 'Not specified';
 
-// Note the correction in the prop name from 'exericse' to 'exercise' and the typing syntax
-const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
+export default function ExerciseCard({route, navigation}: Props) {
+  const exercise = route.params?.item;
   const {addExercises} = useSetExercise();
-  const {saveWorkouts, error, loading} = useSaveWorkOuts();
-  const [showMore, setShowMore] = useState<boolean>(false);
-  const [showMoreText, setShowMoreText] = useState<string>('Show more');
+  const {saveWorkouts, loading} = useSaveWorkOuts();
+  const [expanded, setExpanded] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const busy = useRef(false);
+  const generation = useRef(0);
   const tour = useWalkThrough();
-
-  const exerciseItems = route.params?.item;
-  const formatInstructions = (raw: any): string => {
-    if (Array.isArray(raw)) {
-      raw = raw.join(' ');
-    }
-    if (typeof raw !== 'string') {
-      return '';
-    }
-    // Insert a space after any period that isn't followed by whitespace or end-of-string.
-    return raw.replace(/\.(?!\s|$)/g, '. ');
-  };
-
+  const {register} = tour;
+  const insets = useSafeAreaInsets();
+  const image = Array.isArray(exercise?.img_url) ? exercise.img_url[0] : exercise?.img_url;
+  const rawInstructions = exercise?.instructions;
+  const instructions = (Array.isArray(rawInstructions) ? rawInstructions.filter(step => typeof step === 'string').join('\n\n') : typeof rawInstructions === 'string' ? rawInstructions : '').replace(/\.(?!\s|$)/g, '. ');
+  useEffect(() => { register({id: 'plus-button', order: 5, onActivate: () => openTab('Calendar')}, true); }, [register]);
   useEffect(() => {
-    tour.register({id: 'plus-button', order: 5, onActivate: () => openTab('Calendar')}, true);
-  }, [tour.register, navigation]);
-
-const onSaveWorkout = async () => {
+    const current = generation;
+    current.current++; setSaved(false); setExpanded(false);
+    return () => { current.current++; };
+  }, [exercise?.id]);
+  const save = async () => {
+    if (busy.current || loading || saved || !exercise) { return; }
+    busy.current = true;
+    const version = generation.current;
     try {
-      if (exerciseItems !== undefined) {
-        const result = await saveWorkouts(exerciseItems);
-        if (result) {
-          addExercises(exerciseItems);
-          Alert.alert(result.created === false ? 'Already saved' : 'Workout saved', result.message);
-        }
+      const result = await saveWorkouts(exercise);
+      if (result && version === generation.current) {
+        if (result.created !== false) { addExercises(exercise); }
+        setSaved(true);
+        Alert.alert(result.created === false ? 'Already saved' : 'Workout saved', result.message || 'Find this exercise in your saved workouts.');
       }
-    } catch (err: any) {
-      console.log(err);
-      Alert.alert(
-        'Error',
-        err.message || 'An error occurred while saving the workout.',
-      );
-    }
+    } catch (failure) {
+      if (version === generation.current) { Alert.alert('Could not save workout', failure instanceof Error ? failure.message : 'Please try again.'); }
+    } finally { busy.current = false; }
   };
+  const button = <TouchableOpacity accessibilityRole="button" accessibilityLabel="Save workout" disabled={loading || saved || !exercise}
+    onPress={save} style={[styles.saveButton, saved && styles.savedButton, loading && styles.pending]}>
+    {loading ? <ActivityIndicator color="white" /> : <Text style={[styles.saveText, saved && styles.savedText]}>{saved ? '✓ Saved' : 'Save workout'}</Text>}
+  </TouchableOpacity>;
 
-  const toggleShowMore = () => {
-    setShowMore(prev => !prev);
-    if (!showMore) {
-      setShowMoreText('Show less');
-    } else {
-      setShowMoreText('Show more');
-    }
-  };
-
-  const saveButton = (
-        <TouchableOpacity
-            style={styles.saveButton}
-            disabled={loading}
-            onPress={() => {
-              onSaveWorkout();
-            }}>
-            <Text style={styles.saveButtonText} color="white">
-              Save
-            </Text>
-          </TouchableOpacity>
-  )
-
-  return (
-    <ScrollView style={styles.container}>
-      <Stack spacing={10}>
-        <HStack ph={25} pv={15} spacing={20} items="center" justify="between">
-          <TouchableOpacity
-            onPress={() => {
-              navigation.goBack();
-            }}>
-            <AntDesign name="leftcircle" size={20} color={'black'} />
-          </TouchableOpacity>
-          <Text color="black" style={styles.headerText}>
-            {exerciseItems?.name}
-          </Text>
-          <Box mr={-10}>
-            <Entypo name="dots-three-vertical" size={15} color={'black'} />
-          </Box>
-        </HStack>
-        <Image
-        
-          source={{
-            uri:
-              Array.isArray(exerciseItems?.img_url) &&
-              exerciseItems?.img_url.length > 0
-                ? exerciseItems?.img_url[0]
-                : 'fallback_image_url_here',
-                cache:'default'
-          }}
-          style={{height: 300, width: 'auto'}}
-          
-        />
-        <Stack p={10} style={styles.contentContainer} spacing={20}>
-          <Text style={styles.categoryText}>
-            Category:{' '}
-            {exerciseItems?.category?.charAt(0)?.toUpperCase() +
-              exerciseItems?.category?.slice(1)}
-          </Text>
-          <Text style={styles.equipmentText}>
-            Equipment:{' '}
-            {exerciseItems?.equipment ? exerciseItems?.equipment?.charAt(0)?.toUpperCase() +
-              exerciseItems?.equipment?.slice(1) : "No Equipment Required"}
-          </Text>
-
-          <Text style={styles.equipmentText}>Muscles: {(exerciseItems?.primaryMuscles ?? []).join(', ') || 'Not specified'}</Text>
-          <Text
-            numberOfLines={showMore ? undefined : 3}
-            style={styles.instructions}>
-            {formatInstructions(exerciseItems?.instructions)}
-          </Text>
-          <TouchableOpacity onPress={toggleShowMore}>
-            <Text>{showMoreText}</Text>
-          </TouchableOpacity>
-
-              
-              {
-                tour.wrap('save-button', saveButton, {
-                  order:4,
-                  placement:'top',
-                  showChildInTooltip:true,
-                  content: <Text>
-                    Click Save to an Exercise
-                  </Text>,
-                  onClose() {
-                    tour.stop()
-                  },
-                  
-                })
-              }
-              
-      
-        </Stack>
-      </Stack>
+  return <View style={[styles.screen, {paddingTop: insets.top + 8}]}>
+    <View style={styles.header}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Back" onPress={() => navigation.goBack()} style={styles.backButton}><Text style={styles.back}>‹</Text></TouchableOpacity>
+      <Text style={styles.name}>{exercise?.name || 'Exercise'}</Text><View style={styles.backButton} />
+    </View>
+    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {image ? <Image source={{uri: image, cache: 'default'}} resizeMode="contain" style={styles.image} /> : null}
+      <View style={styles.metadata}>
+        {[['Category', capitalise(exercise?.category)], ['Equipment', exercise?.equipment ? capitalise(exercise.equipment) : 'No equipment required'],
+          ['Muscles', (exercise?.primaryMuscles ?? []).join(', ') || 'Not specified']].map(([label, value]) => <View key={label} style={styles.detailRow}>
+          <Text style={styles.label}>{label}</Text><Text style={styles.value}>{value}</Text>
+        </View>)}
+      </View>
+      <View style={styles.instructions}>
+        <Text style={styles.sectionTitle}>How to do it</Text>
+        <Text numberOfLines={expanded ? undefined : 4} style={styles.instructionText}>{instructions || 'Instructions aren’t available for this exercise.'}</Text>
+        {!!instructions && <TouchableOpacity accessibilityRole="button" accessibilityState={{expanded}} onPress={() => setExpanded(previous => !previous)} style={styles.expandButton}>
+          <Text style={styles.expandText}>{expanded ? 'Show less' : 'Show more'}</Text>
+        </TouchableOpacity>}
+      </View>
     </ScrollView>
-  );
-};
-
+    <View style={styles.footer}>
+      {tour.wrap('save-button', button, {order: 4, placement: 'top', showChildInTooltip: true, content: <Text>Save an exercise here to add it to your plan later.</Text>, onClose: () => tour.stop()})}
+      <Text style={styles.footerHint}>{saved ? 'Saved to your profile.' : 'Save this exercise to plan it later.'}</Text>
+    </View>
+  </View>;
+}
 const styles = StyleSheet.create({
-  container: {
-    marginTop: 50,
-  },
-  instructions: {
-    fontSize: 13,
-    color: '#323131',
-    textAlign: 'left',
-  },
-  saveButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 5,
-    backgroundColor: 'black',
-    borderRadius: 10,
-    width: '70%',
-    alignSelf: 'center',
-    marginTop: 20,
-  },
-  saveButtonText: {
-    textAlign: 'center',
-    fontWeight: '700',
-    fontSize: 18,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-  },
-  equipmentText: {
-    fontSize: 20,
-    color: 'black',
-  },
-  categoryText: {
-    fontSize: 20,
-    color: 'black',
-  },
-  headerText: {
-    fontSize: 20,
-    width: '70%',
-    textAlign: 'center',
-  },
+  screen: {flex: 1, backgroundColor: '#f2f2f2'},
+  header: {minHeight: 52, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8},
+  backButton: {width: 44, minHeight: 44, justifyContent: 'center'},
+  back: {fontSize: 32, color: 'black'},
+  name: {flex: 1, fontSize: 16, lineHeight: 21, fontWeight: '600', color: 'black', textAlign: 'center'},
+  content: {padding: 20, paddingTop: 12, gap: 16, paddingBottom: 24},
+  image: {height: 220, width: '100%', borderRadius: 12, backgroundColor: '#e8e8e8'},
+  metadata: {gap: 9, paddingBottom: 14, borderBottomWidth: 1, borderColor: '#ddd'},
+  detailRow: {flexDirection: 'row', gap: 12},
+  label: {width: 78, fontSize: 12, color: '#666', lineHeight: 19},
+  value: {flex: 1, fontSize: 13, color: 'black', lineHeight: 19},
+  instructions: {gap: 8},
+  sectionTitle: {fontSize: 15, fontWeight: '600', color: 'black'},
+  instructionText: {fontSize: 13, color: '#444', lineHeight: 20},
+  expandButton: {minHeight: 40, justifyContent: 'center', alignSelf: 'flex-start'},
+  expandText: {fontSize: 12, fontWeight: '600', color: 'black'},
+  footer: {paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, borderTopWidth: 1, borderColor: '#ddd', gap: 7},
+  saveButton: {minHeight: 44, borderRadius: 10, backgroundColor: 'black', alignItems: 'center', justifyContent: 'center'},
+  saveText: {fontSize: 14, fontWeight: '600', color: 'white'},
+  savedButton: {backgroundColor: 'white', borderWidth: 1, borderColor: '#ccc'},
+  savedText: {color: 'black'},
+  pending: {opacity: 0.5},
+  footerHint: {fontSize: 11, color: '#555', textAlign: 'center'},
 });
-export default ExerciseCard;

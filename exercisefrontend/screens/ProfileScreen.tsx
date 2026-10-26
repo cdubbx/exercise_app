@@ -108,13 +108,13 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
       </View>
       <View style={styles.identityCard}>
         <View style={styles.identityRow}>
-          <Avatar size={{height: 76, width: 76}} imageUrl={user?.image_url} />
+          <Avatar size={{height: 52, width: 52}} imageUrl={user?.image_url} />
           <View style={styles.identityText}>
             <Text style={styles.username}>{user?.username || 'Your profile'}</Text>
             {!!joined && joined !== 'Invalid date' && <Text style={styles.supportingText}>Member since {joined}</Text>}
           </View>
         </View>
-        <TouchableOpacity accessibilityRole="button" onPress={openEditor} style={styles.editButton}><Text style={styles.editLabel}>Edit Profile</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" onPress={openEditor} hitSlop={4} style={styles.editButton}><Text style={styles.editLabel}>Edit Profile</Text></TouchableOpacity>
       </View>
       <View style={styles.stats}>
         <View style={styles.statCard}><Text style={styles.statValue}>{streak} {streak === 1 ? 'day' : 'days'}</Text><Text style={styles.supportingText}>App streak</Text></View>
@@ -196,31 +196,31 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
 }
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: '#f2f2f2'},
-  content: {paddingHorizontal: 20, paddingBottom: 100, gap: 20},
+  content: {paddingHorizontal: 20, paddingBottom: 100, gap: 12},
   header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  title: {fontSize: 26, fontWeight: 'bold', color: 'black'},
+  title: {fontSize: 24, fontWeight: 'bold', color: 'black'},
   menuButton: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   menuText: {fontSize: 22, color: 'black'},
-  identityCard: {backgroundColor: 'white', borderRadius: 20, padding: 20, gap: 18},
-  identityRow: {flexDirection: 'row', alignItems: 'center', gap: 16},
-  identityText: {flex: 1, gap: 7},
-  username: {fontSize: 22, fontWeight: '600', color: 'black'},
-  supportingText: {fontSize: 13, lineHeight: 20, color: '#555'},
-  editButton: {minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center', justifyContent: 'center'},
-  editLabel: {fontSize: 14, fontWeight: '600', color: 'black'},
-  stats: {flexDirection: 'row', flexWrap: 'wrap', gap: 12},
-  statCard: {flex: 1, minWidth: 135, backgroundColor: 'white', borderRadius: 20, padding: 18, gap: 6},
-  statValue: {fontSize: 23, fontWeight: '600', color: 'black'},
-  goalsCard: {backgroundColor: 'white', padding: 20, borderRadius: 20, gap: 18},
+  identityCard: {backgroundColor: 'white', borderRadius: 12, padding: 12, gap: 8},
+  identityRow: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  identityText: {flex: 1, gap: 3},
+  username: {fontSize: 18, fontWeight: '600', color: 'black'},
+  supportingText: {fontSize: 12, lineHeight: 18, color: '#555'},
+  editButton: {minHeight: 36, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center', justifyContent: 'center'},
+  editLabel: {fontSize: 13, fontWeight: '600', color: 'black'},
+  stats: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
+  statCard: {flex: 1, minWidth: 115, backgroundColor: 'white', borderRadius: 12, padding: 12, gap: 2},
+  statValue: {fontSize: 18, fontWeight: '600', color: 'black'},
+  goalsCard: {backgroundColor: 'white', padding: 12, borderRadius: 12, gap: 10},
   goalsRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 16},
-  goal: {flex: 1, minWidth: 115, gap: 6},
-  goalValue: {fontSize: 19, fontWeight: '500', color: 'black'},
-  sectionTitle: {fontSize: 17, fontWeight: '600', color: 'black'},
+  goal: {flex: 1, minWidth: 115, gap: 3},
+  goalValue: {fontSize: 16, fontWeight: '500', color: 'black'},
+  sectionTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
   sectionHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 8},
   textButton: {minHeight: 44, justifyContent: 'center'},
   linkText: {fontSize: 13, fontWeight: '600', color: 'black'},
-  workoutCard: {backgroundColor: 'white', padding: 14, borderRadius: 20, marginBottom: 12},
-  emptyCard: {backgroundColor: 'white', padding: 20, borderRadius: 20, gap: 12},
+  workoutCard: {backgroundColor: 'white', padding: 10, borderRadius: 12, marginBottom: 8},
+  emptyCard: {backgroundColor: 'white', padding: 14, borderRadius: 12, gap: 10},
   emptyTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
   loader: {padding: 20},
   editorHeader: {minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20},
@@ -228,9 +228,9 @@ const styles = StyleSheet.create({
   cancelButton: {minHeight: 44, width: 60, justifyContent: 'center'},
   headerSpacer: {width: 60},
   editorFooter: {paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderColor: '#ddd'},
-  editorContent: {padding: 20, paddingBottom: 40, gap: 20},
+  editorContent: {padding: 20, paddingBottom: 24, gap: 16},
   photoButton: {alignSelf: 'center', alignItems: 'center', gap: 12, minHeight: 44},
-  formCard: {padding: 18, borderRadius: 20, backgroundColor: 'white', gap: 12},
+  formCard: {padding: 14, borderRadius: 12, backgroundColor: 'white', gap: 8},
   fieldLabel: {fontSize: 13, fontWeight: '500', color: '#555'},
   input: {minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', color: 'black', fontSize: 15},
   heightRow: {flexDirection: 'row'},

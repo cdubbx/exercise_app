@@ -88,17 +88,25 @@ export const useSavePlannedWorkouts = () => {
 };
 
 export const useFetchedSavedWorkOuts = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [fetchedExercises, setFetchedExercises] = useState<any[]>([]);
   const [error, setError] = useState('');
-  useFocusEffect(useCallback(() => {
-    let active = true;
+  const generation = useRef(0);
+  const refresh = useCallback(async () => {
+    const version = ++generation.current;
     setLoading(true); setError('');
-    request('userSavedWorkouts/').then(data => { if (active) setFetchedExercises(data); })
-      .catch(err => { if (active) setError(err.message); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []));
-  return {fetchedExercises, loading, error};
+    try {
+      const data = await request('userSavedWorkouts/');
+      if (version === generation.current) { setFetchedExercises(data); }
+    } catch (failure) {
+      if (version === generation.current) { setError(failure instanceof Error ? failure.message : 'Please try again.'); }
+    } finally { if (version === generation.current) { setLoading(false); } }
+  }, []);
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { generation.current++; };
+  }, [refresh]));
+  return {fetchedExercises, loading, error, refresh};
 };
 
 export const useFetchedPlanedWorkouts = () => {
@@ -117,31 +125,41 @@ export const useSetExercise = () => {
   return context;
 };
 
-export const useUploadWorkOuts = () => {
-  const [isLoading, setLoading] = useState(false);
+export const useUploadWorkOuts = (includePublic = true) => {
+  const [isLoading, setLoading] = useState(true);
   const [userWorkouts, setUserWorkouts] = useState<any[]>([]);
   const [publicWorkouts, setPublicWorkouts] = useState<any[]>([]);
   const [error, setError] = useState('');
-  useFocusEffect(useCallback(() => {
-    let active = true;
+  const generation = useRef(0);
+  const refresh = useCallback(async () => {
+    const version = ++generation.current;
     setLoading(true); setError('');
     const loadAll = async (path: string) => {
       let url: string | null = `${API_URL}/${path}`;
       const items: any[] = [];
-      while (url && active) { const page = await readResponse(await apiFetch(url)); items.push(...page.results); url = page.next; }
+      while (url && version === generation.current) {
+        const page = await readResponse(await apiFetch(url));
+        items.push(...page.results); url = page.next;
+      }
       return items;
     };
-    Promise.all([loadAll('user-upload-workouts/'), loadAll('user-upload-workouts/?is_public=true')])
-      .then(([own, shared]) => { if (active) { setUserWorkouts(own); setPublicWorkouts(shared); } })
-      .catch(err => { if (active) setError(err.message); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []));
+    try {
+      const [own, shared] = await Promise.all([loadAll('user-upload-workouts/'), includePublic ? loadAll('user-upload-workouts/?is_public=true') : Promise.resolve([])]);
+      if (version === generation.current) { setUserWorkouts(own); setPublicWorkouts(shared); }
+    } catch (failure) {
+      if (version === generation.current) { setError(failure instanceof Error ? failure.message : 'Please try again.'); }
+    } finally { if (version === generation.current) { setLoading(false); } }
+  }, [includePublic]);
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { generation.current++; };
+  }, [refresh]));
   const addWorkout = async (exercise: any) => {
     setLoading(true);
     try { return (await request('user-upload-workout/', 'POST', exercise)).message; }
     finally { setLoading(false); }
   };
-  return {addWorkout, isLoading, userWorkouts, publicWorkouts, error};
+  return {addWorkout, isLoading, userWorkouts, publicWorkouts, error, refresh};
 };
 
 export const useDeleteWorkout = () => {

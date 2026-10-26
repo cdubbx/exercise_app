@@ -25,7 +25,7 @@ Implementation does not automatically close issues. Device and hosted-provider v
 ## Verification
 
 - Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 48 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Frontend: 65 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -116,3 +116,13 @@ Home keeps all five original body-part photographs, labels and exercise-category
 Removed unused Home imports/state and corrected the Home navigator exercise-detail parameter type to match the existing exercise object. The existing three-character threshold, 300ms debounce and stale-response protection remain.
 
 Verification: 48 frontend tests, TypeScript and scoped lint pass. New Home checks cover five body-part links and profile navigation, debounce/threshold, opening a result, clearing search, stale responses after clearing, and retry after failure. iOS simulator checked the original-artwork catalog, live curl search and opening an exercise result; catalog/search screenshots were captured. Android layout remains unverified.
+
+## Compact profile and workout saving screens
+
+Profile retains the newer card hierarchy with smaller padding, avatar, type, radii and gaps. Identity, streak/saved counts and goals remain in the same sections. Shared workout rows use compact thumbnails, constrained names and a safe missing-image state. The profile edit/cancel behavior is retained.
+
+Saved Workouts has balanced Exercises / Your Exercises tabs, compact rows, a visible options action and the existing long-press action. Each tab uses its own loading/error state and supports retry/pull-to-refresh. Private custom exercises load without requesting the deferred public feed. Confirmations explain that deleting a saved/custom exercise also removes calendar plans referencing it; rows disappear only after server success. Regular and custom exercises still open the existing day/sets/reps screen.
+
+Exercise details keeps its photo and content with smaller metadata, expandable readable instructions and a persistent Save workout button. Successful/already-saved responses show a saved state; failed saves remain retryable. Upload Workout has compact fields, Back, a visible optional-photo action with previews, and a persistent save button. Muscle text is kept as typed and split by commas only on submit. Name is required, photo selection cancellation is quiet, pending uploads block submit, errors preserve drafts, and custom exercises are created private. The floating bot shortcut is hidden on both saving screens to avoid covering their actions.
+
+Verification: 65 frontend tests, TypeScript and scoped lint pass. Added checks for saved/custom routing, tab-specific errors, retry, loading, server-confirmed deletion and failures; private-only loads and stale refresh responses; saving/already-saved/failure feedback; and custom form validation, muscle entry, upload cancellation, upload/save ordering and failure retention. iOS simulator inspected the compact profile, both library tabs, custom-add navigation, Upload Workout layout, and catalog exercise details with a visible save action. Profile, library and exercise-detail screenshots were captured. Android device layout remains unverified. No AI/social/provider integrations were added.
