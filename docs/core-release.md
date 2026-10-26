@@ -25,7 +25,7 @@ Implementation does not automatically close issues. Device and hosted-provider v
 ## Verification
 
 - Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 29 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Frontend: 38 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -88,3 +88,11 @@ Calendar now has a clear heading, an Add workout action, consistent weekday butt
 Removed unused calendar/gradient/component imports, duplicate derived list state and nested unbounded layout. The workout list uses the available screen height and leaves bottom space for the existing floating button. The calendar tutorial anchor remains on Add workout.
 
 Verification: 29 frontend tests, TypeScript and scoped lint pass. Calendar regressions cover weekday filtering, saved-exercise navigation, waiting for deletion success, preserving workouts on deletion failure, and retry after a failed load. iOS simulator checks covered populated/empty days, the removal confirmation (cancelled), and Add workout navigation. Screenshots of populated and empty-day states were captured. Android layout still requires device verification.
+
+## Exercise Bot page cleanup
+
+Exercise Bot uses the same monochrome palette, rounded white cards and black actions as Calendar and workout planning. The blank entry screen now offers editable starter questions and a Browse exercises action. The multiline composer has a clear send control, blank/loading guards, bounded height and keyboard-safe positioning. Incoming exercise links retain the existing root ExerciseCard route. Clear conversation now works with confirmation; Back and the existing tutorial anchor remain available. The floating shortcut is hidden on the chat route by the existing route guard.
+
+Chat failures appear in a separate recovery card, not as assistant answers. Network failures can retry the same question without duplicating it. A 503 response explains that the bot is not available yet and offers Browse exercises. AI recommendations remain deferred under core-first scope; no AI provider or generated-workout feature was added. Message IDs are stable and unique, pending replies cannot reappear after a clear or account change, and automatic scrolling follows new replies only while near the bottom.
+
+Verification: 38 frontend tests, TypeScript and scoped lint pass. New tests cover duplicate/blank sends, retry without duplicate questions, unavailable/missing replies, late replies after clear/account changes, starter drafts, composer guards, confirmation, Back, browsing and exercise navigation. iOS simulator checked starter selection, keyboard spacing, send, the real unavailable response and Browse exercises navigation. Start and unavailable-state screenshots were captured. Android device layout remains unverified.
