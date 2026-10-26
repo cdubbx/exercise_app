@@ -25,7 +25,7 @@ Implementation does not automatically close issues. Device and hosted-provider v
 ## Verification
 
 - Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 38 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Frontend: 44 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -49,7 +49,7 @@ Critical `fast-xml-parser` and `shell-quote` findings from the original lockfile
 
 Apple Health (#10), Blender avatars (#4), trainer playlists (#11), social workout invitations/calendar sharing (#12/#18/#19), PR and weight history/charts (#15/#25/#26), calorie estimates (#16/#48), dark mode (#24), sharing/app-store/NFC links (#32), and AI recommendation expansion (#5).
 
-Spotify was already commented out/incomplete in the local app. Its original Settings design is retained and explains that integration is deferred. The core backend returns a clear unavailable message for recommendations instead of a missing route or a fabricated response. Friend/completed-workout placeholders show an em dash until those data models are implemented.
+Spotify was already commented out/incomplete in the local app. Its original Settings design is retained and explains that integration is deferred. The core backend returns a clear unavailable message for recommendations instead of a missing route or a fabricated response. Friend/completed-workout metrics are omitted from Profile until those data models are implemented.
 
 ## Release 1 BDD follow-up
 
@@ -100,3 +100,11 @@ Verification: 38 frontend tests, TypeScript and scoped lint pass. New tests cove
 ## Public pages deferred
 
 The public/social feed, other-user profiles and public workouts are outside the agreed core-first scope. Their navigation entries are gated off together with PUBLIC_PAGES_ENABLED in App.tsx; the original screens and artwork remain for a later release. The visible tabs are Home, Calendar and Profile. The Home exercise catalog, body-part browsing, exercise details, saved workouts, Calendar and existing profile settings stay available. Public routes are also absent from the active Home navigator, so hiding the tab does not leave a second entry point.
+
+## Profile cleanup
+
+Profile now follows the same monochrome palette and rounded cards as Calendar and workout planning. It shows the original avatar, username, join month, a clearly labelled app-use streak and the real saved-workout count. Unimplemented Friends and Exercises Completed placeholders are removed. Current/goal weights use a dedicated goals card with Not set for missing data. The first two saved workouts, Show More and the native Edit Profile / Settings / Add Workout menu retain their destinations. Shared saved-exercise rows constrain long names within the available width.
+
+Edit Profile uses controlled fields, grouped cards, a scrollable keyboard-aware form and a persistent Save Profile button. Each open starts from saved account data; Cancel discards draft fields/photos. Phone and numeric fields use appropriate keyboards, existing values are prefilled, height is optional and only submitted if adjusted, and save payloads contain editable fields rather than the entire account. Photo selection cancellation stays quiet, pending uploads disable saving, and stale upload results cannot overwrite a later draft. Success/error toasts remain visible, including errors within the modal.
+
+Verification: all 44 frontend tests, TypeScript and scoped lint pass. Added regression checks for Cancel/reopen, controlled save payloads, keeping drafts on save failure, cancelled image selection, optional height clearing, saved-workout/menu destinations and fetch errors. iOS simulator verified the main screen, edit form with persistent save, cancelling an unsaved username, and the native menu. Profile/editor screenshots were captured. Android layout remains unverified.

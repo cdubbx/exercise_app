@@ -1,536 +1,241 @@
-import {ToastOverlay, useToast} from '../context/ToastContext';
-import {openChat} from '../services/navigation';
+import React, {useEffect, useRef, useState} from 'react';
 import {
-  View,
-  SafeAreaView,
-  Touchable,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  StyleSheet,
-  Alert,
-  Modal,
-  TextInput,
-  ScrollView,
-  Platform,
+  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, SafeAreaView,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Button, even, HStack, Stack, Text} from '@react-native-material/core';
-import Entypo from 'react-native-vector-icons/Entypo';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import LinearGradient from 'react-native-linear-gradient';
-import {
-  useLogout,
-  useUpdateUser,
-  useUserContext,
-} from '../hooks/auth';
-import {useFetchedSavedWorkOuts, useSetExercise} from '../hooks/exercises';
-import Exercise from './ExerciseCard';
-import {
-  Exercise as ExerciseInterface,
-  SavedWorkout,
-  ExerciseCardProps,
-} from '../interfaces/interfaces';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {Avatar} from '../components/Avatar';
-import {convertToDecimalFeet, formatDate, formatWeight} from '../utils/utils';
-import {AddWorkOuts} from '../components/AddWorkOuts';
-import {ProfileStackParamList} from '../interfaces/screentypes';
-import LottieView from 'lottie-react-native';
-// import {SpotifySong} from '../cards/SpotifySong';
-import {Song, User} from '../interfaces/types';
-import {useFilePicker, useS3Uploader} from '../hooks/social';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {MenuView} from '@react-native-menu/menu';
 import {Picker} from '@react-native-picker/picker';
-import BodyPartExercise from '../cards/BodyPartExerciseCard';
+import {ToastOverlay, useToast} from '../context/ToastContext';
+import {openChat, openTab} from '../services/navigation';
+import {useUpdateUser, useUserContext} from '../hooks/auth';
+import {useFetchedSavedWorkOuts} from '../hooks/exercises';
+import {useFilePicker, useS3Uploader} from '../hooks/social';
+import {Avatar} from '../components/Avatar';
 import FetchedExercise from '../cards/FetchedExercise';
-import {MenuView, MenuComponentRef} from '@react-native-menu/menu';
-import { useWalkThrough } from '../utils/TutorialSystemService';
+import {ProfileStackParamList} from '../interfaces/screentypes';
+import {useWalkThrough} from '../utils/TutorialSystemService';
+import {formatDate} from '../utils/utils';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
-
-interface UserData {
-  username?: string;
-  height?: number | null | string;
-  weight?: number | null | string;
-  phone_number?: string;
-  goal_weight?: string | null | number;
-  [key: string]: any;
-  img_url?: string;
-}
+interface ProfileDraft {username: string; weight: string; goal_weight: string; phone_number: string; image_url?: string}
+const emptyDraft: ProfileDraft = {username: '', weight: '', goal_weight: '', phone_number: ''};
+const displayWeight = (value: unknown) => value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? 'Not set' : String(Number(value));
 
 export default function ProfileScreen({navigation}: Props): React.JSX.Element {
-  const {logout} = useLogout();
-  const showToast = useToast();
-  const {exercises, removeExercise} = useSetExercise(); // this is where exercises are saved in context.
-  const {fetchedExercises, loading: savedLoading, error: savedError} = useFetchedSavedWorkOuts();
-  const [localExercises, setLocalExercises] = useState<ExerciseInterface|any>()
-  const [feet, setFeet] = useState<number>(5);
-  const [heightChanged, setHeightChanged] = useState(false);
-  const [inches, setInches] = useState<number>(0);
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const {file, error, pickFile, setFile} = useFilePicker();
-  const [showMore, setShowMore] = useState<boolean>(false);
-  const {uploadToS3} = useS3Uploader();
   const {user} = useUserContext();
-  // const {isPlaying} = useSpotifyContext();
-  // const {fetchNowPlaying, getCurrentSession} = useSpotify();
-  const [showPlaying, setShowPlaying] = useState<boolean>(false);
-  const [isVisble, setIsVisible] = useState<boolean>(false);
-  const [showText, setShowText] = useState<string>('Show More');
-  const [isMenuVisible, setMenuVisible] = useState<boolean>(false);
+  const {fetchedExercises, loading: savedLoading, error: savedError} = useFetchedSavedWorkOuts();
   const {updateUser, isLoading} = useUpdateUser();
-  const menuAnchorRef = useRef<MenuComponentRef>(null);
-
-  const [userInfo, setUserInfo] = useState<UserData>({
-    username: user?.username,
-    height: user?.height,
-    weight: user?.weight,
-    phone_number: user?.phone_number,
-    goal_weight: user?.goal_weight,
-    image_url: user?.image_url,
-  });
-
-  const [track, setTrack] = useState<Song | undefined | null>();
+  const {pickFile, error: pickerError, setFile} = useFilePicker();
+  const {uploadToS3} = useS3Uploader();
+  const showToast = useToast();
+  const tour = useWalkThrough();
+  const {register} = tour;
+  const insets = useSafeAreaInsets();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<ProfileDraft>(emptyDraft);
+  const [feet, setFeet] = useState<number | null>(null);
+  const [inches, setInches] = useState(0);
+  const [heightChanged, setHeightChanged] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const editVersion = useRef(0);
+  const saveBusy = useRef(false);
+  const photoBusy = useRef(false);
+  const busy = isLoading || uploading;
+  const joined = user?.date_joined ? formatDate(user.date_joined, 'full') : '';
   const streak = user?.streak ?? 0;
+  const savedCount = savedLoading || savedError ? '—' : String(fetchedExercises.length);
 
-  const showNowPlaying = async (track: any) => {
-    if (track) {
-      setShowPlaying(true);
-    } else {
-      setShowPlaying(false);
+  useEffect(() => { register({id: 'bot-screen-tooltip', order: 7, onActivate: openChat}, true); }, [register]);
+  const openEditor = () => {
+    editVersion.current++;
+    setDraft({username: user?.username ?? '', weight: user?.weight == null ? '' : String(user.weight),
+      goal_weight: user?.goal_weight == null ? '' : String(user.goal_weight), phone_number: user?.phone_number ?? '', image_url: user?.image_url});
+    const totalInches = Math.round((Number(user?.height) || 0) * 12);
+    setFeet(user?.height == null || user.height === '' ? null : Math.floor(totalInches / 12)); setInches(totalInches % 12); setHeightChanged(false);
+    setFile(null); setUploading(false); photoBusy.current = false; setEditing(true);
+  };
+  const closeEditor = () => {
+    if (saveBusy.current) { return; }
+    editVersion.current++; setEditing(false); setFile(null);
+  };
+  const changePhoto = async () => {
+    if (photoBusy.current || saveBusy.current) { return; }
+    photoBusy.current = true; setUploading(true);
+    const version = editVersion.current;
+    try {
+      const selected = await pickFile();
+      if (!selected || version !== editVersion.current) { return; }
+      const url = await uploadToS3(selected, 'profile');
+      if (url && version === editVersion.current) { setDraft(previous => ({...previous, image_url: url})); }
+    } catch (failure) {
+      if (version === editVersion.current) { showToast(failure instanceof Error ? failure.message : 'Could not upload your photo. Please try again.'); }
+    } finally {
+      if (version === editVersion.current) { photoBusy.current = false; setUploading(false); }
     }
   };
-
-  const handleUpdateUser = async () => {
+  const saveProfile = async () => {
+    if (saveBusy.current || photoBusy.current) { return; }
+    saveBusy.current = true;
     try {
-      const message = await updateUser({...userInfo, ...(heightChanged ? {height: Number(convertToDecimalFeet(feet, inches).toFixed(4))} : {})});
+      const message = await updateUser({...draft, username: draft.username.trim(), phone_number: draft.phone_number.trim(),
+        ...(heightChanged ? {height: feet === null ? null : Number((feet + inches / 12).toFixed(4))} : {})});
+      setEditing(false); editVersion.current++; setFile(null);
       showToast(message || 'Profile updated successfully.');
-      setIsVisible(false);
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Could not save your profile. Please try again.');
-    }
+    } catch (failure) {
+      showToast(failure instanceof Error ? failure.message : 'Could not save your profile. Please try again.');
+    } finally { saveBusy.current = false; }
   };
+  const savedWorkouts = () => navigation.navigate('SavedExerciseList', {exercises: fetchedExercises});
+  const menu = <MenuView title="Profile" actions={[
+    {id: 'edit', title: 'Edit Profile', image: Platform.select({ios: 'square.and.pencil'})},
+    {id: 'settings', title: 'Settings', image: Platform.select({ios: 'gearshape'})},
+    {id: 'addWorkout', title: 'Add Workout', image: Platform.select({ios: 'plus'})},
+  ]} onPressAction={({nativeEvent}) => {
+    if (nativeEvent.event === 'edit') { openEditor(); }
+    else if (nativeEvent.event === 'settings') { navigation.navigate('Settings'); }
+    else if (nativeEvent.event === 'addWorkout') { navigation.navigate('AddWorkoutScreen'); }
+  }}><TouchableOpacity accessibilityRole="button" accessibilityLabel="Profile options" style={styles.menuButton}>
+    <Text style={styles.menuText}>•••</Text>
+  </TouchableOpacity></MenuView>;
 
-  const handleImageUpload = useCallback(async (file:any) => {
-    if (!file) {
-      Alert.alert('No file selected');
-      return;
-    }
-    try {
-      const url = await uploadToS3(file, 'profile');
-      console.log('This is the uploaded url', url);
-
-      if (url) {
-        setImageUrl(url);
-        setUserInfo((prev => ({
-          ...prev, 
-          image_url:url
-        })))
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error('Upload failed:', err);
-        Alert.alert('Error uploading file', err.message);
-      }
-    }
-  }, [file, uploadToS3]);
-
-  const mergeExercises = () => {
-  const normalize = (items: any[] = []) =>
-    items.map(ex => (ex?.exercise ? ex.exercise : ex)).filter(Boolean);
-
-  const combined = [...normalize(fetchedExercises), ...normalize(exercises)];
-  const uniqueById = new Map(combined.map(ex => [ex?.id, ex]));
-  return Array.from(uniqueById.values());
-};
-
-  const tour = useWalkThrough()
-  const joinDate = formatDate(user?.date_joined, 'full');
-  useEffect(() => {
-    // const handleShowPlaying = async () => {
-    //   const track: Song | undefined | null = await fetchNowPlaying();
-    //   await showNowPlaying(track);
-    //   setTrack(track);
-    // };
-    // handleShowPlaying();
-    setLocalExercises(mergeExercises());
-  }, [exercises, fetchedExercises, track]);
-
-  useEffect(() => {
-    tour.register({
-      id: 'bot-screen-tooltip',
-      order:7,
-      onActivate: () => {
-        openChat()
-      }
-    }, true)
-  }, [tour.register, navigation])
-
-  useEffect(() => {
-    setUserInfo({...user});
-    setHeightChanged(false);
-    const height = Number(user?.height) || 5;
-    setFeet(Math.floor(height));
-    setInches(Math.min(11, Math.round((height % 1) * 12)));
-  }, [user]);
-
-  const onClose = () => {
-    setIsVisible(false);
-  };
-
-  const handleMenuAction = (actionId: string) => {
-    switch (actionId) {
-      case 'edit':
-        setIsVisible(true);
-        break;
-      case 'settings':
-        navigation.navigate('Settings');
-        break;
-      case 'addWorkout':
-        navigation.navigate('AddWorkoutScreen');
-        break;
-      default:
-        Alert.alert('Unknown action selected');
-    }
-  };
-
-  const iphoneMenu = (
-    <MenuView
-              title="Profile Settings"
-              actions={[
-                {
-                  id: 'edit',
-                  title: 'Edit Profile',
-                  image: Platform.select({
-                    ios: 'square.and.pencil',
-                  }),
-                  imageColor: '#000000',
-                },
-                {
-                  id: 'settings',
-                  title: 'Settings',
-                  image: Platform.select({
-                    ios: 'gearshape',
-                  }),
-                  imageColor: '#000000',
-                },
-                {
-                  id: 'addWorkout',
-                  title: 'Add Workout',
-                  image: Platform.select({
-                    ios: 'plus',
-                  }),
-                  imageColor: '#000000',
-                },
-              ]}
-              onPressAction={event =>
-                handleMenuAction(event.nativeEvent.event)
-              }>
-              <TouchableOpacity
-                onPress={() => {
-                  setMenuVisible(true);
-                }}>
-                <Entypo name="dots-three-vertical" size={15} color={'black'} />
-              </TouchableOpacity>
-            </MenuView>
-  )
-
-  return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <Stack>
-        <HStack p={20} spacing={20} items="center" justify="end">
-          {(
-            tour.wrap('settings-menu', iphoneMenu, {
-              showChildInTooltip:true,
-              order:6,
-              placement:'bottom',
-              topAdjustment:20,
-              content: <Text>Click here to select the settings menu</Text>
-            }) 
-          )}
-        </HStack>
-        <Stack style={styles.profileStack}>
-          <HStack style={styles.avatarStack}>
-            <Avatar size={undefined} imageUrl={userInfo?.image_url} />
-            <Stack>
-              <Text color="black" style={styles.avatarText}>
-                {userInfo?.username}
-              </Text>
-              <HStack style={styles.animationStack}>
-                {streak > 1 ? (
-                  <LottieView
-                    source={{
-                      uri: 'https://lottie.host/fd464efb-1546-4cc5-8258-7cf9570c0291/MHh8RjVRUk.lottie',
-                    }}
-                    autoPlay
-                    loop
-                    style={styles.animation}
-                  />
-                ) : (
-                  <Ionicons name="flame-outline" size={20} />
-                )}
-
-                <Text>Streak: {streak}</Text>
-              </HStack>
-              <HStack style={styles.infoStack}>
-                <TouchableOpacity>
-                  <Text style={{fontSize: 12}}>Friends</Text>
-                  <Text>—</Text>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                  <Text style={{fontSize: 12}}>Exercises Completed</Text>
-                  <Text style={{textAlign: 'center'}}>—</Text>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                  <Text></Text>
-                </TouchableOpacity>
-              </HStack>
-            </Stack>
-          </HStack>
-        </Stack>
-        <HStack style={styles.weightStack}>
-          <Stack>
-            <Text style={styles.weightText}>Current Weight</Text>
-            <Text style={styles.weightText}>
-              {typeof userInfo?.weight === 'string'
-                ? formatWeight(parseFloat(userInfo?.weight))
-                : (userInfo?.weight ?? '—')}
-            </Text>
-          </Stack>
-
-          <Stack>
-            <Text style={styles.weightText}>Goal Weight</Text>
-            <Text style={styles.weightText}>
-              {typeof userInfo?.goal_weight === 'string'
-                ? formatWeight(parseFloat(userInfo?.goal_weight))
-                : (userInfo?.goal_weight ?? '—')}
-            </Text>
-          </Stack>
-        </HStack>
-        {/* {showPlaying && <SpotifySong song={track} />}
-        {exercises && (
-          <View style={{marginTop: 15}}>
-            <AddWorkOuts navigation={navigation} exercises={exercises} />
+  return <View style={[styles.screen, {paddingTop: insets.top + 12}]}>
+    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Profile</Text>
+        {tour.wrap('settings-menu', menu, {showChildInTooltip: true, order: 6, placement: 'bottom', topAdjustment: 20, content: <Text>Open this menu to edit your profile, add a workout, or view Settings.</Text>})}
+      </View>
+      <View style={styles.identityCard}>
+        <View style={styles.identityRow}>
+          <Avatar size={{height: 76, width: 76}} imageUrl={user?.image_url} />
+          <View style={styles.identityText}>
+            <Text style={styles.username}>{user?.username || 'Your profile'}</Text>
+            {!!joined && joined !== 'Invalid date' && <Text style={styles.supportingText}>Member since {joined}</Text>}
           </View>
-        )} */}
-        <Text style={{marginTop: 25}}>Saved Workouts</Text>
-        {!savedLoading && !savedError && fetchedExercises?.length === 0 && (
-          <Text style={{marginTop: 10}}>You do not have any saved workouts, let’s save a workout.</Text>
-        )}
-        {fetchedExercises &&
-          fetchedExercises.length > 0 &&
-          fetchedExercises
-            .slice(0, showMore ? fetchedExercises.length : 2)
-            .map(item => (
-              <TouchableOpacity
-                key={String(item.id)}
-                onPress={() => {
-                  navigation.navigate('SavedExercises', {
-                    exercise: item.exercise,
-                  });
-                }}>
-                <View style={{marginTop: 5}}>
-                  <FetchedExercise item={item} />
-                </View>
-              </TouchableOpacity>
-            ))}
-        <TouchableOpacity
-          onPress={() => {
-            navigation.navigate('SavedExerciseList', {
-              exercises: fetchedExercises,
-            });
-          }}>
-          <Text style={{marginTop: 15}}>{'Show More'}</Text>
-        </TouchableOpacity>
-      </Stack>
-      <Modal
-        visible={isVisble}
-        presentationStyle="pageSheet"
-        onRequestClose={() => {
-          onClose();
-        }}>
-        <Stack style={styles.modalContainer}>
-          <Text style={styles.modalHeaderText}>Edit Profile</Text>
-          <TouchableOpacity
-            style={styles.modalProfilePic}
-            onPress={async () => {
-              const result = await pickFile();
-               // Wait for file selection
-              if (result) {
-                await handleImageUpload(result); // Call handleImageUpload only if a file is selected
-              } else {
-                Alert.alert('No file selected');
-              }
-            }}>
-            <Avatar size={undefined} imageUrl={file ? file : user?.image_url} />
-          </TouchableOpacity>
-          <Text style={{marginTop: 20}}>
-            Weight:{' '}
-            {typeof userInfo?.weight === 'string'
-              ? formatWeight(parseFloat(userInfo?.weight))
-              : (userInfo?.weight ?? '—')}
-          </Text>
-          <TextInput
-            placeholderTextColor="#666"
-            // value={user?.weight}
-            placeholder="Enter your weight"
-            inputMode="numeric"
-            onChangeText={text =>
-              setUserInfo(prev => ({
-                ...prev,
-                weight: text,
-              }))
-            }
-          />
-
-          <Text>
-            Goal Weight:{' '}
-            {typeof userInfo?.goal_weight === 'string'
-              ? formatWeight(parseFloat(userInfo?.goal_weight))
-              : (userInfo?.goal_weight ?? '—')}
-          </Text>
-          <TextInput
-            placeholderTextColor="#666"
-            // value={user?.weight}
-            placeholder="Enter your goal weight"
-            inputMode="numeric"
-            onChangeText={text =>
-              setUserInfo(prev => ({
-                ...prev,
-                goal_weight: text,
-              }))
-            }
-          />
-          <HStack>
-            <Text>Height: {userInfo?.height}</Text>
-
-            <Picker
-              style={[styles.modalPickerHeight,  { color: "black" }]}
-              selectedValue={feet}
-              onValueChange={value => { setFeet(value); setHeightChanged(true); }}>
-              {Array.from({length: 8}, (_, i) => i + 3).map(f => (
-                <Picker.Item key={f} label={`${f} ft`} value={f} color='black' />
-              ))}
-            </Picker>
-            <Picker
-              style={styles.modalPickerHeight}
-              selectedValue={inches}
-              onValueChange={value => { setInches(value); setHeightChanged(true); }}>
-              {Array.from({length: 12}, (_, i) => i).map(inch => (
-                <Picker.Item style={{color:'black'}} key={inch} label={`${inch} in.`} color='black' value={inch} />
-              ))}
-            </Picker>
-          </HStack>
-
-          <Text>Phone number</Text>
-          <TextInput
-            placeholderTextColor="#666"
-            value={userInfo?.phone_number ?? ''}
-            placeholder="Enter your Phone Number"
-            inputMode="numeric"
-            onChangeText={text =>
-              setUserInfo(prev => ({
-                ...prev,
-                phone_number: text,
-              }))
-            }
-          />
-
-          <Text>Username: {userInfo?.username}</Text>
-          <TextInput
-            placeholderTextColor="#666"
-            placeholder="Enter your new username"
-            onChangeText={text =>
-              setUserInfo(prev => ({
-                ...prev,
-                username: text,
-              }))
-            }
-          />
-
-          <TouchableOpacity
-            style={styles.updateUserButton}
-            onPress={() => {
-              handleUpdateUser();
-            }}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </Stack>
-        <ToastOverlay />
-      </Modal>
+        </View>
+        <TouchableOpacity accessibilityRole="button" onPress={openEditor} style={styles.editButton}><Text style={styles.editLabel}>Edit Profile</Text></TouchableOpacity>
+      </View>
+      <View style={styles.stats}>
+        <View style={styles.statCard}><Text style={styles.statValue}>{streak} {streak === 1 ? 'day' : 'days'}</Text><Text style={styles.supportingText}>App streak</Text></View>
+        <View style={styles.statCard}><Text style={styles.statValue}>{savedCount}</Text><Text style={styles.supportingText}>Saved workouts</Text></View>
+      </View>
+      <View style={styles.goalsCard}>
+        <Text style={styles.sectionTitle}>Your goals</Text>
+        <View style={styles.goalsRow}>
+          <View style={styles.goal}><Text style={styles.supportingText}>Current weight</Text><Text style={styles.goalValue}>{displayWeight(user?.weight)}</Text></View>
+          <View style={styles.goal}><Text style={styles.supportingText}>Goal weight</Text><Text style={styles.goalValue}>{displayWeight(user?.goal_weight)}</Text></View>
+        </View>
+      </View>
+      <View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Saved Workouts</Text>
+          <TouchableOpacity accessibilityRole="button" onPress={savedWorkouts} style={styles.textButton}><Text style={styles.linkText}>Show More →</Text></TouchableOpacity>
+        </View>
+        {savedLoading && !fetchedExercises.length ? <ActivityIndicator color="black" accessibilityLabel="Loading saved workouts" style={styles.loader} /> : savedError ? <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>Couldn’t load saved workouts</Text><Text style={styles.supportingText}>{savedError}</Text>
+          <TouchableOpacity accessibilityRole="button" onPress={savedWorkouts} style={styles.textButton}><Text style={styles.linkText}>Open saved workouts →</Text></TouchableOpacity>
+        </View> : !fetchedExercises.length ? <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>Save your first workout</Text><Text style={styles.supportingText}>You do not have any saved workouts, let’s save a workout.</Text>
+          <TouchableOpacity accessibilityRole="button" onPress={() => openTab('Home1', {screen: 'ExplorePage'})} style={styles.primaryButton}><Text style={styles.primaryLabel}>Browse exercises</Text></TouchableOpacity>
+        </View> : fetchedExercises.slice(0, 2).map(item => <TouchableOpacity key={String(item.id)} accessibilityRole="button"
+          onPress={() => navigation.navigate('SavedExercises', {exercise: item.exercise})} style={styles.workoutCard}>
+          <FetchedExercise item={item} />
+        </TouchableOpacity>)}
+      </View>
     </ScrollView>
-  );
+    <Modal visible={editing} presentationStyle="pageSheet" onRequestClose={closeEditor}>
+      <SafeAreaView style={styles.screen}>
+        <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.editorHeader}>
+            <TouchableOpacity accessibilityRole="button" disabled={isLoading} onPress={closeEditor} style={styles.cancelButton}><Text style={styles.linkText}>Cancel</Text></TouchableOpacity>
+            <Text style={styles.editorTitle}>Edit Profile</Text><View style={styles.headerSpacer} />
+          </View>
+          <ScrollView contentContainerStyle={styles.editorContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Change profile photo" disabled={busy} onPress={changePhoto} style={styles.photoButton}>
+              <Avatar size={{height: 90, width: 90}} imageUrl={draft.image_url} /><Text style={styles.linkText}>{uploading ? 'Uploading photo…' : 'Change photo'}</Text>
+            </TouchableOpacity>
+            {uploading && <ActivityIndicator color="black" />}
+            {!!pickerError && !pickerError.toLowerCase().includes('cancel') && <Text style={styles.supportingText}>{pickerError}</Text>}
+            <View style={styles.formCard}>
+              <Text style={styles.fieldLabel}>Username</Text>
+              <TextInput accessibilityLabel="Username" value={draft.username} onChangeText={text => setDraft(previous => ({...previous, username: text}))}
+                placeholder="Your username" placeholderTextColor="#777" autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
+              <Text style={styles.fieldLabel}>Phone number</Text>
+              <TextInput accessibilityLabel="Phone number" value={draft.phone_number} onChangeText={text => setDraft(previous => ({...previous, phone_number: text}))}
+                placeholder="Add a phone number" placeholderTextColor="#777" keyboardType="phone-pad" editable={!busy} style={styles.input} />
+            </View>
+            <View style={styles.formCard}>
+              <Text style={styles.fieldLabel}>Current weight</Text>
+              <TextInput accessibilityLabel="Current weight" value={draft.weight} onChangeText={text => setDraft(previous => ({...previous, weight: text}))}
+                placeholder="Add your weight" placeholderTextColor="#777" keyboardType="decimal-pad" editable={!busy} style={styles.input} />
+              <Text style={styles.fieldLabel}>Goal weight</Text>
+              <TextInput accessibilityLabel="Goal weight" value={draft.goal_weight} onChangeText={text => setDraft(previous => ({...previous, goal_weight: text}))}
+                placeholder="Add your goal weight" placeholderTextColor="#777" keyboardType="decimal-pad" editable={!busy} style={styles.input} />
+              <Text style={styles.fieldLabel}>Height</Text>
+              <View style={styles.heightRow}>
+                <Picker accessibilityLabel="Height in feet" selectedValue={feet} enabled={!busy} style={styles.heightPicker} onValueChange={value => { setFeet(value); if (value === null) { setInches(0); } setHeightChanged(true); }}>
+                  <Picker.Item label="Not set" value={null} color="black" />
+                  {Array.from({length: 8}, (_, i) => i + 3).map(value => <Picker.Item key={value} label={`${value} ft`} value={value} color="black" />)}
+                </Picker>
+                <Picker accessibilityLabel="Height in inches" selectedValue={inches} enabled={!busy && feet !== null} style={styles.heightPicker} onValueChange={value => { setInches(value); setHeightChanged(true); }}>
+                  {Array.from({length: 12}, (_, value) => <Picker.Item key={value} label={`${value} in`} value={value} color="black" />)}
+                </Picker>
+              </View>
+            </View>
+
+          </ScrollView>
+          <View style={styles.editorFooter}>
+            <TouchableOpacity accessibilityRole="button" disabled={busy} onPress={saveProfile} style={[styles.primaryButton, busy && styles.disabled]}><Text style={styles.primaryLabel}>{isLoading ? 'Saving…' : 'Save Profile'}</Text></TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+        <ToastOverlay />
+      </SafeAreaView>
+    </Modal>
+  </View>;
 }
-
 const styles = StyleSheet.create({
-  container: {
-    gap: 10,
-    marginLeft: 10,
-    marginTop: 50,
-  },
-  avatarText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: 'gray',
-    // textAlign:'center',
-    marginTop: 5,
-  },
-  avatarStack: {
-    alignItems: 'flex-start',
-    gap: 15,
-  },
-  profileStack: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-
-  infoStack: {
-    marginTop: 20,
-    justifyContent: 'space-between',
-    gap: 30,
-  },
-  animation: {
-    width: 40,
-    height: 40,
-  },
-  animationStack: {
-    alignItems: 'center',
-  },
-  weightStack: {
-    paddingLeft: 10,
-    gap: 30,
-    marginTop: 20,
-  },
-  weightText: {
-    fontSize: 13,
-  },
-
-  modalContainer: {
-    padding: 20,
-    gap: 10,
-  },
-  modalHeaderText: {
-    fontSize: 20,
-    textAlign: 'center',
-  },
-  modalProfilePic: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  modalPickerHeight: {
-    width: 120,
-  },
-  updateUserButton: {
-    width: 100,
-    padding: 8,
-    backgroundColor: 'black',
-    alignSelf: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    marginTop: 40,
-  },
-  saveButtonText: {
-    color:'white'
-  }
+  screen: {flex: 1, backgroundColor: '#f2f2f2'},
+  content: {paddingHorizontal: 20, paddingBottom: 100, gap: 20},
+  header: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  title: {fontSize: 26, fontWeight: 'bold', color: 'black'},
+  menuButton: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
+  menuText: {fontSize: 22, color: 'black'},
+  identityCard: {backgroundColor: 'white', borderRadius: 20, padding: 20, gap: 18},
+  identityRow: {flexDirection: 'row', alignItems: 'center', gap: 16},
+  identityText: {flex: 1, gap: 7},
+  username: {fontSize: 22, fontWeight: '600', color: 'black'},
+  supportingText: {fontSize: 13, lineHeight: 20, color: '#555'},
+  editButton: {minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', alignItems: 'center', justifyContent: 'center'},
+  editLabel: {fontSize: 14, fontWeight: '600', color: 'black'},
+  stats: {flexDirection: 'row', flexWrap: 'wrap', gap: 12},
+  statCard: {flex: 1, minWidth: 135, backgroundColor: 'white', borderRadius: 20, padding: 18, gap: 6},
+  statValue: {fontSize: 23, fontWeight: '600', color: 'black'},
+  goalsCard: {backgroundColor: 'white', padding: 20, borderRadius: 20, gap: 18},
+  goalsRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 16},
+  goal: {flex: 1, minWidth: 115, gap: 6},
+  goalValue: {fontSize: 19, fontWeight: '500', color: 'black'},
+  sectionTitle: {fontSize: 17, fontWeight: '600', color: 'black'},
+  sectionHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 8},
+  textButton: {minHeight: 44, justifyContent: 'center'},
+  linkText: {fontSize: 13, fontWeight: '600', color: 'black'},
+  workoutCard: {backgroundColor: 'white', padding: 14, borderRadius: 20, marginBottom: 12},
+  emptyCard: {backgroundColor: 'white', padding: 20, borderRadius: 20, gap: 12},
+  emptyTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
+  loader: {padding: 20},
+  editorHeader: {minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20},
+  editorTitle: {fontSize: 17, fontWeight: '600', color: 'black'},
+  cancelButton: {minHeight: 44, width: 60, justifyContent: 'center'},
+  headerSpacer: {width: 60},
+  editorFooter: {paddingHorizontal: 20, paddingVertical: 12, borderTopWidth: 1, borderColor: '#ddd'},
+  editorContent: {padding: 20, paddingBottom: 40, gap: 20},
+  photoButton: {alignSelf: 'center', alignItems: 'center', gap: 12, minHeight: 44},
+  formCard: {padding: 18, borderRadius: 20, backgroundColor: 'white', gap: 12},
+  fieldLabel: {fontSize: 13, fontWeight: '500', color: '#555'},
+  input: {minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', color: 'black', fontSize: 15},
+  heightRow: {flexDirection: 'row'},
+  heightPicker: {flex: 1, color: 'black'},
+  primaryButton: {minHeight: 50, borderRadius: 10, backgroundColor: 'black', alignItems: 'center', justifyContent: 'center', padding: 12},
+  primaryLabel: {fontSize: 15, fontWeight: '600', color: 'white'},
+  disabled: {opacity: 0.35},
 });

@@ -10,7 +10,7 @@ export default function FetchedExercise({item}: any) {
 
   return (
     <View style={styles.container}>
-      <HStack spacing={20} items="center">
+      <HStack spacing={14} items="center" style={{flex: 1}}>
         <Image
           source={{
             uri:
@@ -21,7 +21,7 @@ export default function FetchedExercise({item}: any) {
           }}
           style={{height: 60, width: 60, borderRadius: 10}}
         />
-        <Stack spacing={3}>
+        <Stack spacing={3} style={{flex: 1}}>
           <Text style={{fontSize: 16, color: 'black', fontWeight: 'bold'}}>
             {exercise?.name}
           </Text>
@@ -42,11 +42,9 @@ export default function FetchedExercise({item}: any) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 10,
     display: 'flex',
     justifyContent: 'space-between',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 20,
   },
 });
