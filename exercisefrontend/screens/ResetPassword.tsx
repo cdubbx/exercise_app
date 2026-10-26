@@ -1,10 +1,10 @@
+import {useToast} from '../context/ToastContext';
 import {
     Alert,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
     SafeAreaView,
   } from 'react-native';
   import React, {useState} from 'react';
@@ -23,15 +23,22 @@ import {
   }) => {
     const {token, email} = route.params;
     const [newPassword, setNewPassword] = useState<string>('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const showToast = useToast();
     const [loading, setLoading] = useState<boolean>(false);
     const {resetPassword} = useResetPassword();
   
     const handleResetPassword = async () => {
+      if (loading) { return; }
       if (!newPassword) {
         Alert.alert('Error', 'Please enter a new password.');
         return;
       }
   
+      if (newPassword !== confirmPassword) {
+        Alert.alert('Passwords do not match', 'Please confirm your new password.');
+        return;
+      }
       setLoading(true);
       try {
         const resetObject = {
@@ -40,7 +47,7 @@ import {
           new_password: newPassword, // Include the new password in the payload
         };
         const message = await resetPassword(resetObject);
-        Alert.alert('Success', message);
+        showToast(message || 'Password changed successfully.');
         navigation.navigate('Login'); // Navigate back to login after success
       } catch (error: any) {
         Alert.alert('Error', `An error has occurred: ${error.message}`);
@@ -59,6 +66,15 @@ import {
           placeholder="Enter new password"
           value={newPassword}
           onChangeText={setNewPassword}
+          secureTextEntry
+          autoCapitalize="none"
+        />
+        <TextInput
+          placeholderTextColor="#666"
+          style={styles.input}
+          placeholder="Confirm new password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
           secureTextEntry
           autoCapitalize="none"
         />

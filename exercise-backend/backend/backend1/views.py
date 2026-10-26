@@ -54,7 +54,7 @@ class ExerciseListView(ListAPIView):
         if muscle:
             queryset = queryset.filter(primaryMuscles__icontains=muscle)
         if search:
-            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search))
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search) | Q(primaryMuscles__icontains=search))
         return queryset.order_by('date_created', 'id')
 
 
@@ -123,17 +123,15 @@ class LoginAPIView(APIView):
     permission_classes = [AllowAny]  # Allow any user to access this view
 
     def post(self, request):
-        email = request.data.get('email')
+        identifier = request.data.get('identifier') or request.data.get('username') or request.data.get('email')
         password = request.data.get('password')
-
-        user = User.objects.filter(email=email).first()
-
-        if user is None:
-            logger.error('User not found with email: %s', email)
-            raise AuthenticationFailed('User not found')
-        if not password or not user.check_password(password) or not user.is_active:
-            logger.error('Invalid password for user: %s', email)
-            raise AuthenticationFailed('Invalid password')
+        if not isinstance(identifier, str) or not identifier.strip():
+            raise AuthenticationFailed('Invalid username, email, or password')
+        # Reject ambiguous legacy records rather than selecting a different account.
+        matches = list(User.objects.filter(Q(email__iexact=identifier.strip()) | Q(username=identifier.strip()))[:2])
+        if len(matches) != 1 or not password or not matches[0].check_password(password) or not matches[0].is_active:
+            raise AuthenticationFailed('Invalid username, email, or password')
+        user = matches[0]
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
@@ -378,7 +376,8 @@ class RequestPasswordResetAPIView(APIView):
                 token = token_generator.make_token(user)
 
                 from urllib.parse import urlencode
-                reset_link = 'exercisefrontend://reset-password?' + urlencode({'token': token, 'email': email})
+                from django.urls import reverse
+                reset_link = request.build_absolute_uri(reverse('password-reset-landing')) + '?' + urlencode({'token': token, 'email': email})
                 email_subject = "Password Reset Request"
                 email_body = f"""
                     <p>Click the link below to reset your password:</p>

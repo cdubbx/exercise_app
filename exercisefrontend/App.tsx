@@ -1,3 +1,4 @@
+import {ToastProvider} from './context/ToastContext';
 import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
@@ -269,21 +270,23 @@ export default function App(): React.JSX.Element {
 
 
   return (
-    <NowPlayingProvider>
-      <UserContextProvider>
-        <ExerciseProvider>
-          <ChatProvider>
-            <WalkthroughProvider>
-              <FloatingButtonContextProvider>
-                <NavigationContainer ref={navigationRef} linking={linking}>
-                  <FloatingButton />
-                  <MainNavigator />
-                </NavigationContainer>
-              </FloatingButtonContextProvider>
-            </WalkthroughProvider>
-          </ChatProvider>
-        </ExerciseProvider>
-      </UserContextProvider>
-    </NowPlayingProvider>
+    <ToastProvider>
+      <NowPlayingProvider>
+        <UserContextProvider>
+          <ExerciseProvider>
+            <ChatProvider>
+              <WalkthroughProvider>
+                <FloatingButtonContextProvider>
+                  <NavigationContainer ref={navigationRef} linking={linking}>
+                    <FloatingButton />
+                    <MainNavigator />
+                  </NavigationContainer>
+                </FloatingButtonContextProvider>
+              </WalkthroughProvider>
+            </ChatProvider>
+          </ExerciseProvider>
+        </UserContextProvider>
+      </NowPlayingProvider>
+    </ToastProvider>
   );
 }

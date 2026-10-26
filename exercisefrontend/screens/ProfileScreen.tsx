@@ -1,3 +1,4 @@
+import {ToastOverlay, useToast} from '../context/ToastContext';
 import {openChat} from '../services/navigation';
 import {
   View,
@@ -60,8 +61,9 @@ interface UserData {
 
 export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   const {logout} = useLogout();
+  const showToast = useToast();
   const {exercises, removeExercise} = useSetExercise(); // this is where exercises are saved in context.
-  const {fetchedExercises} = useFetchedSavedWorkOuts(); 
+  const {fetchedExercises, loading: savedLoading, error: savedError} = useFetchedSavedWorkOuts();
   const [localExercises, setLocalExercises] = useState<ExerciseInterface|any>()
   const [feet, setFeet] = useState<number>(5);
   const [heightChanged, setHeightChanged] = useState(false);
@@ -103,10 +105,10 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   const handleUpdateUser = async () => {
     try {
       const message = await updateUser({...userInfo, ...(heightChanged ? {height: Number(convertToDecimalFeet(feet, inches).toFixed(4))} : {})});
-      Alert.alert(message);
+      showToast(message || 'Profile updated successfully.');
       setIsVisible(false);
     } catch (error) {
-      Alert.alert('An error has occurred', `${error}`);
+      showToast(error instanceof Error ? error.message : 'Could not save your profile. Please try again.');
     }
   };
 
@@ -313,6 +315,9 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
           </View>
         )} */}
         <Text style={{marginTop: 25}}>Saved Workouts</Text>
+        {!savedLoading && !savedError && fetchedExercises?.length === 0 && (
+          <Text style={{marginTop: 10}}>You do not have any saved workouts, let’s save a workout.</Text>
+        )}
         {fetchedExercises &&
           fetchedExercises.length > 0 &&
           fetchedExercises
@@ -452,6 +457,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
         </Stack>
+        <ToastOverlay />
       </Modal>
     </ScrollView>
   );

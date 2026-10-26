@@ -24,8 +24,8 @@ Implementation does not automatically close issues. Device and hosted-provider v
 
 ## Verification
 
-- Backend: 26 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 20 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
+- Frontend: 23 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -50,3 +50,27 @@ Critical `fast-xml-parser` and `shell-quote` findings from the original lockfile
 Apple Health (#10), Blender avatars (#4), trainer playlists (#11), social workout invitations/calendar sharing (#12/#18/#19), PR and weight history/charts (#15/#25/#26), calorie estimates (#16/#48), dark mode (#24), sharing/app-store/NFC links (#32), and AI recommendation expansion (#5).
 
 Spotify was already commented out/incomplete in the local app. Its original Settings design is retained and explains that integration is deferred. The core backend returns a clear unavailable message for recommendations instead of a missing route or a fabricated response. Friend/completed-workout placeholders show an em dash until those data models are implemented.
+
+## Release 1 BDD follow-up
+
+The [Release 1 BDDs](https://docs.google.com/document/d/1DPLusxK7VOGDiEEiGajgbpbBAlupxuROsia2lfyyl8w/edit?tab=t.e7cueor89l38) are the acceptance reference. Core-first implementation is not a declaration that every Release 1 BDD is complete.
+
+| BDD | Current status and remaining verification |
+| --- | --- |
+| 1–2 | Existing sign-in/sign-up and OTP flow retained; backend registration/verification covered by tests. Real SMTP delivery requires deployment configuration. |
+| 3 | Username or email/password login supported, with inactive/invalid/ambiguous accounts rejected. Existing Apple sign-in requires provider/device verification. |
+| 4(a–b) | Reset email links to a server webpage with an Open App button. Invalid, expired, and consumed tokens do not offer an app link. Tests follow email → webpage → app URI → reset; real email/device opening still needs verification. Deploy the updated backend over HTTPS for public use. |
+| 5 | Reset form requires matching confirmation; success toast survives navigation back to Login. Error keeps the form available. Covered by frontend tests. |
+| 6–9 | Existing tabs, body-part browsing, weekday planning and long-press deletion retained. Prior iOS smoke covered browsing/planning; weekday deletion has backend coverage. |
+| 10 | Profile displays the requested invitation to save a workout when the saved list is empty, excluding loading/error states. |
+| 11(a–b), 12–14 | Existing two-workout preview, Show More → Exercises/Your Exercises, username/menu and edit form retained. |
+| 15–16 | Numeric weight/phone controls retained; profile save uses meaningful toast feedback, including errors inside the edit modal. Height retains the original feet/inches pickers. |
+| 17–18 | Existing Settings navigation/options retained. Presence of an option does not establish its integration is complete. |
+| 19 | Spotify playback remains deferred under core-first scope; does not satisfy the full BDD yet. |
+| 20–21 | Document explicitly excludes privacy from initial release. Existing privacy behavior remains. |
+| 22 | Logout clears the account and opens Login. This follows BDD 3's signed-out destination; BDD 22's Home destination conflicts with it. |
+| 23–24 | Search includes primary muscle/body-part names as well as existing text fields. Regression test covers a muscle name absent from exercise name. Browse/details/save retained. |
+| 25–26 | First-use tutorial and Settings replay implemented; prior iOS smoke verified replay, ordered steps, Back and completion. Fresh-install first-use still needs device acceptance. |
+| 27 | AI questions, generated workouts and saving generated workouts remain deferred; the unavailable response is not completion of this BDD. |
+
+Follow-up local validation: 31 backend tests and 23 frontend tests pass, including username/email login, body-part search, email/web/app reset linkage, expired links, password confirmation, reset failures and success feedback across navigation. Native/device acceptance remains distinct from automated tests and JS bundle packaging.

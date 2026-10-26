@@ -98,9 +98,9 @@ export default function Login(): React.JSX.Element {
         <Stack style={styles.inputStack}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Username or email"
             onChangeText={text => setEmail(text)}
-            keyboardType="email-address"
+            keyboardType="default"
             placeholderTextColor={"black"}
             autoCapitalize="none"
             autoCorrect={false}

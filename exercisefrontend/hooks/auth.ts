@@ -296,7 +296,7 @@ export const useLogin = () => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
       setLoading(true);
 
@@ -305,16 +305,8 @@ export const useLogin = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({email, password}),
+        body: JSON.stringify({identifier: identifier.trim(), password}),
       });
-
-      console.log('Login response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.json();
-        console.error('Login error response:', errorText);
-        throw new Error(errorText.error || 'Network error');
-      }
 
       const data = await readResponse(response);
       await AsyncStorage.setItem('access', data.access);

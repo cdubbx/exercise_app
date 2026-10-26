@@ -57,3 +57,6 @@ urlpatterns += [path('gpt-chat/', ChatUnavailableView.as_view())]
 
 from .views import ResendOTPAPIView
 urlpatterns += [path('resend-otp/', ResendOTPAPIView.as_view())]
+
+from .password_reset import password_reset_landing
+urlpatterns += [path('password-reset/', password_reset_landing, name='password-reset-landing')]

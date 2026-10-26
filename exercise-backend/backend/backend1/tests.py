@@ -212,3 +212,55 @@ class CoreAppTests(TestCase):
         self.other.is_searchable = True; self.other.save()
         self.assertEqual(len(self.client.get('/api/users/?search=oth').data['results']), 1)
         self.assertEqual(self.client.get('/api/users/?search=no-match').data['results'], [])
+
+    def test_login_accepts_username_and_email_and_rejects_invalid_accounts(self):
+        self.client.force_authenticate(None)
+        for payload in ({'identifier': 'first'}, {'username': 'first'}, {'email': 'FIRST@example.com'}):
+            response = self.client.post('/api/login/', {**payload, 'password': 'Training-plan-2026!'}, format='json')
+            self.assertEqual(response.status_code, 200, response.data)
+            self.assertIn('access', response.data)
+        for identifier, password in [('first', 'wrong'), ('missing', 'Training-plan-2026!'), ('', 'Training-plan-2026!')]:
+            self.assertEqual(self.client.post('/api/login/', {'identifier': identifier, 'password': password}, format='json').status_code, 401)
+        self.user.is_active = False
+        self.user.save()
+        self.assertEqual(self.client.post('/api/login/', {'identifier': 'first', 'password': 'Training-plan-2026!'}, format='json').status_code, 401)
+
+    def test_login_rejects_ambiguous_username_email(self):
+        self.other.username = self.user.email
+        self.other.save()
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.post('/api/login/', {'identifier': self.user.email, 'password': 'Training-plan-2026!'}, format='json').status_code, 401)
+
+    def test_reset_email_opens_webpage_then_app_and_consumed_link_expires(self):
+        from django.core import mail
+        from urllib.parse import parse_qs, urlsplit
+        from html import unescape
+        import re
+        self.client.force_authenticate(None)
+        response = self.client.post('/api/request-password-reset/', {'email': self.user.email}, format='json')
+        self.assertEqual(response.status_code, 200)
+        link = re.search(r'href="([^"]+)"', mail.outbox[-1].body).group(1)
+        self.assertTrue(link.startswith('http://testserver/api/password-reset/?'))
+        page = self.client.get(link)
+        self.assertContains(page, 'Open App')
+        self.assertEqual(page['Cache-Control'], 'no-store')
+        self.assertEqual(page['Referrer-Policy'], 'no-referrer')
+        app_link = unescape(re.search(r'href="([^"]+)"', page.content.decode()).group(1))
+        self.assertTrue(app_link.startswith('exercisefrontend://reset-password?'))
+        query = parse_qs(urlsplit(app_link).query)
+        self.assertEqual(query['email'], [self.user.email])
+        response = self.client.post('/api/reset-password/', {'email': self.user.email, 'token': query['token'][0], 'new_password': 'Changed-training-2026!'}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client.get(link).status_code, 400)
+
+    def test_invalid_reset_landing_does_not_offer_app_link(self):
+        for query in ('', '?email=first@example.com&token=invalid', '?email=missing@example.com&token=invalid'):
+            response = self.client.get('/api/password-reset/' + query)
+            self.assertContains(response, 'invalid or has expired', status_code=400)
+            self.assertNotContains(response, 'exercisefrontend://', status_code=400)
+
+    def test_search_matches_body_part_without_name_match(self):
+        exercise = Exercise.objects.create(name='Standing lift', primaryMuscles=['quadriceps'])
+        response = self.client.get('/api/exercises/?search=quadriceps')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(str(exercise.id), [str(item['id']) for item in response.data['results']])
