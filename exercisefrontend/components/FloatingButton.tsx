@@ -61,7 +61,7 @@ const FloatingButton = () => {
       },
     }),
   ).current;
-  if (!isAuthenticated || routeName === 'BotScreen') return null;
+  if (!isAuthenticated || routeName === 'BotScreen' || routeName === 'SavedExercises') return null;
   return (
     <Animated.View
       style={[

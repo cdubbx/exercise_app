@@ -25,7 +25,7 @@ Implementation does not automatically close issues. Device and hosted-provider v
 ## Verification
 
 - Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 23 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Frontend: 25 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -74,3 +74,9 @@ The [Release 1 BDDs](https://docs.google.com/document/d/1DPLusxK7VOGDiEEiGajgbpb
 | 27 | AI questions, generated workouts and saving generated workouts remain deferred; the unavailable response is not completion of this BDD. |
 
 Follow-up local validation: 31 backend tests and 23 frontend tests pass, including username/email login, body-part search, email/web/app reset linkage, expired links, password confirmation, reset failures and success feedback across navigation. Native/device acceptance remains distinct from automated tests and JS bundle packaging.
+
+## Workout planning UI refinement
+
+The Add to Plan form keeps the app's black-and-white palette, rounded photo/cards and existing navigation. A smaller 240-point exercise photo gives the workout controls more space. Sets and repetitions are editable number fields with bounded plus/minus controls; optional 8/10/12/15-rep shortcuts are selections, not workout recommendations. Visible weekday buttons use the existing black selected state. A live sets/reps/day summary sits above one Add to Plan button. The form scrolls and accommodates the number keyboard; the floating chat button stays out of this screen so it cannot cover the save action.
+
+Verification: all 25 frontend tests, TypeScript and scoped lint pass. Planning regression tests cover invalid quantities, save failure, numeric payloads, presets/steppers and limits. On the iOS 26 simulator, preset selection, incrementing, direct keyboard entry, day selection and save were exercised; Calendar displayed the saved Tuesday workout as 4 sets × 11 reps. Android device layout has not been checked for this refinement.
