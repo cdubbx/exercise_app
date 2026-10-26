@@ -17,6 +17,8 @@ import {
   useNavigation,
   useNavigationState,
 } from '@react-navigation/native';
+import {navigationRef, openChat} from '../services/navigation';
+import {useUserContext} from '../hooks/auth';
 import Svg, {Path} from 'react-native-svg';
 
 function getActiveRouteName(state: any): string | undefined {
@@ -43,22 +45,23 @@ const FloatingButton = () => {
   const pan = useRef(new Animated.ValueXY()).current;
   const {moveToBottomRight} = useFloatingButtonActions();
   const state = useFloatingButtonState();
-  const navigation = useNavigation();
-  const routeState = useNavigationState(s => s);
-  const routeName = getActiveRouteName(routeState);
+  const {isAuthenticated} = useUserContext();
+  const [routeName, setRouteName] = React.useState<string | undefined>();
+  useEffect(() => navigationRef.addListener('state', () => setRouteName(navigationRef.getCurrentRoute()?.name)), []);
 
   useEffect(() => {
     moveToBottomRight();
   }, []);
   const panResponder = React.useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gestureState) => true,
-      onPanResponderMove: Animated.event([null, {dx: pan.x, dy: pan.y}]),
+      onMoveShouldSetPanResponder: (_evt, gestureState) => Math.abs(gestureState.dx) + Math.abs(gestureState.dy) > 8,
+      onPanResponderMove: Animated.event([null, {dx: pan.x, dy: pan.y}], {useNativeDriver: false}),
       onPanResponderRelease: () => {
         pan.extractOffset();
       },
     }),
   ).current;
+  if (!isAuthenticated || routeName === 'BotScreen') return null;
   return (
     <Animated.View
       style={[
@@ -73,7 +76,7 @@ const FloatingButton = () => {
       {...panResponder.panHandlers}>
       <TouchableOpacity
         style={styles.floatingButtonContainer}
-        onPress={() => navigation.navigate('BotScreen')}>
+        onPress={openChat}>
         <Svg width={32} height={32} viewBox="0 0 98 92">
           <Path
             d="M23.1035 43.4394L30.8046 20.3359H40.7658L48.4669 43.4394L71.5704 51.1405V61.1017L48.4669 68.8029L40.7658 91.9063H30.8046L23.1035 68.8029L0 61.1017V51.1405L23.1035 43.4394Z"

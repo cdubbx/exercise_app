@@ -33,7 +33,8 @@ const RequestResetPassword: React.FC = () => {
       </Text>
 
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter your email"
         value={email}
         onChangeText={(text) => setEmail(text)}

@@ -1,9 +1,9 @@
-import { View, Text } from 'react-native'
-import React, { useEffect } from 'react'
-import { useUserContext } from '../hooks/auth'
-import { AuthNavigator, RootStackNavigator } from '../App'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import React from 'react';
+import {useUserContext} from '../hooks/auth';
+import {AuthNavigator, RootStackNavigator} from '../App';
 
-export default function MainNavigator({isAuthenticated}:any) {
-    return isAuthenticated ? <RootStackNavigator /> : <AuthNavigator />;
+export default function MainNavigator() {
+  const {isAuthenticated, isReady} = useUserContext();
+  if (!isReady) return null;
+  return isAuthenticated ? <RootStackNavigator /> : <AuthNavigator />;
 }

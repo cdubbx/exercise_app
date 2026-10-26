@@ -1,3 +1,4 @@
+import {openTab} from '../services/navigation';
 import {
   View,
   SafeAreaView,
@@ -37,7 +38,7 @@ const BodyPart: React.FC<Props> = ({route, navigation}) => {
   const hamstringImg = require('../assets/AdobeStock_287421213.jpeg');
 
   const parts = route.params.bodyParts;
-  const {loading, bodyExercises, loadMoreExercises, loadingMore} =
+  const {loading, bodyExercises, loadMoreExercises, loadingMore, error} =
     useMuscleExercise(parts);
   const [tip, setTip] = useState<boolean>(true);
   const tour = useWalkThrough();
@@ -56,15 +57,14 @@ const BodyPart: React.FC<Props> = ({route, navigation}) => {
         placement: 'bottom',
         onActivate: () => {
           const first = bodyExercises[0];
+          if (!first) return;
           exerciseRef?.current?.scrollToIndex({index: 0, animated:true})
-           navigation.navigate('ExerciseCard', {
-              item: first,
-            })
+           openTab('Home1', {screen: 'ExerciseCard', params: {item: first}})
           }
       },
       true,
     );
-  }, [tour]);
+  }, [tour.register, bodyExercises, navigation]);
 
   if (loading) {
     return <Text>Loading...</Text>;
@@ -85,7 +85,7 @@ const BodyPart: React.FC<Props> = ({route, navigation}) => {
       </View>
     );
 
-    if (index === 3) {
+    if (index === 0) {
       return tour.wrap(`individual-bicep`, card, {
         order: 3,
         placement: 'bottom',
@@ -114,7 +114,7 @@ const BodyPart: React.FC<Props> = ({route, navigation}) => {
             item.id ? item.id.toString() + index : `index-${index}`
           }
           onEndReachedThreshold={0.5}
-          ListFooterComponent={<ActivityIndicator animating />}
+          ListFooterComponent={loadingMore ? <ActivityIndicator /> : null}
           onEndReached={() => {
             console.log('This function is being called');
             loadMoreExercises();
@@ -141,7 +141,8 @@ const BodyPart: React.FC<Props> = ({route, navigation}) => {
           renderItem={renderItem}
         />
       )}
-      {bodyExercises.length === 0 && (
+      {bodyExercises.length === 0 && parts !== 'legs' && (<SafeAreaView><TouchableOpacity onPress={() => navigation.goBack()}><Text>Back</Text></TouchableOpacity><Text>{parts.charAt(0).toUpperCase() + parts.slice(1)}</Text><Text>{error?.message || 'No exercises found.'}</Text></SafeAreaView>)}
+      {bodyExercises.length === 0 && parts === 'legs' && (
         <SafeAreaView>
           <Stack spacing={10}>
             <HStack p={20} spacing={20} items="center" justify="between">
@@ -156,7 +157,7 @@ const BodyPart: React.FC<Props> = ({route, navigation}) => {
                 style={{fontSize: 26, fontFamily: 'Roboto-Medium'}}>
                 Legs
               </Text>
-              <Entypo name="dots-three-vertical" size={15} color={'black'} />'
+              <Entypo name="dots-three-vertical" size={15} color={'black'} />
             </HStack>
 
             <TouchableOpacity

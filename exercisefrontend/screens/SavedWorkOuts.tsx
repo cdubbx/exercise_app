@@ -35,26 +35,18 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
 }) => {
   const {exercises} = route.params ?? []; // Provide a default value if params is undefined
 
-  const {fetchedExercises} = useFetchedSavedWorkOuts();
+  const {fetchedExercises, error: savedError} = useFetchedSavedWorkOuts();
 
   const [isCustom, setCustom] = useState<boolean>(false);
   const [localExercises, setLocalExercises] = useState<any[]>();
-  const {userWorkouts} = useUploadWorkOuts();
+  const {userWorkouts, error: uploadError} = useUploadWorkOuts();
   const {deleteSavedWorkout, deleteUserSavedWorkout} = useDeleteWorkout();
   const [selected, setSelected] = useState({
     exercises: true,
     customExercises: false,
   });
 
-  let combinedExercises = [...fetchedExercises];
-  useEffect(() => {
-    setLocalExercises(combinedExercises);
-    setLocalExercises((prevLocalExercises: any) => [
-      ...prevLocalExercises,
-      ...userWorkouts,
-    ])
-  }, [fetchedExercises, exercises]);
-
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
   const toggleCustom = (workoutType: 'custom' | 'regular') => {
     switch (workoutType) {
       case 'custom':
@@ -76,21 +68,14 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
         break;
     }
   };
-  const selectedExercises = isCustom ? userWorkouts : localExercises;
+  const selectedExercises = (isCustom ? userWorkouts : fetchedExercises).filter(item => !removedIds.includes(`${isCustom}:${item.id}`));
   const flattenedExercises = selectedExercises?.flat().filter(Boolean);
 
   const handleDelete = async (id: any) => {
-    if (id && !isCustom) {
-      setLocalExercises((prevLocalExercises: any) =>
-        prevLocalExercises.filter((exercise: any) => exercise?.id !== id),
-      );
-      await deleteSavedWorkout(id);
-    } else { 
-      setLocalExercises((prevLocalExercises: any) =>
-        prevLocalExercises.filter((exercise: any) => exercise?.id !== id),
-      );
-      await deleteUserSavedWorkout(id);
-    }
+    try {
+      if (isCustom) await deleteUserSavedWorkout(id); else await deleteSavedWorkout(id);
+      setRemovedIds(prev => [...prev, `${isCustom}:${id}`]);
+    } catch (error: any) { Alert.alert('Could not remove workout', error.message); }
   };
 
   return (
@@ -110,7 +95,7 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
               />
             </TouchableOpacity>
             <Text
-              style={{textAlign: 'center', marginBottom: 20, fontSize: 18, color:"Black"}}
+              style={{textAlign: 'center', marginBottom: 20, fontSize: 18, color:"black"}}
               >
               Saved Workouts
             </Text>
@@ -157,6 +142,7 @@ const SavedWorkOuts: React.FC<SavedWorkoutsScreenProps> = ({
             </HStack>
           </View>
         }
+        ListEmptyComponent={<Text style={{padding: 16}}>{savedError || uploadError || 'No saved workouts yet.'}</Text>}
         data={flattenedExercises}
         renderItem={({item}): any => (
           <TouchableOpacity

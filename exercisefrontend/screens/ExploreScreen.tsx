@@ -22,25 +22,9 @@ interface ExploreScreenProps {
   navigation: NavigationProp<ExploreStackParamList, 'Explore'>;
 }
 const ExploreScreen: React.FC<ExploreScreenProps> = ({navigation}) => {
-  const {users, isLoading} = useUsers();
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [query, setQuery] = useState('');
+  const {users, isLoading, fetchUsers, error} = useUsers(query);
   const {publicWorkouts, isLoading: workoutsLoading} = useUploadWorkOuts();
-
-  const handleSearch = (query: string) => {
-    const trimmedQuery = query.trim().toLowerCase();
-    if (trimmedQuery === '') {
-      setFilteredUsers([]);
-      return;
-    }
-    setFilteredUsers(
-      users.filter(
-        user =>
-          user?.username &&
-          user.is_searchable &&
-          user.username.toLowerCase().startsWith(trimmedQuery),
-      ),
-    );
-  };
 
   return (
     <FlatList
@@ -51,12 +35,16 @@ const ExploreScreen: React.FC<ExploreScreenProps> = ({navigation}) => {
             <TextInput
               placeholderTextColor={'black'}
               placeholder="Find other users"
-              onChangeText={text => handleSearch(text)}
+              value={query}
+              onChangeText={setQuery}
             />
           </HStack>
         </View>
       }
-      data={filteredUsers}
+      data={users}
+      keyExtractor={item => item.id}
+      onEndReached={() => { void fetchUsers(); }}
+      ListEmptyComponent={<Text>{error || (isLoading ? 'Loading...' : 'No public profiles found.')}</Text>}
       renderItem={({item}) => (
         <View>
           <UsersCard navigation={navigation} user={item} />
@@ -70,6 +58,7 @@ const ExploreScreen: React.FC<ExploreScreenProps> = ({navigation}) => {
             publicWorkouts.length > 0 &&
             publicWorkouts.slice(0, 1).map((workout, index) => (
               <TouchableOpacity
+                key={String(workout.id)}
                 onPress={() => {
                   navigation.navigate('PublicWorkoutsScreen', {
                     publicWorkouts: publicWorkouts,

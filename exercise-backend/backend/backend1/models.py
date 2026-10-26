@@ -4,6 +4,7 @@ from .managers import CustomerUserManager
 from django.conf import settings
 import random 
 from datetime import date, timedelta
+from django.utils import timezone
 import string
 from pgvector.django import VectorField
 from uuid import uuid4
@@ -34,7 +35,7 @@ class User(AbstractUser):
     def __str__(self) -> str:
         return self.email
     def update_streak(self):
-        today = date.today()
+        today = timezone.localdate()
         if self.last_active is None:
             self.streak = 1
         elif self.last_active == today:
@@ -123,12 +124,21 @@ class PlannedWorkout(models.Model):
         ('Sunday', 'Sunday'),
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='planned_workouts')
-    saved_workout = models.ForeignKey(SavedWorkout, on_delete=models.CASCADE, related_name='planned_workouts')
-    day_of_the_week = models.CharField(max_length=9)
+    saved_workout = models.ForeignKey(SavedWorkout, on_delete=models.CASCADE, related_name='planned_workouts', null=True, blank=True)
+    custom_workout = models.ForeignKey(UserUploadWorkedouts, on_delete=models.CASCADE, null=True, blank=True)
+    sets = models.PositiveSmallIntegerField(default=1)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=(models.Q(saved_workout__isnull=False, custom_workout__isnull=True) | models.Q(saved_workout__isnull=True, custom_workout__isnull=False)), name='plan_one_exercise_source'),
+            models.UniqueConstraint(fields=['user', 'saved_workout', 'day_of_the_week'], name='unique_saved_plan_day'),
+            models.UniqueConstraint(fields=['user', 'custom_workout', 'day_of_the_week'], name='unique_custom_plan_day'),
+        ]
+    day_of_the_week = models.CharField(max_length=9, choices=DAYS_OF_WEEK)
     reps = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.user.email} - {self.saved_workout.exercise.name} on {self.day_of_the_week}"
+        return f"{self.user.email} - {self.saved_workout or self.custom_workout} on {self.day_of_the_week}"
     
 class NowPlayingTrack(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

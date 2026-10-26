@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 
 import jwt
 import datetime
+from django.db import transaction
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.throttling import ScopedRateThrottle
+from .serializers import PublicUserSerializer
 
 
 
@@ -39,59 +43,43 @@ class ExerciseCursorPagination(CursorPagination):
     ordering = 'date_created'  # Ensure ordering by a unique, indexed field (e.g., timestamp)
 
 class ExerciseListView(ListAPIView):
-    authentication_classes = [TokenAuthentication]
     permission_classes = [AllowAny]
     serializer_class = ExerciseSerializer
-    pagination_class = ExerciseCursorPagination  # Use CursorPagination
+    pagination_class = ExerciseCursorPagination
 
     def get_queryset(self):
-        cursor = self.request.query_params.get("cursor", "first_page")
-        primaryMuscle = self.request.query_params.get("primaryMuscles")
-        search = self.request.query_params.get("search")  # ✅ Add this
-
-        # Generate a cache key that includes search
-        cache_key = f"exercise_cursor_{cursor}_muscle_{primaryMuscle}_search_{search}"
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return cached_data
-
         queryset = Exercise.objects.all()
-
-        if primaryMuscle:
-            queryset = queryset.filter(primaryMuscles__icontains=primaryMuscle)
-
+        muscle = self.request.query_params.get('primaryMuscles')
+        search = self.request.query_params.get('search', '').strip()
+        if muscle:
+            queryset = queryset.filter(primaryMuscles__icontains=muscle)
         if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(description__icontains=search) |
-                Q(category__icontains=search)
-            )
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(category__icontains=search))
+        return queryset.order_by('date_created', 'id')
 
-        queryset = queryset.order_by('-date_created')
-        cache.set(cache_key, queryset, timeout=60 * 15)
-        return queryset
-# Create your views here.
 
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
+
     def post(self, request):
-        try:
-            serializer = UserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user = serializer.save(is_active=False)            
-            email = serializer.validated_data['email']
-            otp = generate_otp()
-            cache.set(f'otp_{email}', otp, timeout=300)
-            send_otp(email, otp)
-            
-            return Response({'message': 'Account created. Verify OTP to activate.'})
-        except ValidationError as ve:
-            return Response({'error': ve.detail}, status=400)
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
-        
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save(is_active=False)
+        otp = generate_otp()
+        cache.set(f'otp_{user.email}', otp, timeout=300)
+        if not send_otp(user.email, otp):
+            user.delete()
+            cache.delete(f'otp_{user.email}')
+            return Response({'error': 'Could not send verification email. Please try again.'}, status=503)
+        return Response({'message': 'Account created. Verify OTP to activate.'}, status=201)
+
+
 class VerifyOTPAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'otp'
 
     def post(self, request):
         try:
@@ -106,6 +94,7 @@ class VerifyOTPAPIView(APIView):
                 raise ValidationError({'otp': 'Invalid or expired OTP.'})            
             user = User.objects.get(email=email)
             if not user.is_active:  # Check if the user is inactive
+                cache.delete(f'otp_{email}')
                 user.is_active = True  # Activate the user
                 user.save()
             else:
@@ -129,6 +118,8 @@ class VerifyOTPAPIView(APIView):
             return Response({'error': str(e)}, status=500)
         
 class LoginAPIView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
     permission_classes = [AllowAny]  # Allow any user to access this view
 
     def post(self, request):
@@ -140,7 +131,7 @@ class LoginAPIView(APIView):
         if user is None:
             logger.error('User not found with email: %s', email)
             raise AuthenticationFailed('User not found')
-        if not user.check_password(password):
+        if not password or not user.check_password(password) or not user.is_active:
             logger.error('Invalid password for user: %s', email)
             raise AuthenticationFailed('Invalid password')
 
@@ -158,14 +149,13 @@ class LoginAPIView(APIView):
 
 class UserView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-            authenticated_user = request.user
-            try:
-                user = User.objects.get(id=authenticated_user.id)
-                serializer = UserSerializer(user)
-                return Response(serializer.data, status=200)
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=404)
+        with transaction.atomic():
+            user = User.objects.select_for_update().get(id=request.user.id)
+            user.update_streak()
+        return Response(UserSerializer(user).data)
+
 
 class UserCursorPagination(CursorPagination):
     page_size = 10
@@ -173,34 +163,27 @@ class UserCursorPagination(CursorPagination):
 
 class UserListView(ListAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.all().order_by("date_joined")
-    serializer_class = UserSerializer
+    serializer_class = PublicUserSerializer
     pagination_class = UserCursorPagination
 
     def get_queryset(self):
-        cursor = self.request.query_params.get("cursor", "first_page")        
-        cached_users = cache.get(f"user_list:{cursor}")
-        if cached_users:
-            return cached_users
-        users = super().get_queryset()
-        cache.set(f"user_list:{cursor}", users, timeout=60 * 60)
-        return users
+        queryset = User.objects.filter(is_active=True, is_searchable=True, is_private=False).exclude(id=self.request.user.id)
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            queryset = queryset.filter(username__istartswith=search)
+        return queryset.order_by('date_joined', 'id')
+
 
 class UserDetailView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, user_id):
-        cache_key = f"user_{user_id}"
-        cached_user = cache.get(cache_key)
-        if cached_user:
-            return Response(cached_user)
-        try:
-            user = User.objects.get(id=user_id)
-            serializer = UserSerializer(user)
-            cache.set(cache_key, serializer.data, timeout=60* 60)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+        user = get_object_or_404(User, id=user_id, is_active=True)
+        if user.id != request.user.id and (user.is_private or not user.is_searchable):
+            return Response({'error': 'Profile is private.'}, status=404)
+        return Response(PublicUserSerializer(user).data)
+
+
 class EditUserView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -209,7 +192,7 @@ class EditUserView(APIView):
             serializer = UserSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response({"message": "User information updated successfully"}, status=status.HTTP_200_OK)
+                return Response({"message": "User information updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -233,42 +216,6 @@ class LogoutView(APIView):
         }
         return response
 
-class TokenRefreshView(APIView):
-    
-    def post(self, request):
-        refresh_token = request.data.get('refresh_token')
-        if refresh_token is None:
-            raise AuthenticationFailed('Refresh token required')
-        try:
-            payload = jwt.decode(refresh_token, 'refresh_secret', algorithms = ["HS256"])
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Expire refresh token, please login again')
-        
-        user = User.objects.filter(id=payload['id']).first()
-        if not user:
-            raise AuthenticationFailed('Unauthenticated')
-        
-        access_token_payload = {
-            "id": user.id,
-            "exp":datetime.datetime.utcnow() + datetime.timedelta(minutes=15),
-            "iat": datetime.datetime.utcnow()
-        }
-
-        new_acccess_token = jwt.encode(access_token_payload, 'access_secret', algorithm = "HS256")
-        new_refresh_token_payload = {
-            "id": payload['id'],
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7),
-            "iat": datetime.datetime.utcnow()
-        }
-
-        new_refresh_token = jwt.encode(new_refresh_token_payload,"refresh_secret", algorithm = 'HS256')
-
-
-        return Response({
-            'access_token': new_acccess_token,
-            'refresh_token': new_refresh_token
-        })
-        
 class UploadWorkOutView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -294,19 +241,12 @@ class GetUserUploadedWorkOutView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserUploadWorkoutsSerializer
     pagination_class = UserUploadedWorkoutsCursorPagination
-    
+
     def get_queryset(self):
-        cursor = self.request.query_params.get('cursor', 'first_page')
-        is_public = self.request.query_params.get('is_public','false').lower() == 'true'
-        cache_key = f"workoutlist_{'public' if is_public else self.request.user.id}_{cursor}"
-        cached_workouts = cache.get(cache_key)
-        if cached_workouts:
-            return cached_workouts
-        if is_public:
-            workouts = UserUploadWorkedouts.objects.filter(is_public = True).order_by("-date_created")
-        workouts = UserUploadWorkedouts.objects.filter(user=self.request.user).order_by("-date_created")
-        cache.set(cache_key, workouts, timeout=60 * 60)
-        return workouts
+        if self.request.query_params.get('is_public', 'false').lower() == 'true':
+            return UserUploadWorkedouts.objects.filter(is_public=True, user__is_private=False).order_by('date_created', 'id')
+        return UserUploadWorkedouts.objects.filter(user=self.request.user).order_by('date_created', 'id')
+
 
 class GetTrainerVerifiedWorkkouts(ListAPIView):
     authentication_classes = [IsAuthenticated]
@@ -342,66 +282,47 @@ class SaveWorkOutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
-        logger.debug(f'Authenticated user: {user}')  # Debugging line
-
-        if not user:
-            return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        workout_data = request.data.get('workout', {})
-        exercise_id = workout_data.get('id')
-        
+        exercise_id = request.data.get('workout', {}).get('id')
         if not exercise_id:
-            return Response({"error": "Exercise ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({'error': 'Exercise ID is required.'})
+        from rest_framework.serializers import UUIDField
+        exercise_id = UUIDField().run_validation(exercise_id)
+        exercise = get_object_or_404(Exercise, id=exercise_id)
+        workout, created = SavedWorkout.objects.get_or_create(user=request.user, exercise=exercise)
+        return Response({'workout': workout.id, 'created': created, 'message': 'Workout saved.' if created else 'Workout already saved.'}, status=201 if created else 200)
 
-        saved_workout_data = {'exercise_id': exercise_id}
-
-        serializer = SavedWorkoutSerializer(data=saved_workout_data)
-        if serializer.is_valid():
-            workout = serializer.save(user=user)
-            return Response({"workout": workout.id}, status=status.HTTP_201_CREATED)
-        else:
-            logger.debug(f'Serializer errors: {serializer.errors}')  # Debugging line
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserPlannedWorkoutsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        planned_workouts = PlannedWorkout.objects.filter(user=user).select_related('saved_workout', 'saved_workout__exercise')
-        serializer = PlannedWorkoutSerializer(planned_workouts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request):
+        workouts = PlannedWorkout.objects.filter(user=request.user).select_related('saved_workout__exercise', 'custom_workout')
+        return Response(PlannedWorkoutSerializer(workouts, many=True).data)
 
-    def post(self, request, *args, **kwargs):
-        user = request.user
-        request.data['user'] = user.id  # Set the user
-        workout_data = request.data.get('workout', {}) 
-        workout = workout_data.get('exercise', {})
-        exercise_id = workout.get('id')
-        day_of_the_week = workout_data.get('day')
-        reps = workout_data.get('reps')
-        saved_workout_instance = get_object_or_404(SavedWorkout, exercise_id=exercise_id, user=user)       
-        saved_workout_id = saved_workout_instance.id
+    def post(self, request):
+        workout = request.data.get('workout', {})
+        exercise_id = workout.get('exercise', {}).get('id')
+        from rest_framework.serializers import UUIDField
+        exercise_id = UUIDField().run_validation(exercise_id)
+        custom = UserUploadWorkedouts.objects.filter(id=exercise_id, user=request.user).first() if exercise_id else None
+        saved = None if custom else get_object_or_404(SavedWorkout, exercise_id=exercise_id, user=request.user)
+        serializer = PlannedWorkoutSerializer(data={
+            'saved_workout': saved.id if saved else None,
+            'custom_workout': str(custom.id) if custom else None,
+            'day_of_the_week': workout.get('day'),
+            'reps': workout.get('reps'),
+            'sets': workout.get('sets', 1),
+        })
+        serializer.is_valid(raise_exception=True)
+        values = serializer.validated_data
+        with transaction.atomic():
+            plan, created = PlannedWorkout.objects.get_or_create(
+                user=request.user, saved_workout=saved, custom_workout=custom,
+                day_of_the_week=values['day_of_the_week'],
+                defaults={'reps': values['reps'], 'sets': values['sets']},
+            )
+        return Response(PlannedWorkoutSerializer(plan).data, status=201 if created else 200)
 
-        
-        if not saved_workout_id or not day_of_the_week:
-            return Response({"error": "Both saved_workout and day_of_the_week are required."}, status=status.HTTP_400_BAD_REQUEST)
-        
-     
-        data = {
-            'user': user.id,
-            'saved_workout': saved_workout_id,
-            'day_of_the_week': day_of_the_week,
-            'reps': reps
-        }
-        
-
-        serializer = PlannedWorkoutSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CheckAuthenticationView(APIView):
     permission_classes = [IsAuthenticated]
@@ -456,7 +377,8 @@ class RequestPasswordResetAPIView(APIView):
                 token_generator = PasswordResetTokenGenerator()
                 token = token_generator.make_token(user)
 
-                reset_link = f"exercisefrontend://reset-password?token={token}&email={email}"
+                from urllib.parse import urlencode
+                reset_link = 'exercisefrontend://reset-password?' + urlencode({'token': token, 'email': email})
                 email_subject = "Password Reset Request"
                 email_body = f"""
                     <p>Click the link below to reset your password:</p>
@@ -478,42 +400,35 @@ class RequestPasswordResetAPIView(APIView):
                 return Response({'message': f"There is an internal error {e}"}, status=500)
             
 class ResetPasswordAPIView(APIView):
-        permission_classes = [AllowAny]
-        def post(self, request):
-            email = request.data.get('email')
-            token = request.data.get('token')
-            new_password = request.data.get('new_password')
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
 
-            if not email or not token or not new_password:
-                raise ValidationError({'message': 'Email, token, and new password are required'})
-            try:
-                user = User.objects.get(email=email)
-                token_generator = PasswordResetTokenGenerator()
-                if not token_generator.check_token(user, token):
-                    raise ValidationError({'error': 'Invalid or expired token'})
-                user.set_password(new_password)
-                user.save()
-                return Response({'message': 'Password has been reset successfully'}, status=200)
-            except User.DoesNotExist:
-                raise ValidationError({'email': 'User with this email does not exist'})
-            except Exception as e:
-                print( f"There is an internal error {e}")
-                return Response({'message': f"There is an internal error {e}"}, status=500)
+    def post(self, request):
+        from django.core.exceptions import ValidationError as PasswordError
+        user = get_object_or_404(User, email=request.data.get('email'))
+        if not PasswordResetTokenGenerator().check_token(user, request.data.get('token')):
+            raise ValidationError({'error': 'Invalid or expired reset link.'})
+        password = request.data.get('new_password', '')
+        try:
+            validate_password(password, user)
+        except PasswordError as error:
+            raise ValidationError({'new_password': error.messages})
+        user.set_password(password)
+        user.save(update_fields=['password'])
+        return Response({'message': 'Password has been reset successfully.'})
+
 
 class TrackStreakView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        try:
-             user = request.user
-             streak_user = User.objects.get(user=user)
-             streak_user.update_streak()
-             serializer = UserSerializer(streak_user)
-             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.debug(f"An error has occurred {e}")
-            print(f"An error has occurred {e}")
-            return Response({"error": f"An error has occured {e}"}, status=status.HTTP_400_BAD_REQUEST)
-   
+        with transaction.atomic():
+            user = User.objects.select_for_update().get(id=request.user.id)
+            user.update_streak()
+        return Response(UserSerializer(user).data)
+
+
 class SpotifySwapTokenView(APIView):
 
     permission_classes = [AllowAny]  # ✅ Allow all users (ensure API is public)
@@ -607,29 +522,54 @@ class DeleteSavedWorkoutView(APIView):
         return Response({"message": "Saved workout deleted successfully."}, status=status.HTTP_200_OK)    
 class DeleteUserAccountView(APIView):
     permission_classes = [IsAuthenticated]
+
     def delete(self, request):
-        user = request.user
-        user.delete()
+        request.user.delete()
+        return Response(status=204)
+
+
 class ReportIssueView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'reports'
+
     def post(self, request):
-        report_type = request.data.get("report_type", "issue")  # e.g., "user" or "exercise"
-        reported_id = request.data.get("reported_id", "")
-        report_text = request.data.get("report_text", "")
-        if not report_text:
-            return Response({"error": "Report text is required."}, status=status.HTTP_400_BAD_REQUEST)
-        subject = f"Report: {report_type.capitalize()} Issue"
-        if reported_id:
-            subject += f" (ID: {reported_id})"
-            to_email = "cwwantong@gmail.com"
-            try:
-                send_mail(
-                        subject,
-                        report_text,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [to_email],
-                        fail_silently=False,
-                )
-                return Response({"message": "Report sent successfully."}, status=status.HTTP_200_OK)
-            except Exception as e:
-                    return Response({"error": "Failed to send report", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        report = request.data.get('reportObj', request.data)
+        text = report.get('report_text', '').strip()
+        if not text or len(text) > 5000:
+            raise ValidationError({'error': 'Enter a report between 1 and 5000 characters.'})
+        if not settings.REPORT_EMAIL:
+            return Response({'error': 'Reporting is not configured.'}, status=503)
+        send_mail('Exercise app report', f"Reporter: {request.user.id}\nType: {report.get('report_type', 'issue')}\nID: {report.get('reported_id', '')}\n{text}", settings.DEFAULT_FROM_EMAIL, [settings.REPORT_EMAIL], fail_silently=False)
+        return Response({'message': 'Report sent successfully.'})
+
+
+class DeleteUserUploadedWorkoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, workout_id):
+        get_object_or_404(UserUploadWorkedouts, id=workout_id, user=request.user).delete()
+        return Response(status=204)
+
+class ChatUnavailableView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        return Response({'error': 'Exercise recommendations are planned for a later release. You can find and save exercises using Search.'}, status=503)
+
+class ResendOTPAPIView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'otp'
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            raise ValidationError({'email': 'Email is required.'})
+        user = User.objects.filter(email=email, is_active=False).first()
+        if user:
+            otp = generate_otp()
+            if not send_otp(email, otp):
+                return Response({'error': 'Could not send verification email. Please try again.'}, status=503)
+            cache.set(f'otp_{email}', otp, timeout=300)
+        return Response({'message': 'If this account needs verification, a new code has been sent.'})

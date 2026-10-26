@@ -1,13 +1,11 @@
-import {useEffect, useState} from 'react';
-import AWS from 'aws-sdk';
-import RNFetchBlob from 'react-native-blob-util';
+import {API_URL, apiFetch, readResponse} from '../services/api';
+import {useEffect, useState, useRef} from 'react';
 import {
   ImageLibraryOptions,
   launchImageLibrary,
 } from 'react-native-image-picker';
 import {getAuthToken} from './auth';
 import {User} from '../interfaces/types';
-import {SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID} from '@env';
 
 export interface SelectedFile {
   uri: string;
@@ -15,75 +13,22 @@ export interface SelectedFile {
   type?: string;
 }
 
-const s3 = new AWS.S3({
-  apiVersion: '2006-03-01',
-  region: 'us-east-2',
-  accessKeyId: AWS_ACCESS_KEY_ID,
-  secretAccessKey: SECRET_ACCESS_KEY,
-  params: {Bucket: 'exerciseplus'},
-});
-
 export const useS3Uploader = () => {
   const [uploadProgess, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>('');
-
-
-  
-  const uploadToS3 = async (file: any, path: 'profile' | 'exercises'): Promise<string | null | undefined> => {
-    
-    if (!file) {
-      throw new Error('No file provided for upload');
-    }
-    setError(null);
-    setUploadProgress(0);
-    let params;
-
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const uploadToS3 = async (file: SelectedFile, path: 'profile' | 'exercises'): Promise<string> => {
+    setError(null); setUploadProgress(0);
     try {
-      switch (path) {
-        case 'profile':
-        case 'exercises': 
-          params = {
-            Bucket: 'exerciseplus',
-            Key: `${path}-images/${file.name}`, 
-            ContentType: file.type,
-          };
-          break;
-        default:
-          throw new Error('Invalid path provided');
-      }
-      if (!params) {
-        throw new Error('S3 upload parameters not defined');
-      }
-      const signedUrl = await s3.getSignedUrlPromise('putObject', params);
-      console.log("Signed URL:", signedUrl);
-      console.log(file.type);
-      
-      const response = await RNFetchBlob.fetch(
-        'PUT',
-        signedUrl,
-        {
-          'Content-Type': file.type,
-        },
-        RNFetchBlob.wrap(file.uri.replace('file://', '')),
-      );
-      if (response.respInfo.status === 200) {
-        const uploadedUrl = signedUrl.split('?')[0];
-        setUploadedUrl(uploadedUrl);
-        return uploadedUrl;
-      } else {
-        throw new Error(
-          `Upload failed with status ${response.respInfo.status}`,
-        );
-      }
-    } catch (error: any) {
-      setError(error.message);
-      console.error('Upload error:', error);
-      return null; 
-    }
+      const form = new FormData();
+      form.append('path', path);
+      form.append('file', {uri: file.uri, name: file.name || 'image.jpg', type: file.type || 'image/jpeg'} as any);
+      const data = await readResponse(await apiFetch(`${API_URL}/uploads/`, {method: 'POST', body: form}));
+      setUploadedUrl(data.url); setUploadProgress(100);
+      return data.url;
+    } catch (err: any) { setError(err.message); throw err; }
   };
-
-  return {uploadToS3, uploadProgess, uploadedUrl};
+  return {uploadToS3, uploadProgess, uploadedUrl, error};
 };
 
 export const useFilePicker = () => {
@@ -131,43 +76,30 @@ export const useFilePicker = () => {
   return {error, pickFile, setFile, file};
 };
 
-export const useUsers = () => {
+export const useUsers = (search = '') => {
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setLoading] = useState<boolean>(false);
-  const [nextUrl, setNextUrl] = useState<string | null>(
-    'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/users/',
-  );
-
-  async function fetchUsers() {
-    if (!nextUrl || isLoading) return;
+  const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const next = useRef<string | null>(null);
+  const busy = useRef(false);
+  const version = useRef(0);
+  const fetchUsers = async () => {
+    if (!next.current || busy.current) return;
+    busy.current = true; setLoading(true); setError('');
+    const current = version.current;
     try {
-      setLoading(true);
-      const token = await getAuthToken();
-      const response = await fetch(nextUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        console.log(data.error || 'Network error');
-        throw new Error(data.error || 'Network error');
-      }
-      setUsers(prevUsers => [...prevUsers, ...data.results]);
-      setNextUrl(data.next);
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-    } finally {
-      setLoading(false);
-    }
-  }
+      const data = await readResponse(await apiFetch(next.current));
+      if (current !== version.current) return;
+      setUsers(prev => [...prev, ...data.results]); next.current = data.next;
+    } catch (err: any) { if (current === version.current) setError(err.message); }
+    finally { if (current === version.current) { busy.current = false; setLoading(false); } }
+  };
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  return {users, isLoading, fetchUsers, hasMore: !!nextUrl};
+    const current = ++version.current;
+    setUsers([]); busy.current = false;
+    next.current = `${API_URL}/users/?search=${encodeURIComponent(search.trim())}`;
+    const timer = setTimeout(() => { void fetchUsers(); }, 250);
+    return () => { version.current = current + 1; clearTimeout(timer); };
+  }, [search]);
+  return {users, isLoading, fetchUsers, hasMore: !!next.current, error};
 };

@@ -1,3 +1,4 @@
+import {openChat} from '../services/navigation';
 import {
   View,
   SafeAreaView,
@@ -63,6 +64,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   const {fetchedExercises} = useFetchedSavedWorkOuts(); 
   const [localExercises, setLocalExercises] = useState<ExerciseInterface|any>()
   const [feet, setFeet] = useState<number>(5);
+  const [heightChanged, setHeightChanged] = useState(false);
   const [inches, setInches] = useState<number>(0);
   const [imageUrl, setImageUrl] = useState<string>('');
   const {file, error, pickFile, setFile} = useFilePicker();
@@ -88,7 +90,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
   });
 
   const [track, setTrack] = useState<Song | undefined | null>();
-  const streak = 5;
+  const streak = user?.streak ?? 0;
 
   const showNowPlaying = async (track: any) => {
     if (track) {
@@ -100,13 +102,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
 
   const handleUpdateUser = async () => {
     try {
-      if (feet !== null && inches !== null) {
-        setUserInfo(prev => ({
-          ...prev,
-          height: convertToDecimalFeet(feet, inches),
-        }));
-      }
-      const message = await updateUser(userInfo);
+      const message = await updateUser({...userInfo, ...(heightChanged ? {height: Number(convertToDecimalFeet(feet, inches).toFixed(4))} : {})});
       Alert.alert(message);
       setIsVisible(false);
     } catch (error) {
@@ -164,10 +160,18 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
       id: 'bot-screen-tooltip',
       order:7,
       onActivate: () => {
-        navigation.navigate('BotScreen', )
+        openChat()
       }
     }, true)
-  })
+  }, [tour.register, navigation])
+
+  useEffect(() => {
+    setUserInfo({...user});
+    setHeightChanged(false);
+    const height = Number(user?.height) || 5;
+    setFeet(Math.floor(height));
+    setInches(Math.min(11, Math.round((height % 1) * 12)));
+  }, [user]);
 
   const onClose = () => {
     setIsVisible(false);
@@ -183,6 +187,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
         break;
       case 'addWorkout':
         navigation.navigate('AddWorkoutScreen');
+        break;
       default:
         Alert.alert('Unknown action selected');
     }
@@ -233,7 +238,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <Stack>
         <HStack p={20} spacing={20} items="center" justify="end">
-          {Platform.OS === 'ios' && (
+          {(
             tour.wrap('settings-menu', iphoneMenu, {
               showChildInTooltip:true,
               order:6,
@@ -264,16 +269,16 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
                   <Ionicons name="flame-outline" size={20} />
                 )}
 
-                <Text>Streak</Text>
+                <Text>Streak: {streak}</Text>
               </HStack>
               <HStack style={styles.infoStack}>
                 <TouchableOpacity>
                   <Text style={{fontSize: 12}}>Friends</Text>
-                  <Text>5</Text>
+                  <Text>—</Text>
                 </TouchableOpacity>
                 <TouchableOpacity>
                   <Text style={{fontSize: 12}}>Exercises Completed</Text>
-                  <Text style={{textAlign: 'center'}}>2</Text>
+                  <Text style={{textAlign: 'center'}}>—</Text>
                 </TouchableOpacity>
                 <TouchableOpacity>
                   <Text></Text>
@@ -288,7 +293,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             <Text style={styles.weightText}>
               {typeof userInfo?.weight === 'string'
                 ? formatWeight(parseFloat(userInfo?.weight))
-                : userInfo?.weight}
+                : (userInfo?.weight ?? '—')}
             </Text>
           </Stack>
 
@@ -297,7 +302,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             <Text style={styles.weightText}>
               {typeof userInfo?.goal_weight === 'string'
                 ? formatWeight(parseFloat(userInfo?.goal_weight))
-                : userInfo?.goal_weight}
+                : (userInfo?.goal_weight ?? '—')}
             </Text>
           </Stack>
         </HStack>
@@ -314,6 +319,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             .slice(0, showMore ? fetchedExercises.length : 2)
             .map(item => (
               <TouchableOpacity
+                key={String(item.id)}
                 onPress={() => {
                   navigation.navigate('SavedExercises', {
                     exercise: item.exercise,
@@ -358,9 +364,10 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             Weight:{' '}
             {typeof userInfo?.weight === 'string'
               ? formatWeight(parseFloat(userInfo?.weight))
-              : userInfo?.weight}
+              : (userInfo?.weight ?? '—')}
           </Text>
           <TextInput
+            placeholderTextColor="#666"
             // value={user?.weight}
             placeholder="Enter your weight"
             inputMode="numeric"
@@ -376,9 +383,10 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             Goal Weight:{' '}
             {typeof userInfo?.goal_weight === 'string'
               ? formatWeight(parseFloat(userInfo?.goal_weight))
-              : userInfo?.goal_weight}
+              : (userInfo?.goal_weight ?? '—')}
           </Text>
           <TextInput
+            placeholderTextColor="#666"
             // value={user?.weight}
             placeholder="Enter your goal weight"
             inputMode="numeric"
@@ -395,7 +403,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             <Picker
               style={[styles.modalPickerHeight,  { color: "black" }]}
               selectedValue={feet}
-              onValueChange={setFeet}>
+              onValueChange={value => { setFeet(value); setHeightChanged(true); }}>
               {Array.from({length: 8}, (_, i) => i + 3).map(f => (
                 <Picker.Item key={f} label={`${f} ft`} value={f} color='black' />
               ))}
@@ -403,17 +411,17 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
             <Picker
               style={styles.modalPickerHeight}
               selectedValue={inches}
-              onValueChange={setInches}>
+              onValueChange={value => { setInches(value); setHeightChanged(true); }}>
               {Array.from({length: 12}, (_, i) => i).map(inch => (
                 <Picker.Item style={{color:'black'}} key={inch} label={`${inch} in.`} color='black' value={inch} />
               ))}
             </Picker>
-            <Picker selectedValue={inches} />
           </HStack>
 
-          <Text>Phone number: {userInfo?.phone_number}</Text>
+          <Text>Phone number</Text>
           <TextInput
-            // value={String(user?.phone_number)}
+            placeholderTextColor="#666"
+            value={userInfo?.phone_number ?? ''}
             placeholder="Enter your Phone Number"
             inputMode="numeric"
             onChangeText={text =>
@@ -426,6 +434,7 @@ export default function ProfileScreen({navigation}: Props): React.JSX.Element {
 
           <Text>Username: {userInfo?.username}</Text>
           <TextInput
+            placeholderTextColor="#666"
             placeholder="Enter your new username"
             onChangeText={text =>
               setUserInfo(prev => ({

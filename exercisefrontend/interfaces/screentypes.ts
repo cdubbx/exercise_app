@@ -1,3 +1,4 @@
+import type {NavigatorScreenParams} from '@react-navigation/native';
 import {User} from './types';
 
 // Define AuthStackParamList outside of the App component
@@ -56,10 +57,10 @@ export type HomeStackParamList = {
 };
 
 export type BottomTabParamList = {
-  Home1: undefined;
-  Profile1: undefined;
+  Home1: NavigatorScreenParams<ExploreStackParamList>;
+  Profile1: NavigatorScreenParams<ProfileStackParamList>;
   Explore1: undefined;
-  Calendar: undefined;
+  Calendar: NavigatorScreenParams<CalendarParamList>;
   Social1: undefined;
   BotScreen: undefined;
 };
@@ -77,8 +78,9 @@ export type BotScreenParams = {
 };
 
 export type RootStackParamList = {
+  ResetPassword: {email: string; token: string};
   BotScreen: undefined;
-  BottomTabs:undefined;
+  BottomTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ExerciseCard: {item: string};
 
 }

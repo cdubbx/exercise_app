@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.conf import settings
-import random
+import secrets
 import logging
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -23,7 +23,7 @@ def send_otp(email:str, otp:int) -> bool:
     
 def generate_otp(length=4) -> str:
     """Generate a numeric OTP of a specified length as a string"""
-    otp: str = ''.join([str(random.randint(0, 9)) for _ in range(length)])
+    otp: str = ''.join([str(secrets.randbelow(10)) for _ in range(length)])
     return otp
 
 

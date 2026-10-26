@@ -30,4 +30,6 @@ typing_extensions==4.12.2
 urllib3==2.3.0
 pgvector==0.4.1
 
- 
+
+boto3>=1.35,<2
+Pillow>=11,<14

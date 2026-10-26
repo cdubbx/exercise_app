@@ -28,10 +28,10 @@ export default function PlannedExercise({item}: any) {
                 {exercise?.name}
               </Text>
               <Text style={{fontSize: 11, color: 'black'}}>
-                {exercise?.category.charAt(0).toUpperCase() + exercise?.category.slice(1)}
+                {exercise?.category ? exercise.category.charAt(0).toUpperCase() + exercise.category.slice(1) : ''}
               </Text>
               <Text style={{fontSize: 11, color: 'black', }}>
-                {item?.reps}
+                {item?.sets ?? 1} sets × {item?.reps} reps
               </Text>
             </Stack>
           </HStack>

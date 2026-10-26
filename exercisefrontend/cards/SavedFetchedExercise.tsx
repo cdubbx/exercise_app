@@ -29,9 +29,10 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
 }) => {
   const [modal, setModal] = useState(false);
   const daysOfTheWeek = ['Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'];
+  const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('');
   const [selectedDay, setSelectedDay] = useState<string | null>('');
-  const {savePlannedWorkouts} = useSavePlannedWorkouts();
+  const {savePlannedWorkouts, loading} = useSavePlannedWorkouts();
   const {addExercises, exercises} = useSetExercise();
   const itemData = Array.isArray(route.params.exercise)
     ? route.params.exercise[0]
@@ -53,24 +54,26 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
         return;
       }
 
+      if (!/^\d+$/.test(reps) || !/^\d+$/.test(sets) || Number(reps) < 1 || Number(reps) > 1000 || Number(sets) < 1 || Number(sets) > 100) {
+        Alert.alert('Invalid workout', 'Enter 1–100 sets and 1–1000 repetitions.'); return;
+      }
       const workoutData: any = {
         exercise: item,
-        reps: reps,
+        reps: Number(reps),
+        sets: Number(sets),
         day: selectedDay,
       };
       const result = await savePlannedWorkouts(workoutData);
       if (result) {
         workoutData['day_of_the_week'] = selectedDay;
-        addExercises(workoutData);
-        console.log("This is the saved workout", workoutData);
-        Alert.alert("Success", `Workout ${workoutData?.saved_workout_details?.exercise?.name}`)
+        addExercises(result);
+        Alert.alert("Success", `${item?.name} is in your plan.`)
         navigation.goBack();
       }
       // console.log(
       //   'These are the exercises that are being added to state',
       //   exercises,
       // );
-      navigation.goBack();
     } catch (error) {
       Alert.alert(`${error}`);
     }
@@ -82,7 +85,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => onSubmit()}>
+        <TouchableOpacity disabled={loading} onPress={() => onSubmit()}>
           <Text>Submit</Text>
         </TouchableOpacity>
       </HStack>
@@ -104,10 +107,24 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({
           style={{height: 300, width: 300, borderRadius: 20}}
         />
 
+        <Text style={{alignSelf: 'flex-start', marginLeft: 20, color: 'black'}}>Sets</Text>
         <TextInput
+          accessibilityLabel="Sets"
+          placeholder="Sets"
+          placeholderTextColor="black"
+          keyboardType="number-pad"
+          value={sets}
+          onChangeText={setSets}
+          style={{alignSelf: 'flex-start', marginLeft: 20, color: 'black'}}
+        />
+        <Text style={{alignSelf: 'flex-start', marginLeft: 20, color: 'black'}}>Repetitions</Text>
+        <TextInput
+          accessibilityLabel="Repetitions"
+          keyboardType="number-pad"
+          value={reps}
           placeholder="Reps amount"
           placeholderTextColor={'black'}
-          style={{right: 130, marginTop: 40}}
+          style={{alignSelf: 'flex-start', marginLeft: 20, color: 'black'}}
           onChangeText={text => setReps(text)}
         />
         <Box style={{right: 120}}>

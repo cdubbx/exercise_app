@@ -5,9 +5,6 @@ import {getImageUrl} from '../utils/utils';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 export default function BodyPartExercise({item}: any) {
-  useEffect(() => {
-    console.log('this is the item', item?.img_url[0]);
-  }, []);
 
   return (
     <SafeAreaView>
@@ -19,10 +16,11 @@ export default function BodyPartExercise({item}: any) {
               Array.isArray(item?.img_url) &&
               item?.img_url.length > 0
                 ? getImageUrl(item?.img_url[0])
-                : item?.img_url,
+                : typeof item?.img_url === 'string' ? item.img_url : undefined,
             cache: 'default',
           }}
-          style={{height: 60, width: 60, borderRadius: 10}}
+          resizeMode="cover"
+          style={{height: 60, width: 60, borderRadius: 10, flexShrink: 0}}
         />
         <Stack spacing={3} style={{flex: 1}}>
           <Text

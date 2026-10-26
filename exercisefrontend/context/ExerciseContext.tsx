@@ -1,8 +1,9 @@
-import React, { createContext, useState } from "react";
+import {useUserContext} from '../hooks/auth';
+import React, { createContext, useEffect, useState } from "react";
 
 interface ExerciseContextType {
-    exercises:any[] | undefined
-    setExercises:React.Dispatch<React.SetStateAction<any[] | undefined>>
+    exercises:any[]
+    setExercises:React.Dispatch<React.SetStateAction<any[]>>
     addExercises: (exercise:any) => void;
     removeExercise: (id:string) => void;
 }
@@ -14,13 +15,15 @@ interface ExerciseContextProps {
 }
 
 export const ExerciseProvider: React.FC<ExerciseContextProps> = ({children}) => {
-    const [exercises, setExercises] = useState<any[]>();
+    const [exercises, setExercises] = useState<any[]>([]);
+    const {user} = useUserContext();
+    useEffect(() => { setExercises([]); }, [user?.id]);
 
     const addExercises = (exercise: any | any[]) => {
         
         setExercises((prevExercises: any[] = [] ) => {
             console.log(prevExercises);
-            const exercisesToAdd = [exercise];
+            const exercisesToAdd = Array.isArray(exercise) ? exercise : [exercise];
             const uniqueExercises = [
                 ...prevExercises, 
                 ...exercisesToAdd.filter(
@@ -31,7 +34,7 @@ export const ExerciseProvider: React.FC<ExerciseContextProps> = ({children}) => 
         })
     }
     const removeExercise = (id:string) => {
-        setExercises((prevExercises:any) => prevExercises.filter((ex:any) => ex.id !== id));
+        setExercises((prevExercises:any) => (prevExercises ?? []).filter((ex:any) => ex.id !== id));
     }
 
     return (

@@ -1,4 +1,3 @@
-import { StringEmpty256 } from "aws-sdk/clients/emrcontainers";
 
 export interface Exercise {
     id?: string;
@@ -34,6 +33,7 @@ export interface Exercise {
     day_of_the_week: string;
     exercise: Exercise
     reps: string;
+    sets: number;
 }
 
 export interface PlannedWorkoutProps {

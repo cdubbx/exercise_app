@@ -1,58 +1,37 @@
-import {createContext, SetStateAction, useEffect, useState} from 'react';
+import React, {createContext, SetStateAction, useEffect, useState} from 'react';
 import {authTokenObj, User} from '../interfaces/types';
-import {useAuth, useUser} from '../hooks/auth';
-
+import {API_URL, apiFetch, getAuthToken, readResponse, onSessionExpired} from '../services/api';
+import SplashScreen from 'react-native-splash-screen';
 
 interface UserContextTypes {
   user: User | undefined;
-  setUser: React.Dispatch<SetStateAction< User | undefined>>;
-  isAuthenticated: boolean | undefined; 
+  setUser: React.Dispatch<SetStateAction<User | undefined>>;
+  isAuthenticated: boolean | undefined;
   setIsAuthenticated: React.Dispatch<SetStateAction<boolean | undefined>>;
   token: authTokenObj | undefined | null;
-  setToken: React.Dispatch<SetStateAction< authTokenObj| undefined | null>>;
+  setToken: React.Dispatch<SetStateAction<authTokenObj | undefined | null>>;
+  isReady: boolean;
 }
+export const UserContext = createContext<UserContextTypes | undefined>(undefined);
 
-interface UserContextProps {
-  children: React.ReactNode;
-}
-
-export const UserContext = createContext<UserContextTypes | undefined>(
-  undefined,
-);
-
-export const UserContextProvider: React.FC<UserContextProps> = ({children}) => {
-  const [user, setUser] = useState<User | undefined>();
-  const {getUser} = useUser();
-  const {isAuthenticated, checkToken, setIsAuthenticated} = useAuth();
-  const [token, setToken] = useState<authTokenObj | undefined | null>()
+export const UserContextProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
+  const [user, setUser] = useState<User>();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(false);
+  const [token, setToken] = useState<authTokenObj | undefined | null>();
+  const [isReady, setReady] = useState(false);
+  useEffect(() => onSessionExpired(() => { setUser(undefined); setToken(null); setIsAuthenticated(false); }), []);
   useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await getUser();
-
-      setUser({
-        ...userData,
-        height:
-          typeof userData?.height === 'string'
-            ? parseFloat(userData?.height)
-            : user?.height,
-        weight:
-          typeof userData?.weight === 'string'
-            ? parseFloat(userData?.weight)
-            : userData?.weight,
-        goal_weight:
-          typeof userData?.goal_weight === 'string'
-            ? parseFloat(userData?.goal_weight)
-            : userData?.goal_weight,
-      });
-
-      // console.log(parseFloat(userData?.height));
-    };
-
-    fetchUser();
+    let active = true;
+    (async () => {
+      try {
+        if (await getAuthToken()) {
+          const data = await readResponse(await apiFetch(`${API_URL}/user/`));
+          if (active) { setUser(data); setIsAuthenticated(true); }
+        }
+      } catch { if (active) setIsAuthenticated(false); }
+      finally { if (active) { setReady(true); SplashScreen.hide(); } }
+    })();
+    return () => { active = false; };
   }, []);
-  return (
-    <UserContext.Provider value={{user, setUser, isAuthenticated, setIsAuthenticated, token, setToken}}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={{user, setUser, isAuthenticated, setIsAuthenticated, token, setToken, isReady}}>{children}</UserContext.Provider>;
 };

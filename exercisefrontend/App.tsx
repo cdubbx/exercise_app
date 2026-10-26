@@ -50,6 +50,7 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {navigationRef} from './services/navigation';
 import MainNavigator from './components/MainNavigator';
 import BotScreen from './screens/BotScreen';
 import SplashScreen from 'react-native-splash-screen';
@@ -74,8 +75,9 @@ export const RootStackNavigator = () => {
     <RootStack.Navigator
       initialRouteName="BottomTabs"
       screenOptions={{headerShown: false}}>
+      <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <RootStack.Screen name="BottomTabs" component={TabNavigator} />
-      <RootStack.Screen name="BotScreen" component={BotScreen} />
+      <RootStack.Screen name="BotScreen" component={BotScreen} getId={() => 'exercise-chat'} />
       <RootStack.Screen name="ExerciseCard" component={ExerciseCard} />
     </RootStack.Navigator>
   );
@@ -88,7 +90,6 @@ export const AuthNavigator = () => {
       screenOptions={{headerShown: false}}>
       <AuthStack.Screen name="Login" component={Login} />
       <AuthStack.Screen name="Register" component={Register} />
-      <AuthStack.Screen name="Tabs" component={TabNavigator} />
       <AuthStack.Screen name="OTP" component={OTPScreen} />
       <AuthStack.Screen
         name="RequestResetPassword"
@@ -180,7 +181,7 @@ const ProfileNavigator = () => {
       <ProfileStack.Screen name="Settings" component={Settings} />
       <ProfileStack.Screen name="AddWorkoutScreen" component={WorkoutForm} />
       <ProfileStack.Screen name="Login1" component={AuthNavigator} />
-      <ProfileStack.Screen name="BotScreen" component={BotScreen} />
+
 
     </ProfileStack.Navigator>
   );
@@ -251,35 +252,10 @@ export const TabNavigator = () => {
   );
 };
 export default function App(): React.JSX.Element {
-  const {checkToken} = useAuth();
-  const [token, setToken] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
-    false,
-  );
-  const [isAppReady, setIsAppReady] = useState(false);
-
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        const result = await checkToken();
-        setIsAuthenticated(result);
-      } catch (error) {
-        console.log('An error has occurred:', error);
-        setIsAuthenticated(false);
-      } finally {
-        SplashScreen.hide();
-        setIsAppReady(true); // ✅ This line WILL run — only if you call initialize()
-      }
-    };
-
-    initialize(); // ✅ Don't forget to call the async function
-    
-  }, []); // ✅ Only run once
   const linking = {
     prefixes: ['exercisefrontend://'],
     config: {
       screens: {
-        Settings: 'spotify-auth',
         ResetPassword: {
           path: 'reset-password',
           parse: {
@@ -291,7 +267,6 @@ export default function App(): React.JSX.Element {
     },
   };
 
-  if (!isAppReady) return <></>; // show native splash
 
   return (
     <NowPlayingProvider>
@@ -300,9 +275,9 @@ export default function App(): React.JSX.Element {
           <ChatProvider>
             <WalkthroughProvider>
               <FloatingButtonContextProvider>
-                <NavigationContainer linking={linking}>
+                <NavigationContainer ref={navigationRef} linking={linking}>
                   <FloatingButton />
-                  <MainNavigator isAuthenticated={isAuthenticated} />
+                  <MainNavigator />
                 </NavigationContainer>
               </FloatingButtonContextProvider>
             </WalkthroughProvider>

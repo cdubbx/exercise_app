@@ -53,13 +53,13 @@ const WorkoutForm = () => {
     }
   };
 
-  const handleImageUpload = useCallback(async () => {
-    if (!file) {
+  const handleImageUpload = useCallback(async (selectedFile: any) => {
+    if (!selectedFile) {
       Alert.alert('No file selected');
       return;
     }
     try {
-      const url = await uploadToS3(file, 'exercises');
+      const url = await uploadToS3(selectedFile, 'exercises');
       console.log('This is the uploaded url', url);
 
       if (url) {
@@ -83,7 +83,8 @@ const WorkoutForm = () => {
       <Text style={styles.heading}>Upload Workout</Text>
       <Text style={styles.label}>Workout Name</Text>
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter workout name"
         value={exerciseData.name}
         onChangeText={text =>
@@ -96,7 +97,8 @@ const WorkoutForm = () => {
 
       <Text style={styles.label}>Equipment</Text>
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter Equipment"
         value={exerciseData.equipment}
         onChangeText={text =>
@@ -109,7 +111,8 @@ const WorkoutForm = () => {
 
       <Text style={styles.label}>Mechanic</Text>
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter Mechanic"
         value={exerciseData.mechanic}
         onChangeText={text =>
@@ -122,7 +125,8 @@ const WorkoutForm = () => {
 
       <Text style={styles.label}>Level</Text>
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter level (e.g. low, medium, high)"
         value={exerciseData.level}
         onChangeText={text =>
@@ -135,9 +139,10 @@ const WorkoutForm = () => {
 
       <Text style={styles.label}>Category</Text>
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter category"
-        value={exerciseData.cateogry}
+        value={exerciseData.category}
         onChangeText={text =>
           setExerciseData(prev => ({
             ...prev,
@@ -148,7 +153,8 @@ const WorkoutForm = () => {
 
       <Text style={styles.label}>Primary Muscles</Text>
       <TextInput
-        style={styles.input}
+        placeholderTextColor="#666"
+            style={styles.input}
         placeholder="Enter the Primary muscles"
         value={exerciseData.primaryMuscles?.join(' ') || ''} // Ensure it's a valid string
         onChangeText={text => {
@@ -170,7 +176,7 @@ const WorkoutForm = () => {
         onPress={async () => {
           const result = await pickFile(); // Ensure file is picked first
           if (result) {
-            await handleImageUpload(); // Call upload only if a file was picked
+            await handleImageUpload(result); // Call upload only if a file was picked
           }
         }}>
         {file && (
@@ -178,7 +184,7 @@ const WorkoutForm = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleUpLoadWorkout}>
+      <TouchableOpacity style={styles.button} disabled={isLoading} onPress={handleUpLoadWorkout}>
         <Text style={styles.buttonText}>Submit Workout</Text>
       </TouchableOpacity>
     </ScrollView>

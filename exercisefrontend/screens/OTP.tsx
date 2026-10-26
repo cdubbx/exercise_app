@@ -14,7 +14,7 @@ interface OTPScreenProps {
 
 const OTPScreen: React.FC<OTPScreenProps> = ({route, navigation}) => {
   const {email} = route.params;
-  const {verifyOTP} = useRegister();
+  const {verifyOTP, resendOTP, loading} = useRegister();
   const [otp, setOtp] = useState<string>('');
 
   const userData = {
@@ -22,14 +22,13 @@ const OTPScreen: React.FC<OTPScreenProps> = ({route, navigation}) => {
     otp: otp, 
   };
 
-  const handleSubmit = () => {
-    if (otp.length === 4) {
-      verifyOTP(userData)
-      navigation.navigate('Tabs')
-
-    } else {
-      Alert.alert('Invalid OTP', 'Please enter a 6-digit OTP.');
+  const handleSubmit = async () => {
+    if (otp.length !== 4) {
+      Alert.alert('Invalid OTP', 'Please enter a 4-digit OTP.');
+      return;
     }
+    try { await verifyOTP(userData); }
+    catch (error: any) { Alert.alert('Verification failed', error.message); }
   };
 
   return (
@@ -46,7 +45,11 @@ const OTPScreen: React.FC<OTPScreenProps> = ({route, navigation}) => {
         textInputStyle={styles.otpInput}
       />
 
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+      <TouchableOpacity disabled={loading} onPress={async () => {
+        try { const result = await resendOTP(email); Alert.alert('Verification code', result.message); }
+        catch (error: any) { Alert.alert('Could not resend code', error.message); }
+      }}><Text style={{color: '#333', marginBottom: 20}}>Resend code</Text></TouchableOpacity>
+      <TouchableOpacity disabled={loading} style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitButtonText}>Submit</Text>
       </TouchableOpacity>
     </View>

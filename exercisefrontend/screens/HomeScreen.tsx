@@ -1,3 +1,4 @@
+import {openTab} from '../services/navigation';
 import {
   View,
   FlatList,
@@ -10,14 +11,14 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useAuth, useLogout, useUserContext} from '../hooks/auth';
 import LinearGradient from 'react-native-linear-gradient';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Tooltip from 'react-native-walkthrough-tooltip';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {
   NativeStackNavigationProp,
   NativeStackScreenProps,
@@ -91,35 +92,38 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
 
   const tour = useWalkThrough();
 
-  useEffect(() => {
-    tour.start();
-  }, []);
+  useFocusEffect(useCallback(() => { if (!tour.isRunning) tour.start(); }, [tour.start, tour.isRunning]));
 
   useEffect(() => {
+    tour.register({id: 'search-bar', order: 1, onActivate: () => openTab('Home1', {screen: 'ExplorePage'})}, true);
+    tour.register({id: 'bicep-step', order: 2, onActivate: () => openTab('Home1', {screen: 'ExplorePage'})}, true);
     tour.register(
       {
         id: 'individual-bicep',
         order: 3,
         onActivate: () => {
-          navigation.navigate('BodyPart', {bodyParts: 'biceps'});
+          openTab('Home1', {screen: 'BodyPart', params: {bodyParts: 'biceps'}});
         },
       },
       true,
     );
   }, [navigation, tour]);
 
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
   useEffect(() => {
-    const handleSearch = async () => {
-      if (search.length >= 3) {
-        const fetchedSearchedExercises = await searchExercises(search);
-        setSearchResults(fetchedSearchedExercises);
-      } else if (search.length === 0) {
-        await searchExercises('');
-      }
-    };
-    handleSearch();
+    let active = true;
+    setSearchError('');
+    setSearchResults([]);
+    if (search.trim().length < 3) { setSearchLoading(false); return; }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try { const results = await searchExercises(search.trim()); if (active) setSearchResults(results); }
+      catch (error: any) { if (active) setSearchError(error.message); }
+      finally { if (active) setSearchLoading(false); }
+    }, 300);
+    return () => { active = false; clearTimeout(timer); };
   }, [search]);
-  
 
   const searchBar = (
           <View style={styles.searchBarHighlight}>
@@ -165,8 +169,8 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
 
         
         {/* Show search results if searching, else show default cards */}
-        {search.length >= 3 && searchResults.length > 0
-          ? searchResults.map((exercise: any, index: number) => (
+        {search.trim().length >= 3
+          ? <>{searchLoading ? <Text>Searching...</Text> : searchError ? <Text>{searchError}</Text> : searchResults.length === 0 ? <Text>No exercises found.</Text> : null}{searchResults.map((exercise: any, index: number) => (
               <TouchableOpacity
                 key={index}
                 style={{marginBottom: 10}}
@@ -176,7 +180,7 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
                 <BodyPartExercise item={exercise} />
               </TouchableOpacity>
             ))
-          : Object.entries(imageCard).map(([key, card], index) => {
+          }</> : Object.entries(imageCard).map(([key, card], index) => {
               const cardContent = (
                 <TouchableOpacity
                   key={key}

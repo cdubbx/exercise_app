@@ -1,5 +1,7 @@
+import {API_URL, apiFetch, readResponse} from '../services/api';
 import { View, Text } from 'react-native'
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import {useUserContext} from '../hooks/auth';
 import { ChatMessage } from '../interfaces/interfaces'
 
 
@@ -16,7 +18,14 @@ export const ChatProvider: React.FC<{children:React.ReactNode}> = ({children}) =
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
 
-    const sendMessage = async (userInput: any) => {
+    const busy = useRef(false);
+    const account = useRef(0);
+    const {user} = useUserContext();
+    useEffect(() => { account.current++; setMessages([]); setLoading(false); busy.current = false; }, [user?.id]);
+    const sendMessage = async (userInput: string) => {
+    if (busy.current || !userInput.trim()) return;
+    busy.current = true;
+    const version = account.current;
     const timestamp = Date.now();
     const userMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -29,8 +38,8 @@ export const ChatProvider: React.FC<{children:React.ReactNode}> = ({children}) =
     setLoading(true);
 
     try {
-      const response = await fetch(
-        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/gpt-chat/',
+      const response = await apiFetch(
+        `${API_URL}/gpt-chat/`,
         {
           method: 'POST',
           headers: {
@@ -40,7 +49,8 @@ export const ChatProvider: React.FC<{children:React.ReactNode}> = ({children}) =
         },
       );
 
-      const data = await response.json();
+      const data = await readResponse(response);
+      if (version !== account.current) return;
       const assistantMsg: ChatMessage = {
         id: Date.now().toString(), // simple timestamp-based id
         role: 'assistant',
@@ -50,6 +60,7 @@ export const ChatProvider: React.FC<{children:React.ReactNode}> = ({children}) =
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err: any) {
+        if (version !== account.current) return;
         const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -60,7 +71,7 @@ export const ChatProvider: React.FC<{children:React.ReactNode}> = ({children}) =
         errorMessage
       ]);
     } finally {
-      setLoading(false);
+      if (version === account.current) { busy.current = false; setLoading(false); }
     }
   };
 

@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8C6B27F42D492D6200596320"
-               BuildableName = "exercisefrontendSimulator.app"
-               BlueprintName = "exercisefrontendSimulator"
+               BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
+               BuildableName = "exercisefrontend.app"
+               BlueprintName = "exercisefrontend"
                ReferencedContainer = "container:exercisefrontend.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -43,9 +43,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8C6B27F42D492D6200596320"
-            BuildableName = "exercisefrontendSimulator.app"
-            BlueprintName = "exercisefrontendSimulator"
+            BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
+            BuildableName = "exercisefrontend.app"
+            BlueprintName = "exercisefrontend"
             ReferencedContainer = "container:exercisefrontend.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -60,9 +60,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8C6B27F42D492D6200596320"
-            BuildableName = "exercisefrontendSimulator.app"
-            BlueprintName = "exercisefrontendSimulator"
+            BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
+            BuildableName = "exercisefrontend.app"
+            BlueprintName = "exercisefrontend"
             ReferencedContainer = "container:exercisefrontend.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

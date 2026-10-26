@@ -1,3 +1,4 @@
+import {openTab} from '../services/navigation';
 import {
   View,
   SafeAreaView,
@@ -7,7 +8,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Calendar, CalendarList, Agenda} from 'react-native-calendars';
 import {HStack, Stack, Text} from '@react-native-material/core';
 import LinearGradient from 'react-native-linear-gradient';
@@ -51,46 +52,25 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
     (exercise: any) => exercise.saved_workout_details,
   );
 
-  const combinedExercises = fetchedExercises;
+  const [fetchError, setFetchError] = useState('');
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setFetchError('');
+    fetchPlannedWorkouts().then(data => { if (active) setFetchedExercises(data); })
+      .catch(error => { if (active) setFetchError(error.message); });
+    return () => { active = false; };
+  }, [fetchPlannedWorkouts]));
   useEffect(() => {
-    const fetchAndFilterExercises = async () => {
-      await handleFetchedExercises();
-
-      if (selectedDay) {
-        const filtered = fetchedExercises?.filter(
-          (workout: any) =>
-            workout.day_of_the_week ===
-            daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek],
-        );
-        setLocalExercises(filtered);
-      }
-    };
-
-    const handleFetchedExercises = async () => {
-      const result = await fetchPlannedWorkouts();
-      setFetchedExercises(result);
-    };
-
-    fetchAndFilterExercises();
-  }, [selectedDay]);
-
+    setLocalExercises((fetchedExercises ?? []).filter(workout => workout.day_of_the_week === daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek]));
+  }, [selectedDay, fetchedExercises]);
   useEffect(() => {
-    tour.register({
-      id:'settings-menu',
-      order:6,
-      onActivate: () => 
-        navigation.navigate('Profile1', {screen: 'Profile' })
-    },
-  true)
-  })
-
-  const handleDelete = (id: any) => {
-    if (id) {
-      setLocalExercises(prevExercises =>
-        prevExercises?.filter((exercise: any) => exercise.id !== id),
-      );
-      deletePlannedWorkout(id);
-    }
+    tour.register({id: 'settings-menu', order: 6, onActivate: () => openTab('Profile1', {screen: 'Profile'})}, true);
+  }, [tour.register, navigation]);
+  const handleDelete = async (id: number) => {
+    try {
+      await deletePlannedWorkout(id);
+      setFetchedExercises(prev => prev?.filter(exercise => exercise.id !== id));
+    } catch (error: any) { Alert.alert('Could not remove workout', error.message); }
   };
 
   const plusButton = (
@@ -140,9 +120,12 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
             </TouchableOpacity>
           ))}
         </HStack>
+        {fetchError ? <Text>{fetchError}</Text> : null}
+        {loading ? <ActivityIndicator /> : null}
         {selectedDay ? (
           <FlatList
             data={localExercises}
+            ListEmptyComponent={<Text>No workouts planned for this day.</Text>}
             renderItem={({item}) => (
               <TouchableOpacity
                 onLongPress={() => {
@@ -170,7 +153,7 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
               </TouchableOpacity>
             )}
             keyExtractor={(item: PlannedWorkout, index) =>
-              item + index.toString()
+              String(item.id)
             }
           />
         ) : (

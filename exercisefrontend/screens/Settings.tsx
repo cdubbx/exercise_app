@@ -1,3 +1,4 @@
+import {openTab} from '../services/navigation';
 import {
   StyleSheet,
   Text,
@@ -10,6 +11,8 @@ import React, {useEffect, useState} from 'react';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {useWalkThrough} from '../utils/TutorialSystemService';
+import {clearTutorialCompleted} from '../utils/tutorialStorage';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
 import {HStack, Stack} from '@react-native-material/core';
@@ -17,8 +20,6 @@ import {
   useAuth,
   useDeleteProfile,
   useLogout,
-  useSpotify,
-  useSpotifyContext,
   useUpdateUser,
   useUserContext,
 } from '../hooks/auth';
@@ -34,22 +35,23 @@ interface UserPrivacySettings {
 }
 
 const Settings: React.FC<SettingsProp> = ({navigation}) => {
-  const {isPlaying, toggleIsPlaying} = useSpotifyContext();
+  const isPlaying = false;
+  const toggleIsPlaying = () => Alert.alert('Spotify', 'Spotify integration is planned for a later release.');
+  const authenticateWithSpotify = toggleIsPlaying;
   const {updateUser, isLoading: settingsLoading} = useUpdateUser();
   const {logout} = useLogout();
   const {user, isAuthenticated, setIsAuthenticated} = useUserContext();
   const {deleteProfile, isLoading: deleteLoading} = useDeleteProfile();
-  const {
-    isLoading,
-    authenticateWithSpotify,
-    fetchNowPlaying,
-    getCurrentSession,
-  } = useSpotify();
   const [userInfo, setUserInfo] = useState<UserPrivacySettings>({
     is_private: user?.is_private,
     is_searchable: user?.is_searchable,
   });
-  const {checkToken} = useAuth();
+  const tour = useWalkThrough();
+  const replayTutorial = async () => {
+    await clearTutorialCompleted();
+    await tour.refreshTutorialEnabled?.();
+    openTab('Home1', {screen: 'ExplorePage'});
+  };
 
   const toggeIsPrivate = () => {
     setUserInfo(prev => ({
@@ -60,7 +62,7 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
 
   const handleLogout = async () => {
     const isLoggedOut = await logout();
-    await checkToken();
+
     // if(isLoggedOut && !isAuthenticated)  navigation.reset({
     //   index: 0,
     //   routes: [{ name: 'Login1' }],
@@ -76,7 +78,10 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
 
   useEffect(() => {
     if(userInfo.is_private != user?.is_private || userInfo.is_searchable != user?.is_searchable )
-    updateUser(userInfo);
+    updateUser(userInfo).catch((error: Error) => {
+      setUserInfo({is_private: user?.is_private, is_searchable: user?.is_searchable});
+      Alert.alert('Could not save settings', error.message);
+    });
   }, [userInfo.is_private, userInfo.is_searchable]);
   return (
     <View style={styles.container}>
@@ -95,6 +100,9 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
       <Text style={styles.settingsHeader}>Settings Screen</Text>
 
       <Stack style={styles.toggleVStack}>
+        <TouchableOpacity onPress={replayTutorial}>
+          <HStack style={styles.toggleStack}><Text>Replay Tutorial</Text><Ionicons name="help-circle-outline" size={26} /></HStack>
+        </TouchableOpacity>
         <HStack style={styles.toggleStack}>
           <Text>Show Spotify Now Playing</Text>
           <Switch onValueChange={toggleIsPlaying} value={isPlaying} />
@@ -102,12 +110,14 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
         <HStack style={styles.toggleStack}>
           <Text>Set you profile to private</Text>
           <Switch
+            disabled={settingsLoading}
             onValueChange={toggeIsPrivate}
             value={userInfo.is_private}></Switch>
         </HStack>
         <HStack style={styles.toggleStack}>
           <Text>Make your profile searchable </Text>
           <Switch
+            disabled={settingsLoading}
             onValueChange={toggeIsSearchable}
             value={userInfo.is_searchable}></Switch>
         </HStack>
@@ -136,7 +146,7 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
                   {
                     text: 'Delete',
                     onPress: async () => {
-                      await deleteProfile();
+                      if (!(await deleteProfile())) Alert.alert('Could not delete account', 'Please try again.');
                     },
                     style: 'destructive',
                   },

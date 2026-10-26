@@ -38,7 +38,7 @@ export default function Login(): React.JSX.Element {
     try {
       const isSuccess = await login(email, password);
       if (isSuccess) {
-        navigation.navigate('Tabs');
+        // The shared authentication state opens the signed-in navigator.
       }
     } catch (error: any) {
       console.log('Login failed:', error.message);
@@ -60,7 +60,7 @@ export default function Login(): React.JSX.Element {
       };
 
       await appleLogin(appleObject);
-      navigation.navigate('Tabs');
+      // The shared authentication state opens the signed-in navigator.
     } catch (error: any) {
       if (error?.code === appleAuth.Error.CANCELED) {
         console.warn('User canceled Apple Sign');

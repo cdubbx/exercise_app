@@ -9,8 +9,9 @@ services:
     volumes:
       - .:/app
       - backend_sqlite_data:/data
+      - backend_media_data:/app/media
     environment:
-      DATABASE_URL: "sqlite:////app/db.sqlite3"
+      DATABASE_URL: "sqlite:////data/db.sqlite3"
       REDIS_URL: "redis://redis:6379/0"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
@@ -31,4 +32,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  backend_media_data:
   backend_sqlite_data:

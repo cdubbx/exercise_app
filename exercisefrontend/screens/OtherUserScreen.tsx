@@ -19,8 +19,6 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   useLogout,
-  useSpotify,
-  useSpotifyContext,
   useUserContext,
 } from '../hooks/auth';
 import {
@@ -67,7 +65,7 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
   const [reportReason, setReportReason] = useState('');
   const {reportUser} = useReport();
 
-  const streak = 5;
+  const streak = user?.streak ?? 0;
 
   const handleReportUser = async (reportReason:any) => {
     console.log(reportReason);
@@ -94,72 +92,13 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
   const handleMenuAction = (actionId: string) => {
     switch (actionId) {
       case 'report':
-        Alert.alert(
-          'Report User',
-          'Are you sure you want to report this user?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Report',
-              onPress: async () => {
-                // setModalVisible(true);
-                Alert.prompt(
-                  'Report User',
-                  'Please provide a reason for reporting this user:',
-                  [
-                    {
-                      text: 'Cancel',
-                      style: 'cancel',
-                    },
-                    {
-                      text: 'Submit',
-                      onPress: (reason) => {
-                        if (reason) {
-                          handleReportUser(reason); // ✅ Save input to state
-                        }
-                      },
-                      style: 'destructive',
-                    },
-                  ],
-                  'plain-text'
-                );
-              },
-              style: 'destructive',
-            },
-          ],
-          {cancelable: true},
-        );
+        setModalVisible(true);
         break;
       default:
         Alert.alert('Unknown action selected');
     }
   };
 
-  const newSocket = new WebSocket(
-    `ws://exerciseplus-a70aea8e1a80.herokuapp.com/ws/spotify/${user.username}/`,
-  );
-
-  useEffect(() => {
-    newSocket.onopen = () => {
-      console.log('Connected to WebSocket');
-    };
-    
-    newSocket.onmessage = event => {
-      const data = JSON.parse(event.data);
-      // console.log('Received song update:', data);
-      if (data) {
-        setShowPlaying(true);
-        setTrack(data);
-      }
-    };
-    setSocket(newSocket);
-    return () => {
-      newSocket.close();
-    };
-  }, []);
 
   return (
     <SafeAreaView>
@@ -171,7 +110,7 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
             }}>
             <AntDesign name="leftcircle" size={24} color={'black'} />
           </TouchableOpacity>
-          {Platform.OS === 'ios' && (
+          {(
             <MenuView
               actions={[
                 {
@@ -217,16 +156,16 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
                   <Ionicons name="flame-outline" size={20} />
                 )}
 
-                <Text>Streak</Text>
+                <Text>Streak: {streak}</Text>
               </HStack>
               <HStack style={styles.infoStack}>
                 <TouchableOpacity>
                   <Text style={{fontSize: 12}}>Friends</Text>
-                  <Text>5</Text>
+                  <Text>—</Text>
                 </TouchableOpacity>
                 <TouchableOpacity>
                   <Text style={{fontSize: 12}}>Exercises Completed</Text>
-                  <Text style={{textAlign: 'center'}}>2</Text>
+                  <Text style={{textAlign: 'center'}}>—</Text>
                 </TouchableOpacity>
                 <TouchableOpacity>
                   <Text></Text>
@@ -238,17 +177,17 @@ const OtherUserScreen: React.FC<OtherUserScreenProps> = ({
         <HStack style={styles.weightStack}>
           <Stack>
             <Text style={styles.weightText}>Current Weight</Text>
-            <Text style={styles.weightText}>265</Text>
+            <Text style={styles.weightText}>—</Text>
           </Stack>
 
           <Stack>
             <Text style={styles.weightText}>Goal Weight</Text>
-            <Text style={styles.weightText}>235</Text>
+            <Text style={styles.weightText}>—</Text>
           </Stack>
         </HStack>
         {showPlaying && <SpotifySong song={track} />}
       </Stack>
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Report User</Text>

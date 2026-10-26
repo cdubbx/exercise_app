@@ -54,7 +54,8 @@ import {
         <Text style={styles.header}>Reset Your Password</Text>
         <Text style={styles.emailText}>For: {email}</Text>
         <TextInput
-          style={styles.input}
+          placeholderTextColor="#666"
+            style={styles.input}
           placeholder="Enter new password"
           value={newPassword}
           onChangeText={setNewPassword}

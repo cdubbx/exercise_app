@@ -1,5 +1,7 @@
+import {API_URL, apiFetch, readResponse, fetchWithTimeout} from '../services/api';
 import {useState, useEffect, useContext} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getAuthToken} from '../services/api';
 import {
   RegisterRequest,
   RegisterResponse,
@@ -12,91 +14,23 @@ import {
   SPOTIFY_TOKEN_SWAP_URL,
   SPOTIFY_TOKEN_REFRESH_URL,
 } from '@env';
-import {ApiConfig, ApiScope} from 'react-native-spotify-remote';
-import SpotifyAuth from 'react-native-spotify-remote/dist/SpotifyAuth';
 import {NowPlayingContext} from '../context/NowPlayContextSpotify';
+export {getAuthToken} from '../services/api';
 export function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
-    false,
-  );
-  const [isLoading, setLoading] = useState<boolean>(true);
-  const {verifyToken} = useVerifyToken();
+  const {isAuthenticated, setIsAuthenticated} = useUserContext();
+  const [isLoading, setLoading] = useState(false);
   const checkToken = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const accessToken = await AsyncStorage.getItem('access');
-      const refreshToken = await AsyncStorage.getItem('refresh');
-
-      if (accessToken) {
-        const isValid = await verifyToken(accessToken);
-        if (isValid) {
-          // setIsAuthenticated(true);
-          return true; 
-        } else if (refreshToken) {
-          const refreshed = await refreshAccessToken(refreshToken);
-          // setIsAuthenticated(refreshed);
-          if (refreshed) return true;
-        } else {
-          // setIsAuthenticated(false);
-          return false;
-        }
-      } 
-    } catch (error) {
-      console.error('Error checking token:', error);
-      return false; 
-    } finally {
-      setLoading(false);
-    }
+      const token = await getAuthToken();
+      const valid = !!token && (await apiFetch(`${API_URL}/user/`)).ok;
+      setIsAuthenticated(valid);
+      return valid;
+    } finally { setLoading(false); }
   };
- 
-  return {isAuthenticated, isLoading, checkToken, setIsAuthenticated};
-}
-async function refreshAccessToken(refreshToken: string): Promise<boolean> {
-  try {
-    const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/token/refresh/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({refresh: refreshToken}),
-    });
-
-    if (!response.ok) {
-      throw new Error('Token refresh failed');
-    }
-
-    const data = await response.json();
-    await AsyncStorage.setItem('access', data.access);
-    await AsyncStorage.setItem('refresh', data.refresh);
-    return true;
-  } catch (error) {
-    console.error('Error refreshing access token:', error);
-    return false;
-  }
+  return {isAuthenticated, setIsAuthenticated, isLoading, checkToken};
 }
 
-export async function getAuthToken(): Promise<string | null> {
-  try {
-    let token = await AsyncStorage.getItem('access');
-    const refreshToken = await AsyncStorage.getItem('refresh');
-    if (!token) {
-      if (refreshToken) {
-        const success = await refreshAccessToken(refreshToken);
-        if (success) {
-          token = await AsyncStorage.getItem('access');
-        } else {
-          throw new Error('Token refresh failed');
-        }
-      } else {
-        throw new Error('Access token is invalid');
-      }
-    }
-    return token;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
 export const useVerifyToken = () => {
   const [loading, setLoading] = useState(false);
 
@@ -104,8 +38,8 @@ export const useVerifyToken = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/token/verify/',
+      const response = await apiFetch(
+        `${API_URL}/token/verify/`,
         {
           method: 'POST',
           headers: {
@@ -132,7 +66,7 @@ export const useVerifyToken = () => {
 export const useLogout = () => {
   const [loading, setLoading] = useState(false);
   const {setIsAuthenticated} = useUserContext();
-  const {setToken} = useUserContext();
+  const {setToken, setUser} = useUserContext();
 
   const logout = async () => {
     try {
@@ -140,6 +74,7 @@ export const useLogout = () => {
       await AsyncStorage.removeItem('access'); // Clear the token from AsyncStorage
       await AsyncStorage.removeItem('refresh');
       setToken(null);
+      setUser(undefined);
       setIsAuthenticated(false);
       setLoading(false);
       return true;
@@ -156,14 +91,14 @@ export const useLogout = () => {
 export const useRegister = () => {
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const {user, setUser} = useUserContext()
+  const {user, setUser, setIsAuthenticated} = useUserContext()
   const {getUser} = useUser()
 
   const register = async (userData: RegisterRequest) => {
     try {
       setLoading(true);
 
-      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/register/', {
+      const response = await fetchWithTimeout(`${API_URL}/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +106,7 @@ export const useRegister = () => {
         body: JSON.stringify(userData),
       });
 
-      const data: RegisterResponse = await response.json();
+      const data: RegisterResponse = await readResponse(response);
 
       if (!response.ok) {
         throw new Error(data.error || 'Network error');
@@ -197,7 +132,7 @@ export const useRegister = () => {
   const verifyOTP = async (userdata: any) => {
     try {
       setLoading(true);
-      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/verify-otp/', {
+      const response = await fetchWithTimeout(`${API_URL}/verify-otp/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +140,7 @@ export const useRegister = () => {
         body: JSON.stringify(userdata),
       });
 
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) {
         throw new Error(data.error || 'Network error');
       }
@@ -220,15 +155,15 @@ export const useRegister = () => {
             height:
               typeof userData?.height === 'string'
                 ? parseFloat(userData.height)
-                : (prevUser?.height ?? 0),
+                : (userData?.height ?? undefined),
             weight:
               typeof userData?.weight === 'string'
                 ? parseFloat(userData.weight)
-                : (userData?.weight ?? 0),
+                : (userData?.weight ?? undefined),
             goal_weight:
               typeof userData?.goal_weight === 'string'
                 ? parseFloat(userData.goal_weight)
-                : (userData?.goal_weight ?? 0),
+                : (userData?.goal_weight ?? undefined),
             id: userData?.id ?? prevUser?.id ?? '', // Ensure id is always a string
             email: userData?.email ?? prevUser?.email ?? '',
             username: userData?.username ?? prevUser?.username ?? '',
@@ -240,13 +175,18 @@ export const useRegister = () => {
           }));
         }
       }
+      setIsAuthenticated(true);
       setLoading(false);
+      return true;
     } catch (error) {
-      console.log('Error:', error);
       setLoading(false);
+      throw error;
     }
   };
-  return {register, loading, otpSent, verifyOTP};
+  const resendOTP = async (email: string) => {
+    return readResponse(await fetchWithTimeout(`${API_URL}/resend-otp/`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email})}));
+  };
+  return {register, loading, otpSent, verifyOTP, resendOTP};
 };
 
 export const useUserContext = () => {
@@ -267,18 +207,16 @@ export const useUser = () => {
         token = await getAuthToken();
       } else if (fetchedToken) {
         token = fetchedToken;
-      } else {
-        return;
       }
       setLoading(true);
-      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user/', {
+      const response = await apiFetch(`${API_URL}/user/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer  ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      const data: any = await response.json();
+      const data: any = await readResponse(response);
       if (!response.ok) {
         console.log(data.error || 'An error has occurred');
         throw new Error(data.error || 'An error has occurred');
@@ -286,8 +224,7 @@ export const useUser = () => {
       setLoading(false);
       return data;
     } catch (error) {
-      console.error(error);
-      setLoading(false);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -297,14 +234,14 @@ export const useUser = () => {
 
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
-  const {setUser, setToken} = useUserContext();
+  const {setUser, setToken, setIsAuthenticated} = useUserContext();
   const {getUser} = useUser();
 
   const appleLogin = async (appleObject: any) => {
     try {
       setLoading(true);
-      const response = await fetch(
-        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/social-login/',
+      const response = await fetchWithTimeout(
+        `${API_URL}/social-login/`,
         {
           method: 'POST',
           headers: {
@@ -314,7 +251,7 @@ export const useLogin = () => {
         },
       );
 
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) {
         console.log(data.error || 'There is a network error');
         throw new Error(data.error || 'There is a network error');
@@ -329,15 +266,15 @@ export const useLogin = () => {
           height:
             typeof userData?.height === 'string'
               ? parseFloat(userData.height)
-              : (prevUser?.height ?? 0),
+              : (userData?.height ?? undefined),
           weight:
             typeof userData?.weight === 'string'
               ? parseFloat(userData.weight)
-              : (userData?.weight ?? 0),
+              : (userData?.weight ?? undefined),
           goal_weight:
             typeof userData?.goal_weight === 'string'
               ? parseFloat(userData.goal_weight)
-              : (userData?.goal_weight ?? 0),
+              : (userData?.goal_weight ?? undefined),
           id: userData?.id ?? prevUser?.id ?? '', // Ensure id is always a string
           email: userData?.email ?? prevUser?.email ?? '',
           username: userData?.username ?? prevUser?.username ?? '',
@@ -349,6 +286,8 @@ export const useLogin = () => {
         }));
       }
 
+      setIsAuthenticated(true);
+      setLoading(false);
       return true;
     } catch (error: any) {
       console.error('Error:', error.message);
@@ -361,7 +300,7 @@ export const useLogin = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/login/', {
+      const response = await fetchWithTimeout(`${API_URL}/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -377,7 +316,7 @@ export const useLogin = () => {
         throw new Error(errorText.error || 'Network error');
       }
 
-      const data = await response.json();
+      const data = await readResponse(response);
       await AsyncStorage.setItem('access', data.access);
       await AsyncStorage.setItem('refresh', data.refresh);
       setToken(prev => ({
@@ -393,15 +332,15 @@ export const useLogin = () => {
           height:
             typeof userData?.height === 'string'
               ? parseFloat(userData.height)
-              : (prevUser?.height ?? 0),
+              : (userData?.height ?? undefined),
           weight:
             typeof userData?.weight === 'string'
               ? parseFloat(userData.weight)
-              : (userData?.weight ?? 0),
+              : (userData?.weight ?? undefined),
           goal_weight:
             typeof userData?.goal_weight === 'string'
               ? parseFloat(userData.goal_weight)
-              : (userData?.goal_weight ?? 0),
+              : (userData?.goal_weight ?? undefined),
           id: userData?.id ?? prevUser?.id ?? '', // Ensure id is always a string
           email: userData?.email ?? prevUser?.email ?? '',
           username: userData?.username ?? prevUser?.username ?? '',
@@ -414,6 +353,7 @@ export const useLogin = () => {
       }
 
       setLoading(false);
+      setIsAuthenticated(true);
       return true; // Indicate success
     } catch (error: any) {
       console.error('Error:', error.message);
@@ -431,18 +371,18 @@ export const useResetPassword = () => {
   async function resetPassword(resetPasswordObject: any) {
     try {
       setLoading(true);
-      const response = await fetch(
-        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/reset-password/',
+      const response = await fetchWithTimeout(
+        `${API_URL}/reset-password/`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(resetPasswordObject),
+          body: JSON.stringify(typeof resetPasswordObject === 'string' ? {email: resetPasswordObject} : resetPasswordObject),
         },
       );
 
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) {
         console.log(data.error || 'There is a network error');
         throw new Error(data.error || 'There is a network error');
@@ -450,26 +390,26 @@ export const useResetPassword = () => {
       setLoading(false);
       return data?.message;
     } catch (error) {
-      console.log('Error:', error);
       setLoading(false);
+      throw error;
     }
   }
 
   async function requestPasswordReset(resetPasswordObject: any) {
     try {
       setLoading(true);
-      const response = await fetch(
-        'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/request-password-reset/',
+      const response = await fetchWithTimeout(
+        `${API_URL}/request-password-reset/`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(resetPasswordObject),
+          body: JSON.stringify(typeof resetPasswordObject === 'string' ? {email: resetPasswordObject} : resetPasswordObject),
         },
       );
 
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) {
         console.log(data.error || 'There is a network error');
         throw new Error(data.error || 'There is a network error');
@@ -477,8 +417,8 @@ export const useResetPassword = () => {
       setLoading(false);
       return data?.message;
     } catch (error) {
-      console.log('Error:', error);
       setLoading(false);
+      throw error;
     }
   }
 
@@ -561,7 +501,7 @@ export const useResetPassword = () => {
   //     const token = await AsyncStorage.getItem('spotify_accessToken');
   //     if (!token) throw new Error('Access token not found');
   //     let inactivityTimeout;
-  //     const response = await fetch(
+  //     const response = await apiFetch(
   //       'https://api.spotify.com/v1/me/player/currently-playing',
   //       {
   //         method: 'GET',
@@ -580,7 +520,7 @@ export const useResetPassword = () => {
   //       await refreshToken();
   //       return fetchNowPlaying(true);
   //     }
-  //     const data = await response.json();
+  //     const data = await readResponse(response);
   //     // console.log('✅ Parsed JSON Response:', data);
   //     if (!data || !data.item) {
   //       console.warn('⚠️ No track currently playing');
@@ -630,8 +570,8 @@ export const useResetPassword = () => {
   //     console.log(authToken);
   //     const spotify_refreshToken = await AsyncStorage.getItem('spotify_refreshToken')
   //     if (spotify_refreshToken) {
-  //       const response = await fetch(
-  //         'https://exerciseplus-a70aea8e1a80.herokuapp.com/api/spotify-token/refresh/',
+  //       const response = await apiFetch(
+  //         `${API_URL}/spotify-token/refresh/`,
   //         {
   //           method: 'POST',
   //           headers: {
@@ -641,7 +581,7 @@ export const useResetPassword = () => {
   //           body: JSON.stringify({refresh_token: spotify_refreshToken}),
   //         },
   //       );
-  //       const data = await response.json();
+  //       const data = await readResponse(response);
   //       if (!response.ok) {
   //         throw new Error(data.error || 'Network error');
   //       }
@@ -663,7 +603,7 @@ export const useResetPassword = () => {
 
 //       if (!track) return;
 
-//       await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/now_playing/update/', {
+//       await apiFetch(`${API_URL}/now_playing/update/`, {
 //         method: 'POST',
 //         headers: {
 //           'Content-Type': 'application/json',
@@ -696,13 +636,14 @@ export const useResetPassword = () => {
 // };
 
 export const useUpdateUser = () => {
+  const {setUser} = useUserContext();
   const [isLoading, setLoading] = useState<boolean>(false);
 
   const updateUser = async (userData: any) => {
     try {
       setLoading(true);
       const token = await getAuthToken();
-      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user/update/', {
+      const response = await apiFetch(`${API_URL}/user/update/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -710,12 +651,13 @@ export const useUpdateUser = () => {
         },
         body: JSON.stringify(userData),
       });
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) {
         console.error(data.error || 'Update user error response:');
         throw new Error(data.error || 'Network error');
       }
       setLoading(false);
+      if (data.user) setUser(data.user);
       return data.message || 'Successful updated profile';
     } catch (error: any) {
       console.error('Error:', error.message);
@@ -736,7 +678,7 @@ export const useDeleteProfile = () => {
     try {
       setLoading(true);
       const token = await getAuthToken();
-      const response = await fetch('https://exerciseplus-a70aea8e1a80.herokuapp.com/api/user/delete/', {
+      const response = await apiFetch(`${API_URL}/user/delete/`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

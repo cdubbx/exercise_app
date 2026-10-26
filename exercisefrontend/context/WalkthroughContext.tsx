@@ -27,7 +27,7 @@ export const WalkthroughProvider: React.FC<WalkthroughContextProps> = ({
   const stepsRef = useRef<Map<string, StepConfig>>(new Map());
   const boundIdsRef = useRef<Set<string>>(new Set()); // boundIds are the steps that have a child in the tool tip
   const activatedIdsRef = useRef<Set<string>>(new Set()); // activatedIds are the steps are added without being bound with a child
-  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [orderIds, setOrderIds] = useState<string[]>(['search-bar', 'bicep-step', 'individual-bicep', 'save-button', 'plus-button', 'settings-menu', 'bot-screen-tooltip']);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [index, setIndex] = useState<number>(0);
   const [tutorialEnabled, setTutorialEnabled] = useState<boolean | null>(null);
@@ -70,7 +70,6 @@ export const WalkthroughProvider: React.FC<WalkthroughContextProps> = ({
 
   const activeStepId = isRunning ? (orderIds[index] ?? null) : null;
   const register = useCallback((step: StepConfig, isPartial?: boolean) => {
-    if (tutorialEnabled === false) return;
     const existing = stepsRef.current.get(step.id);
     stepsRef.current.set(step.id, {...existing, ...step});
 
@@ -118,6 +117,7 @@ export const WalkthroughProvider: React.FC<WalkthroughContextProps> = ({
   }, [tutorialEnabled]);
 
   const next = useCallback(() => {
+    activatedIdsRef.current.clear();
     setIndex(i => {
       if (orderIds.length === 0) return i;
       return Math.min(i + 1, orderIds.length - 1);
@@ -125,15 +125,16 @@ export const WalkthroughProvider: React.FC<WalkthroughContextProps> = ({
   }, [orderIds.length]);
 
   const back = useCallback(() => {
+    activatedIdsRef.current.clear();
     setIndex(i => Math.max(i - 1, 0));
   }, [orderIds.length]);
 
-  const skip = useCallback(() => stop(), [stop]);
+  const skip = useCallback(() => { void complete(); }, [complete]);
 
   useEffect(() => {
     if (tutorialEnabled === false) return;
     if (!isRunning || !activeStepId) return;
-    if (boundIdsRef.current.has(activeStepId)) return;
+    // A mounted step may belong to a background tab. Its navigation callback still runs.
 
     const step = stepsRef.current.get(activeStepId);
     if (!step?.onActivate) return;
@@ -147,7 +148,7 @@ export const WalkthroughProvider: React.FC<WalkthroughContextProps> = ({
     (id: string, node: React.ReactElement, config: Omit<StepConfig, 'id'>) => {
       if (tutorialEnabled === false) return node;
       return (
-        <TourStep id={id} config={config}>
+        <TourStep key={id} id={id} config={config}>
           {node}
         </TourStep>
       );

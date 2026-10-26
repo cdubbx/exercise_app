@@ -1,3 +1,4 @@
+import {openTab} from '../services/navigation';
 import {
   View,
   Image,
@@ -44,25 +45,18 @@ const ExerciseCard: React.FC<Props> = ({route, navigation}: any) => {
     return raw.replace(/\.(?!\s|$)/g, '. ');
   };
 
-  tour.register(
-      {
-        id: 'plus-button',
-        order: 5,
-        showChildInTooltip: false,
-        placement: 'bottom',
-        onActivate: () => {
-           navigation.navigate('Calendar',)
-          }
-      },
-      true,
-    );
+  useEffect(() => {
+    tour.register({id: 'plus-button', order: 5, onActivate: () => openTab('Calendar')}, true);
+  }, [tour.register, navigation]);
 
 const onSaveWorkout = async () => {
     try {
       if (exerciseItems !== undefined) {
         const result = await saveWorkouts(exerciseItems);
-        if(result)
-        addExercises(exerciseItems);
+        if (result) {
+          addExercises(exerciseItems);
+          Alert.alert(result.created === false ? 'Already saved' : 'Workout saved', result.message);
+        }
       }
     } catch (err: any) {
       console.log(err);
@@ -137,6 +131,7 @@ const onSaveWorkout = async () => {
               exerciseItems?.equipment?.slice(1) : "No Equipment Required"}
           </Text>
 
+          <Text style={styles.equipmentText}>Muscles: {(exerciseItems?.primaryMuscles ?? []).join(', ') || 'Not specified'}</Text>
           <Text
             numberOfLines={showMore ? undefined : 3}
             style={styles.instructions}>
@@ -150,7 +145,7 @@ const onSaveWorkout = async () => {
               {
                 tour.wrap('save-button', saveButton, {
                   order:4,
-                  placement:'bottom',
+                  placement:'top',
                   showChildInTooltip:true,
                   content: <Text>
                     Click Save to an Exercise

@@ -35,7 +35,7 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
   const {show, hide, moveTo} = useFloatingButtonActions();
   const tour = useWalkThrough();
   const handleSend = () => {
-    if (input.trim()) {
+    if (input.trim() && !loading) {
       sendMessage(input);
       setInput('');
     }
@@ -48,6 +48,7 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
 
   useEffect(() => {
     hide();
+    return () => show();
   }, []);
 
   useEffect(() => {
@@ -70,7 +71,8 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
   const inputComposer = (
     <View style={{flexDirection: 'row', padding: 10}}>
       <TextInput
-        value={input}
+        placeholderTextColor="#666"
+            value={input}
         onChangeText={setInput}
         placeholder="Ask something..."
         style={{
@@ -82,14 +84,15 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
           paddingVertical: 10,
         }}
       />
-      <FloatingButton />
+
       <TouchableOpacity
+        disabled={loading}
         onPress={handleSend}
         style={{marginLeft: 10, justifyContent: 'center'}}>
         {loading ? (
           <ActivityIndicator />
         ) : (
-          <Text style={{color: '#00000', fontWeight: 'bold'}}>Send</Text>
+          <Text style={{color: '#000000', fontWeight: 'bold'}}>Send</Text>
         )}
       </TouchableOpacity>
     </View>
