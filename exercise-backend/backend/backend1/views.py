@@ -187,7 +187,7 @@ class EditUserView(APIView):
     def post(self, request):
         try:
             user = request.user
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "User information updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
@@ -220,7 +220,7 @@ class UploadWorkOutView(APIView):
         try:
             user = request.user
             workout_data = request.data
-            serializer = UserUploadWorkoutsSerializer(data=workout_data)
+            serializer = UserUploadWorkoutsSerializer(data=workout_data, context={'request': request})
             if serializer.is_valid():
                 workout = serializer.save(user=user)
                 return Response({"message": f'Workout with {workout.id} has been saved!'}, status=status.HTTP_201_CREATED)
@@ -428,51 +428,6 @@ class TrackStreakView(APIView):
         return Response(UserSerializer(user).data)
 
 
-class SpotifySwapTokenView(APIView):
-
-    permission_classes = [AllowAny]  # ✅ Allow all users (ensure API is public)
-
-    def post(self, request):
-        try:
-            code = request.data.get('code')
-            print("🚀 Received request at /api/token/swap/")
-            print("🔍 Request headers:", request.headers)
-            print("🔍 Request body:", request.data)  # ✅ Print 
-            print(code)
-
-            payload = {
-                'grant_type': 'authorization_code',
-                 'code': code,
-                 'redirect_uri': settings.FRONTEND_REDIRECT_URL,
-                 'client_id': settings.SPOTIFY_CLIENT_ID,
-                 'client_secret': settings.SPOTIFY_CLIENT_SECRET
-            }
-            
-            response = requests.post('https://accounts.spotify.com/api/token', data=payload)
-            return Response(response.json())
-        except Exception as e: 
-            logger.debug(f'An error has occurred {e}')
-            print(f'An error has occurred {e}')
-            Response({"error": f"An error has occurred {e}"})
-
-class SpotifyRefreshTokenView(APIView):
-    permission_classes = [IsAuthenticated]
-    def post(self, request):
-        try:
-            refresh_token = request.data.get('refresh_token')
-            payload = {
-                'grant_type':'refresh_token',
-                'refresh_token': refresh_token,
-                'client_id': settings.SPOTIFY_CLIENT_ID,
-                'client_secret': settings.SPOTIFY_CLIENT_SECRET,
-            }
-            response = requests.post('https://accounts.spotify.com/api/token', data=payload)
-            Response(response.json(), status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.debug(f'An error has occurred {e}')
-            print(f'An error has occurred {e}')
-            Response({"error": f"An error has occurred {e}"})
-    
 class UpdateNowPlayingView(APIView):
     permission_classes = [IsAuthenticated]
 

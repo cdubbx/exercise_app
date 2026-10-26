@@ -15,6 +15,7 @@ import {ExploreStackParamList} from '../interfaces/screentypes';
 import {Exercise} from '../interfaces/interfaces';
 import BodyPartExercise from '../cards/BodyPartExerciseCard';
 import {useWalkThrough} from '../utils/TutorialSystemService';
+import SpotifyPlayer from '../components/SpotifyPlayer';
 import {openTab} from '../services/navigation';
 
 type Props = NativeStackScreenProps<ExploreStackParamList, 'ExplorePage'>;
@@ -85,6 +86,7 @@ export default function HomeScreen({navigation}: Props): React.JSX.Element {
       </View>
       {tour.wrap('search-bar', searchBar, {order: 1, placement: 'bottom', showChildInTooltip: true, content: <Text>Search for an exercise or body part here.</Text>})}
       {query.length > 0 && !searching && <Text style={styles.hint}>Type at least 3 characters to search.</Text>}
+      {!searching && <SpotifyPlayer />}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{searching ? 'Search results' : 'Browse by body part'}</Text>
         <Text style={styles.subtitle}>{searching ? `For “${query}”` : 'Choose a muscle group to see exercises.'}</Text>

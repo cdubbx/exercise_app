@@ -156,7 +156,7 @@ class CoreAppTests(TestCase):
 
     def test_valid_image_upload_then_profile_save(self):
         image = BytesIO(); Image.new('RGB', (10, 10)).save(image, format='PNG')
-        with tempfile.TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media, AWS_STORAGE_BUCKET_NAME=''):
+        with tempfile.TemporaryDirectory() as media, override_settings(DEBUG=True, MEDIA_ROOT=media, AWS_STORAGE_BUCKET_NAME=''):
             response = self.client.post('/api/uploads/', {'path': 'profile', 'file': SimpleUploadedFile('avatar.png', image.getvalue(), content_type='image/png')}, format='multipart')
             self.assertEqual(response.status_code, 201, response.data); self.assertIn(str(self.user.id), response.data['url'])
             self.assertEqual(self.client.post('/api/user/update/', {'image_url': response.data['url']}, format='json').status_code, 200)

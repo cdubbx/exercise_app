@@ -81,3 +81,9 @@ test('a request from an old account is never retried as a newly signed-in accoun
   finish(response(401, {})); await rejected;
   expect(fetchMock).toHaveBeenCalledTimes(1); expect(await AsyncStorage.getItem('access')).toBe('new-access');
 });
+
+test('non-JSON server failures show a readable message', async () => {
+  const {readResponse} = require('../services/api');
+  await expect(readResponse({status: 502, json: async () => { throw new SyntaxError('Unexpected <'); }})).rejects.toThrow('The server returned an unexpected response. Please try again.');
+  await expect(readResponse({status: 404, json: async () => { throw new SyntaxError('Unexpected <'); }})).rejects.toThrow('This feature is not available on this server yet.');
+});

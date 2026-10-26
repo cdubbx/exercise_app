@@ -4,7 +4,6 @@ import {
   ImageLibraryOptions,
   launchImageLibrary,
 } from 'react-native-image-picker';
-import {getAuthToken} from './auth';
 import {User} from '../interfaces/types';
 
 export interface SelectedFile {
@@ -37,25 +36,32 @@ export const useFilePicker = () => {
 
   const pickFile = async () => {
     try {
+      setError(null);
       const options: ImageLibraryOptions = {
         mediaType: 'photo',
-        quality: 1,
+        quality: 0.8,
+        maxWidth: 2048, maxHeight: 2048,
+        assetRepresentationMode: 'compatible',
+        selectionLimit: 1,
       };
   
       const result = await launchImageLibrary(options);
       if (result.didCancel) {
-        setError('File selection canceled');
+        setError(null);
         setFile(null);
         return null;
       }
-      if (result.errorMessage) {
-        setError(result.errorMessage);
+      if (result.errorCode || result.errorMessage) {
+        setError(result.errorMessage || 'Could not open your photo library.');
         setFile(null);
         return null;
       }
   
       if (result.assets && result.assets.length > 0) {
         const selectedAsset = result.assets[0];
+        if (!selectedAsset.uri || (selectedAsset.fileSize || 0) > 5 * 1024 * 1024) {
+          setError('Choose an image smaller than 5 MB.'); setFile(null); return null;
+        }
         const file = {
           uri: selectedAsset.uri!,
           name: selectedAsset.fileName || 'unknown',

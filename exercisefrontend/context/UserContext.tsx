@@ -1,3 +1,4 @@
+import {AppState} from 'react-native';
 import React, {createContext, SetStateAction, useEffect, useState} from 'react';
 import {authTokenObj, User} from '../interfaces/types';
 import {API_URL, apiFetch, getAuthToken, readResponse, onSessionExpired} from '../services/api';
@@ -33,5 +34,21 @@ export const UserContextProvider: React.FC<{children: React.ReactNode}> = ({chil
     })();
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) { return; }
+    let active = true;
+    const accountId = user.id;
+    const refreshImage = async () => {
+      try {
+        const data = await readResponse(await apiFetch(`${API_URL}/user/`));
+        if (active && data.id === accountId) {
+          setUser(previous => previous?.id === accountId ? {...previous, image_url: data.image_url} : previous);
+        }
+      } catch { /* Keep the current profile while offline. */ }
+    };
+    const listener = AppState.addEventListener('change', next => { if (next === 'active') { void refreshImage(); } });
+    const timer = setInterval(() => { if (AppState.currentState === 'active') { void refreshImage(); } }, 45 * 60 * 1000);
+    return () => { active = false; listener.remove(); clearInterval(timer); };
+  }, [isAuthenticated, user?.id, user?.image_url]);
   return <UserContext.Provider value={{user, setUser, isAuthenticated, setIsAuthenticated, token, setToken, isReady}}>{children}</UserContext.Provider>;
 };

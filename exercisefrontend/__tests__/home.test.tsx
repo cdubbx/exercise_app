@@ -6,6 +6,7 @@ import HomeScreen from '../screens/HomeScreen';
 const mockSearch = jest.fn<(query: string) => Promise<any[]>>();
 const mockNavigate = jest.fn(); const mockOpenTab = jest.fn();
 const mockTour = {register: jest.fn(), start: jest.fn(), next: jest.fn(), isRunning: false, wrap: (_id: string, child: React.ReactNode) => child};
+jest.mock('../components/SpotifyPlayer', () => () => null);
 jest.mock('../hooks/auth', () => ({useUserContext: () => ({user: {id: 'first', username: 'Review'}})}));
 jest.mock('../hooks/exercises', () => ({useExercises: () => ({searchExercises: mockSearch})}));
 jest.mock('../utils/TutorialSystemService', () => ({useWalkThrough: () => mockTour}));

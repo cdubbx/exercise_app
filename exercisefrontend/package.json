@@ -9,7 +9,7 @@
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "lint:core": "eslint services components/MainNavigator.tsx context/UserContext.tsx hooks/exercises.ts __tests__ --quiet"
+    "lint:core": "eslint services components/MainNavigator.tsx components/SpotifyPlayer.tsx context/UserContext.tsx context/NowPlayContextSpotify.tsx hooks/exercises.ts hooks/social.ts screens/Settings.tsx __tests__ --quiet"
   },
   "dependencies": {
     "@invertase/react-native-apple-authentication": "^2.4.0",

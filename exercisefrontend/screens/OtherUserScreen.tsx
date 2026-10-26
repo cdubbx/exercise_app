@@ -41,7 +41,6 @@ import {
   ProfileStackParamList,
 } from '../interfaces/screentypes';
 import LottieView from 'lottie-react-native';
-import {SPOTIFY_CLIENTID} from '@env';
 import {SpotifySong} from '../cards/SpotifySong';
 import {Song} from '../interfaces/types';
 import {NavigationProp, RouteProp} from '@react-navigation/native';

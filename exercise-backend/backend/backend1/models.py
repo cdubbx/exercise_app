@@ -150,3 +150,13 @@ class NowPlayingTrack(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.track_name}"
+
+class SpotifyConnection(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # Provider credentials are encrypted with a dedicated, server-only Fernet key.
+    access_token = models.TextField(blank=True)
+    refresh_token = models.TextField(blank=True)
+    expires_at = models.DateTimeField(null=True)
+    pending_state = models.CharField(max_length=64, blank=True, db_index=True)
+    pending_verifier = models.TextField(blank=True)
+    pending_expires_at = models.DateTimeField(null=True)

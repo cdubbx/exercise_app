@@ -230,6 +230,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
-AWS_MEDIA_BASE_URL = os.getenv('AWS_MEDIA_BASE_URL', f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com')
 CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}} if REDIS_URL else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
-REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour'}
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min'}
+
+# Spotify uses a server callback; no provider credentials belong in the mobile app.
+SPOTIFY_ENABLED = os.getenv('SPOTIFY_ENABLED', 'false').lower() == 'true'
+SPOTIFY_REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI', '')
+SPOTIFY_TOKEN_ENCRYPTION_KEY = os.getenv('SPOTIFY_TOKEN_ENCRYPTION_KEY', '')
+AWS_S3_SIGNED_URL_SECONDS = 3600

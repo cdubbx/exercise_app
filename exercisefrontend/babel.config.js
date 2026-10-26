@@ -5,7 +5,8 @@ module.exports = {
       {
         envName: 'APP_ENV',
         moduleName: '@env',
-        path: '.env'
+        path: '.env',
+        allowlist: ['API_BASE_URL']
       }
     ]
   ]

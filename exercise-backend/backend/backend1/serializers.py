@@ -1,14 +1,15 @@
 from rest_framework import serializers
+from .media import MediaSerializerMixin
 from rest_framework.exceptions import ValidationError
 
 from .models import Exercise, User, SavedWorkout, PlannedWorkout,UserUploadWorkedouts, NowPlayingTrack
 
-class ExerciseSerializer(serializers.ModelSerializer):
+class ExerciseSerializer(MediaSerializerMixin, serializers.ModelSerializer):
     class Meta: 
         model = Exercise
         exclude = ['embedding']
         
-class UserUploadWorkoutsSerializer(serializers.ModelSerializer):
+class UserUploadWorkoutsSerializer(MediaSerializerMixin, serializers.ModelSerializer):
     img_url = serializers.ListField(child=serializers.URLField(), required=False)  # Ensures correct serialization
     primaryMuscles = serializers.ListField(child=serializers.CharField(), required=False)  # Ensures it's a proper li
     class Meta: 
@@ -18,7 +19,8 @@ class UserUploadWorkoutsSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return super().create(validated_data)
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(MediaSerializerMixin, serializers.ModelSerializer):
+    image_url = serializers.CharField(max_length=4096, allow_blank=True, allow_null=True, required=False)
     date_joined = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
 
     class Meta:
@@ -54,7 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PublicUserSerializer(serializers.ModelSerializer):
+class PublicUserSerializer(MediaSerializerMixin, serializers.ModelSerializer):
     date_joined = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
 
     class Meta:

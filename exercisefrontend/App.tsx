@@ -261,6 +261,7 @@ export default function App(): React.JSX.Element {
     prefixes: ['exercisefrontend://'],
     config: {
       screens: {
+        BottomTabs: {path: 'spotify-connect'},
         ResetPassword: {
           path: 'reset-password',
           parse: {
@@ -275,8 +276,8 @@ export default function App(): React.JSX.Element {
 
   return (
     <ToastProvider>
-      <NowPlayingProvider>
-        <UserContextProvider>
+      <UserContextProvider>
+        <NowPlayingProvider>
           <ExerciseProvider>
             <ChatProvider>
               <WalkthroughProvider>
@@ -289,8 +290,8 @@ export default function App(): React.JSX.Element {
               </WalkthroughProvider>
             </ChatProvider>
           </ExerciseProvider>
-        </UserContextProvider>
-      </NowPlayingProvider>
+        </NowPlayingProvider>
+      </UserContextProvider>
     </ToastProvider>
   );
 }

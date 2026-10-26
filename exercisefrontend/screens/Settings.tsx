@@ -1,14 +1,15 @@
+import SpotifyPlayer from '../components/SpotifyPlayer';
 import {openTab} from '../services/navigation';
 import {
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
   Switch,
   Alert,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
-import Entypo from 'react-native-vector-icons/Entypo';
+import React, {useEffect, useRef, useState} from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useWalkThrough} from '../utils/TutorialSystemService';
@@ -17,7 +18,6 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 
 import {HStack, Stack} from '@react-native-material/core';
 import {
-  useAuth,
   useDeleteProfile,
   useLogout,
   useUpdateUser,
@@ -35,13 +35,10 @@ interface UserPrivacySettings {
 }
 
 const Settings: React.FC<SettingsProp> = ({navigation}) => {
-  const isPlaying = false;
-  const toggleIsPlaying = () => Alert.alert('Spotify', 'Spotify integration is planned for a later release.');
-  const authenticateWithSpotify = toggleIsPlaying;
   const {updateUser, isLoading: settingsLoading} = useUpdateUser();
   const {logout} = useLogout();
-  const {user, isAuthenticated, setIsAuthenticated} = useUserContext();
-  const {deleteProfile, isLoading: deleteLoading} = useDeleteProfile();
+  const {user} = useUserContext();
+  const {deleteProfile} = useDeleteProfile();
   const [userInfo, setUserInfo] = useState<UserPrivacySettings>({
     is_private: user?.is_private,
     is_searchable: user?.is_searchable,
@@ -53,15 +50,19 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
     openTab('Home1', {screen: 'ExplorePage'});
   };
 
-  const toggeIsPrivate = () => {
-    setUserInfo(prev => ({
-      ...prev,
-      is_private: !prev.is_private,
-    }));
+  const settingsBusy = useRef(false);
+  const savePrivacy = async (field: keyof UserPrivacySettings, value: boolean) => {
+    if (settingsBusy.current) { return; }
+    settingsBusy.current = true;
+    const previous = userInfo;
+    setUserInfo(current => ({...current, [field]: value}));
+    try { await updateUser({[field]: value}); }
+    catch (error) { setUserInfo(previous); Alert.alert('Could not save settings', error instanceof Error ? error.message : 'Please try again.'); }
+    finally { settingsBusy.current = false; }
   };
 
   const handleLogout = async () => {
-    const isLoggedOut = await logout();
+    await logout();
 
     // if(isLoggedOut && !isAuthenticated)  navigation.reset({
     //   index: 0,
@@ -69,22 +70,11 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
     // });;
   };
 
-  const toggeIsSearchable = () => {
-    setUserInfo(prev => ({
-      ...prev,
-      is_searchable: !prev.is_searchable,
-    }));
-  };
-
   useEffect(() => {
-    if(userInfo.is_private != user?.is_private || userInfo.is_searchable != user?.is_searchable )
-    updateUser(userInfo).catch((error: Error) => {
-      setUserInfo({is_private: user?.is_private, is_searchable: user?.is_searchable});
-      Alert.alert('Could not save settings', error.message);
-    });
-  }, [userInfo.is_private, userInfo.is_searchable]);
+    setUserInfo({is_private: user?.is_private, is_searchable: user?.is_searchable});
+  }, [user?.is_private, user?.is_searchable]);
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <HStack style={styles.settingsHeaderStack}>
         <TouchableOpacity
           onPress={() => {
@@ -97,28 +87,25 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
           />
         </TouchableOpacity>
       </HStack>
-      <Text style={styles.settingsHeader}>Settings Screen</Text>
+      <Text style={styles.settingsHeader}>Settings</Text>
 
+      <View style={{width: '100%', paddingHorizontal: 20, marginBottom: 16}}><SpotifyPlayer settings /></View>
       <Stack style={styles.toggleVStack}>
         <TouchableOpacity onPress={replayTutorial}>
           <HStack style={styles.toggleStack}><Text>Replay Tutorial</Text><Ionicons name="help-circle-outline" size={26} /></HStack>
         </TouchableOpacity>
         <HStack style={styles.toggleStack}>
-          <Text>Show Spotify Now Playing</Text>
-          <Switch onValueChange={toggleIsPlaying} value={isPlaying} />
-        </HStack>
-        <HStack style={styles.toggleStack}>
-          <Text>Set you profile to private</Text>
+          <Text>Set your profile to private</Text>
           <Switch
             disabled={settingsLoading}
-            onValueChange={toggeIsPrivate}
+            onValueChange={value => { void savePrivacy('is_private', value); }}
             value={userInfo.is_private}></Switch>
         </HStack>
         <HStack style={styles.toggleStack}>
           <Text>Make your profile searchable </Text>
           <Switch
             disabled={settingsLoading}
-            onValueChange={toggeIsSearchable}
+            onValueChange={value => { void savePrivacy('is_searchable', value); }}
             value={userInfo.is_searchable}></Switch>
         </HStack>
         <HStack style={styles.toggleStack}>
@@ -157,31 +144,21 @@ const Settings: React.FC<SettingsProp> = ({navigation}) => {
           </TouchableOpacity>
         </HStack>
       </Stack>
-      <TouchableOpacity onPress={authenticateWithSpotify}>
-        <HStack style={styles.spotifyButton}>
-          <Entypo name="spotify" color={'green'} size={40} />
-          <Stack>
-            <Text style={styles.textListen}>Connect to</Text>
-            <Text style={styles.spotifyText}>Spotify</Text>
-          </Stack>
-        </HStack>
-      </TouchableOpacity>
-
       {/* <TouchableOpacity
         onPress={() => {
           navigation.navigate('AddWorkoutScreen');
         }}>
         <Text>Upload a work</TouchableOpacity>out</Text>
       </TouchableOpacity> */}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 60,
+    paddingTop: 60,
+    paddingBottom: 100,
   },
   spotifyButton: {
     backgroundColor: 'black',

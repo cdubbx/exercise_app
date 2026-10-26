@@ -36,7 +36,7 @@ Set `API_BASE_URL` before starting Metro. Use `http://localhost:8000/api` for th
 
 On macOS, install the existing Gemfile/CocoaPods dependencies and run `bundle exec pod install` inside `ios`. Open `ios/exercisefrontend.xcworkspace` and build the `exercisefrontend` scheme, or run `npm run ios`. Both shared scheme names now point to the app target. Run `npm run android` with an Android emulator configured.
 
-AWS credentials belong on the backend only. Mobile uploads send multipart images to the authenticated `/api/uploads/` endpoint. Local development stores images under `media/`. For S3, configure the backend bucket, AWS credential provider/role, region, and a readable HTTPS media base URL. Production must serve local media through persistent storage and a web server, or use S3.
+AWS credentials belong on the backend only. Mobile uploads send multipart images to the authenticated `/api/uploads/` endpoint. Local development stores images under `media/`. For S3, configure the backend bucket, AWS credential provider/role, and region. Keep the bucket private: uploads return signed read links, serializers refresh those links, and permanent object addresses are stored in the database. Production uploads require S3; local disk fallback is development-only. See [Spotify, S3 and release setup](docs/integrations-release.md) for configuration and remaining live checks.
 
 ## Checks
 

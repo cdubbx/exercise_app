@@ -1,12 +1,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ExerciseListView, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView,  UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView, UploadWorkOutView, GetBodyPartWorkOutView, SpotifyRefreshTokenView, SpotifySwapTokenView
+from .views import ExerciseListView, LoginAPIView, RegisterAPIView, UserView,LogoutView, SaveWorkOutView,  UserPlannedWorkoutsView, UserSavedWorkoutsView, SigninWIthApple, VerifyOTPAPIView, UploadWorkOutView, GetBodyPartWorkOutView
 from .views import ResetPasswordAPIView, RequestPasswordResetAPIView, UserListView, UserDetailView, NowPlayingForUserView, UpdateNowPlayingView, EditUserView, GetUserUploadedWorkOutView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 # Using `router.register(r'exercises', ExerciseViewSet)` registers the `ExerciseViewSet` with the router,
 # which automatically creates all the CRUD (Create, Read, Update, Delete) operation URLs for your `Exercise` model.
 # Accessing `/exercises/` will now allow clients to perform these operations as allowed by your viewset configuration.
+from .spotify import SpotifyStatusView, SpotifyConnectView, SpotifyCallbackView, SpotifyPlayerView, LegacySpotifyTokenView
+
 router = DefaultRouter()
 
 
@@ -20,8 +22,8 @@ urlpatterns = [
     path('user/', UserView.as_view(), name='user'),
     path('verify-otp/', VerifyOTPAPIView.as_view(), name='verify-otp'),
     path('social-login/', SigninWIthApple.as_view(), name='social-login'),
-    path('token/swap/', SpotifySwapTokenView.as_view(), name='token-swap'),
-    path('spotify/token/refresh/', SpotifyRefreshTokenView.as_view(), name='token-refresh'),
+    path('token/swap/', LegacySpotifyTokenView.as_view(), name='token-swap'),
+    path('spotify/token/refresh/', LegacySpotifyTokenView.as_view(), name='token-refresh'),
     path('user-upload-workout/', UploadWorkOutView.as_view(), name='user-upload-workout'),
     path('user-upload-workouts/', GetUserUploadedWorkOutView.as_view(), name='user-upload-workouts'), 
     path('user/update/', EditUserView.as_view(), name='user-update'),
@@ -60,3 +62,10 @@ urlpatterns += [path('resend-otp/', ResendOTPAPIView.as_view())]
 
 from .password_reset import password_reset_landing
 urlpatterns += [path('password-reset/', password_reset_landing, name='password-reset-landing')]
+
+urlpatterns += [
+    path('spotify/', SpotifyStatusView.as_view()),
+    path('spotify/connect/', SpotifyConnectView.as_view()),
+    path('spotify/callback/', SpotifyCallbackView.as_view()),
+    path('spotify/player/', SpotifyPlayerView.as_view()),
+]

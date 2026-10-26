@@ -25,6 +25,7 @@
             <category android:name="android.intent.category.DEFAULT" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="exercisefrontend" android:host="reset-password" />
+            <data android:scheme="exercisefrontend" android:host="spotify-connect" />
         </intent-filter>
       </activity>
     </application>

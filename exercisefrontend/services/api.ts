@@ -74,7 +74,9 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 
 export async function readResponse(response: Response): Promise<any> {
   if (response.status === 204) return null;
-  const data = await response.json();
+  let data: any;
+  try { data = await response.json(); }
+  catch { throw new Error(response.status === 404 ? 'This feature is not available on this server yet.' : 'The server returned an unexpected response. Please try again.'); }
   if (!response.ok) {
     const detail = data.error || data.detail || data;
     throw new Error(typeof detail === 'string' ? detail : Object.entries(detail).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('\n'));
