@@ -133,20 +133,23 @@ const HomeNavigator = () => {
   );
 };
 
+// Public profiles and the social feed are deferred until after the core release.
+const PUBLIC_PAGES_ENABLED = false;
+
 const ExploreNavigator = () => {
   return (
     <ExploreStack.Navigator
       initialRouteName="ExplorePage"
       screenOptions={{headerShown: false}}>
-      <ExploreStack.Screen name="Explore" component={ExploreScreen} />
-      <ExploreStack.Screen name="OtherUser" component={OtherUserScreen} />
+      {PUBLIC_PAGES_ENABLED && <ExploreStack.Screen name="Explore" component={ExploreScreen} />}
+      {PUBLIC_PAGES_ENABLED && <ExploreStack.Screen name="OtherUser" component={OtherUserScreen} />}
       <ExploreStack.Screen name="BodyPart" component={BodyPart} />
       <ExploreStack.Screen name="ExerciseCard" component={ExerciseCard} />
 
-      <ExploreStack.Screen
+      {PUBLIC_PAGES_ENABLED && <ExploreStack.Screen
         name="PublicWorkoutsScreen"
         component={PublicExercises}
-      />
+      />}
       <ExploreStack.Screen name="ExplorePage" component={HomeScreen} />
     </ExploreStack.Navigator>
   );
@@ -227,7 +230,7 @@ export const TabNavigator = () => {
         }}
       /> */}
 
-      <Tab.Screen
+      {PUBLIC_PAGES_ENABLED && <Tab.Screen
         name="Social1"
         component={SocialNavigator}
         options={{
@@ -237,7 +240,8 @@ export const TabNavigator = () => {
           tabBarLabel: 'Social',
           tabBarLabelStyle: {color: 'black'},
         }}
-      />
+      />}
+
       <Tab.Screen
         name="Profile1"
         component={ProfileNavigator}
