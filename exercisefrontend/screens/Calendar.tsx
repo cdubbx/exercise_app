@@ -1,180 +1,163 @@
-import {openTab} from '../services/navigation';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  View,
-  SafeAreaView,
-  TouchableOpacity,
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Alert,
+  ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text,
+  TouchableOpacity, View,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
-import {Calendar, CalendarList, Agenda} from 'react-native-calendars';
-import {HStack, Stack, Text} from '@react-native-material/core';
-import LinearGradient from 'react-native-linear-gradient';
-import {
-  useDeleteWorkout,
-  useFetchedPlanedWorkouts,
-  useSetExercise,
-} from '../hooks/exercises';
-import Exercise from './ExerciseCard';
-import {SavedWorkout, PlannedWorkout} from '../interfaces/interfaces'; // Ensure this path is correct
-import PlannedExercise from '../cards/PlannedExercise';
-import AntDesign from 'react-native-vector-icons/AntDesign';
 import {NavigationProp, useFocusEffect} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {openTab} from '../services/navigation';
+import {useDeleteWorkout, useFetchedPlanedWorkouts} from '../hooks/exercises';
+import {PlannedWorkout} from '../interfaces/interfaces';
 import {CalendarParamList} from '../interfaces/screentypes';
+import PlannedExercise from '../cards/PlannedExercise';
 import {useWalkThrough} from '../utils/TutorialSystemService';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 interface CalendarScreenProps {
   navigation: NavigationProp<CalendarParamList, 'Calendar'>;
 }
+
 const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const {loading, fetchPlannedWorkouts} = useFetchedPlanedWorkouts(); // Ensure refetch is available
-  const [localExercises, setLocalExercises] = useState<any[]>();
-  const [fetchedExercises, setFetchedExercises] = useState<any[]>();
-  const tour = useWalkThrough();
-  const {exercises} = useSetExercise();
-  const daysOfTheWeek = {
-    Mon: 'Monday',
-    Tues: 'Tuesday',
-    Wed: 'Wednesday',
-    Thurs: 'Thursday',
-    Fri: 'Friday',
-    Sat: 'Saturday',
-    Sun: 'Sunday',
-  };
-
-  const {deletePlannedWorkout} = useDeleteWorkout();
-  const insets = useSafeAreaInsets()
-  const flattenedExercises = fetchedExercises?.map(
-    (exercise: any) => exercise.saved_workout_details,
-  );
-
+  const [selectedDay, setSelectedDay] = useState(() => days[(new Date().getDay() + 6) % 7]);
+  const [workouts, setWorkouts] = useState<PlannedWorkout[] | null>(null);
   const [fetchError, setFetchError] = useState('');
-  useFocusEffect(useCallback(() => {
-    let active = true;
+  const loadGeneration = useRef(0);
+  const deleting = useRef(new Set<number>());
+  const {loading, fetchPlannedWorkouts} = useFetchedPlanedWorkouts();
+  const {deletePlannedWorkout} = useDeleteWorkout();
+  const insets = useSafeAreaInsets();
+  const tour = useWalkThrough();
+  const {register} = tour;
+  const dailyWorkouts = useMemo(() => (workouts ?? []).filter(workout => workout.day_of_the_week === selectedDay), [workouts, selectedDay]);
+  const plannedDays = useMemo(() => new Set((workouts ?? []).map(workout => workout.day_of_the_week)), [workouts]);
+  const addWorkout = () => navigation.navigate('SavedExerciseList', {exercises: []});
+
+  const refresh = useCallback(async () => {
+    const generation = ++loadGeneration.current;
     setFetchError('');
-    fetchPlannedWorkouts().then(data => { if (active) setFetchedExercises(data); })
-      .catch(error => { if (active) setFetchError(error.message); });
-    return () => { active = false; };
-  }, [fetchPlannedWorkouts]));
+    try {
+      const data = await fetchPlannedWorkouts();
+      if (generation === loadGeneration.current) { setWorkouts(data); }
+    } catch (error) {
+      if (generation === loadGeneration.current) { setFetchError(error instanceof Error ? error.message : 'Please try again.'); }
+    }
+  }, [fetchPlannedWorkouts]);
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => { loadGeneration.current++; };
+  }, [refresh]));
   useEffect(() => {
-    setLocalExercises((fetchedExercises ?? []).filter(workout => workout.day_of_the_week === daysOfTheWeek[selectedDay as keyof typeof daysOfTheWeek]));
-  }, [selectedDay, fetchedExercises]);
-  useEffect(() => {
-    tour.register({id: 'settings-menu', order: 6, onActivate: () => openTab('Profile1', {screen: 'Profile'})}, true);
-  }, [tour.register, navigation]);
-  const handleDelete = async (id: number) => {
+    register({id: 'settings-menu', order: 6, onActivate: () => openTab('Profile1', {screen: 'Profile'})}, true);
+  }, [register]);
+
+  const removeWorkout = async (id: number) => {
+    if (deleting.current.has(id)) { return; }
+    deleting.current.add(id);
     try {
       await deletePlannedWorkout(id);
-      setFetchedExercises(prev => prev?.filter(exercise => exercise.id !== id));
-    } catch (error: any) { Alert.alert('Could not remove workout', error.message); }
+      setWorkouts(previous => previous?.filter(workout => workout.id !== id) ?? null);
+    } catch (error) {
+      Alert.alert('Could not remove workout', error instanceof Error ? error.message : 'Please try again.');
+    } finally { deleting.current.delete(id); }
+  };
+  const confirmDelete = (item: PlannedWorkout) => {
+    const name = item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'this workout';
+    Alert.alert('Remove workout?', `Remove ${name} from ${item.day_of_the_week}? Your saved exercise will stay in your profile.`, [
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'Remove', style: 'destructive', onPress: () => removeWorkout(item.id)},
+    ]);
   };
 
-  const plusButton = (
-    <TouchableOpacity
-      onPress={() => {
-        navigation.navigate('SavedExerciseList', {
-          exercises: [flattenedExercises, exercises],
-        });
-      }}>
-      <AntDesign name="pluscircle" size={26} />
+  const addButton = (
+    <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add workout" onPress={addWorkout} style={styles.addButton}>
+      <Text style={styles.addIcon}>+</Text><Text style={styles.addLabel}>Add workout</Text>
     </TouchableOpacity>
   );
   return (
-    <View style={{padding: 10, marginTop: Math.max(insets.top, 60)}}>
-      <Stack>
-        <HStack style={styles.plusButtonContainer}>
-          {tour.wrap('plus-button', plusButton, {
-            order: 5,
-            placement: 'bottom',
-            topAdjustment:20,
-            content: (
-              <Text>Press the plus button to access the saved workouts</Text>
-            ),
-            showChildInTooltip: false,
-          })}
-        </HStack>
-        <HStack spacing={10} p={5} justify="center">
-          {Object.keys(daysOfTheWeek).map((day, index) => (
-            <TouchableOpacity
-              key={index} // Add a key prop
-              style={{
-                backgroundColor:
-                  selectedDay === day ? '#222222ff' : 'transparent',
-                height: 30,
-                borderRadius: 5,
-                padding: 5,
-                shadowColor: selectedDay === day ? '#faf4f4ff' : '#fdfbfbff',
-                shadowRadius: selectedDay === day ? 6 : 0,
-                shadowOffset:
-                  selectedDay === day
-                    ? {width: 0, height: 4}
-                    : {width: 0, height: 0},
-                elevation: 6,
-              }}
-              onPress={() => setSelectedDay(day)}>
-              <Text color={selectedDay === day ? 'white' : 'black'}>{day}</Text>
-            </TouchableOpacity>
-          ))}
-        </HStack>
-        {fetchError ? <Text>{fetchError}</Text> : null}
-        {loading ? <ActivityIndicator /> : null}
-        {selectedDay ? (
-          <FlatList
-            data={localExercises}
-            ListEmptyComponent={<Text>No workouts planned for this day.</Text>}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                onLongPress={() => {
-                  if (item.id)
-                    Alert.alert(
-                      'Delete Workout',
-                      'Are you sure you want to delete this workout?',
-                      [
-                        {
-                          text: 'Cancel',
-                          style: 'cancel',
-                        },
-                        {
-                          text: 'Delete',
-                          onPress: () => {
-                            if (item.id) handleDelete(item?.id);
-                          },
-                          style: 'destructive',
-                        },
-                      ],
-                    );
-                }}
-                style={styles.exerciseContainer}>
-                <PlannedExercise item={item} />
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item: PlannedWorkout, index) =>
-              String(item.id)
-            }
-          />
-        ) : (
-          <Text style={{textAlign: 'center'}}>
-            Choose a day to see the plan
-          </Text>
-        )}
-      </Stack>
+    <View style={[styles.screen, {paddingTop: insets.top + 12}]}>
+      <FlatList
+        data={dailyWorkouts}
+        keyExtractor={item => String(item.id)}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={loading && workouts !== null} onRefresh={refresh} tintColor="black" />}
+        ListHeaderComponent={<View>
+          <View style={styles.header}>
+            <Text style={styles.title}>Calendar</Text>
+            {tour.wrap('plus-button', addButton, {
+              order: 5, placement: 'bottom', topAdjustment: 20,
+              content: <Text>Press Add workout to access your saved workouts.</Text>, showChildInTooltip: false,
+            })}
+          </View>
+          <Text style={styles.subtitle}>Your weekly workout plan</Text>
+          <View style={styles.days}>
+            {days.map(day => <TouchableOpacity key={day} accessibilityRole="button" accessibilityLabel={day}
+              accessibilityHint={plannedDays.has(day) ? 'Has planned workouts' : 'No planned workouts'}
+              accessibilityState={{selected: selectedDay === day}} onPress={() => setSelectedDay(day)}
+              style={[styles.day, selectedDay === day && styles.selectedDay]}>
+              <Text style={[styles.dayText, selectedDay === day && styles.selectedDayText]}>{day.slice(0, 3)}</Text>
+              <View style={[styles.dot, plannedDays.has(day) && (selectedDay === day ? styles.whiteDot : styles.blackDot)]} />
+            </TouchableOpacity>)}
+          </View>
+          <View style={styles.dayHeading}>
+            <Text style={styles.sectionTitle}>{selectedDay}</Text>
+            {workouts !== null && <Text style={styles.count}>{dailyWorkouts.length} {dailyWorkouts.length === 1 ? 'workout' : 'workouts'}</Text>}
+          </View>
+          {!!fetchError && <View accessibilityRole="alert" style={styles.messageCard}>
+            <Text style={styles.messageTitle}>Could not refresh your plan</Text>
+            <Text style={styles.supportingText}>{fetchError}</Text>
+            <TouchableOpacity accessibilityRole="button" onPress={refresh} style={styles.retry}><Text style={styles.linkText}>Try again</Text></TouchableOpacity>
+          </View>}
+        </View>}
+        ListEmptyComponent={fetchError ? null : loading || workouts === null ? <View style={styles.loading}>
+          <ActivityIndicator color="black" /><Text style={styles.supportingText}>Loading your plan…</Text>
+        </View> : <View style={styles.messageCard}>
+          <Text style={styles.messageTitle}>Nothing planned for {selectedDay}</Text>
+          <Text style={styles.supportingText}>Choose a saved exercise to build your plan.</Text>
+          <TouchableOpacity accessibilityRole="button" onPress={addWorkout} style={styles.emptyAction}>
+            <Text style={styles.addLabel}>Add workout</Text>
+          </TouchableOpacity>
+        </View>}
+        ListFooterComponent={dailyWorkouts.length > 0 ? <Text style={styles.footerHint}>Use ••• or hold a workout to remove it from your plan.</Text> : null}
+        renderItem={({item}) => <TouchableOpacity accessible={false} onLongPress={() => confirmDelete(item)} style={styles.workoutCard}>
+          <PlannedExercise item={item} />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Options for ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'}`}
+            onPress={() => confirmDelete(item)} style={styles.menuButton}><Text style={styles.menuText}>•••</Text></TouchableOpacity>
+        </TouchableOpacity>}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  exerciseContainer: {
-    margin: 10,
-  },
-  plusButtonContainer: {
-    marginBottom: 20,
-    justifyContent: 'flex-end',
-    marginRight: 10,
-  },
+  screen: {flex: 1, backgroundColor: '#f2f2f2'},
+  content: {paddingHorizontal: 20, paddingBottom: 100},
+  header: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12},
+  title: {fontSize: 26, fontWeight: 'bold', color: 'black'},
+  subtitle: {fontSize: 14, color: '#555', marginTop: 8},
+  addButton: {minHeight: 44, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'black'},
+  addIcon: {fontSize: 23, color: 'white'},
+  addLabel: {fontSize: 13, fontWeight: '600', color: 'white'},
+  days: {flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 24, marginBottom: 26},
+  day: {flexGrow: 1, minWidth: 44, minHeight: 56, paddingHorizontal: 4, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, alignItems: 'center', justifyContent: 'center', gap: 6},
+  selectedDay: {backgroundColor: 'black', borderColor: 'black'},
+  dayText: {fontSize: 13, color: 'black'},
+  selectedDayText: {color: 'white'},
+  dot: {width: 4, height: 4, borderRadius: 2},
+  whiteDot: {backgroundColor: 'white'},
+  blackDot: {backgroundColor: 'black'},
+  dayHeading: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14},
+  sectionTitle: {fontSize: 18, fontWeight: '600', color: 'black', flexShrink: 1},
+  count: {fontSize: 13, color: '#555'},
+  workoutCard: {flexDirection: 'row', alignItems: 'flex-start', backgroundColor: 'white', padding: 14, borderRadius: 20, marginBottom: 12},
+  menuButton: {minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -6, marginTop: -6},
+  menuText: {fontSize: 17, color: '#555'},
+  messageCard: {padding: 22, backgroundColor: 'white', borderRadius: 20, gap: 12, marginBottom: 12},
+  messageTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
+  supportingText: {fontSize: 14, color: '#555', lineHeight: 21},
+  emptyAction: {minHeight: 44, paddingHorizontal: 18, borderRadius: 10, backgroundColor: 'black', alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start', marginTop: 4},
+  retry: {minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start'},
+  linkText: {fontSize: 14, fontWeight: '600', color: 'black'},
+  loading: {padding: 24, alignItems: 'center', gap: 12},
+  footerHint: {fontSize: 12, lineHeight: 18, color: '#555', marginTop: 4, paddingHorizontal: 4},
 });
-
 export default CalendarCard;

@@ -25,7 +25,7 @@ Implementation does not automatically close issues. Device and hosted-provider v
 ## Verification
 
 - Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 25 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Frontend: 29 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -80,3 +80,11 @@ Follow-up local validation: 31 backend tests and 23 frontend tests pass, includi
 The Add to Plan form keeps the app's black-and-white palette, rounded photo/cards and existing navigation. A smaller 240-point exercise photo gives the workout controls more space. Sets and repetitions are editable number fields with bounded plus/minus controls; optional 8/10/12/15-rep shortcuts are selections, not workout recommendations. Visible weekday buttons use the existing black selected state. A live sets/reps/day summary sits above one Add to Plan button. The form scrolls and accommodates the number keyboard; the floating chat button stays out of this screen so it cannot cover the save action.
 
 Verification: all 25 frontend tests, TypeScript and scoped lint pass. Planning regression tests cover invalid quantities, save failure, numeric payloads, presets/steppers and limits. On the iOS 26 simulator, preset selection, incrementing, direct keyboard entry, day selection and save were exercised; Calendar displayed the saved Tuesday workout as 4 sets × 11 reps. Android device layout has not been checked for this refinement.
+
+## Calendar cleanup
+
+Calendar now has a clear heading, an Add workout action, consistent weekday buttons and dots for days with plans. It initially selects the current weekday and keeps the chosen day while navigating to saved exercises. Rounded white workout cards preserve the original thumbnails and show readable names, categories, sets and repetitions; long names wrap within the card. An explicit options button and the existing long-press both open a confirmation that explains only the planned entry is removed. Empty days offer an Add workout action; initial loading, refresh failures and retry are distinct states. Pull to refresh and focus refresh share one request path, and older responses cannot overwrite a newer load.
+
+Removed unused calendar/gradient/component imports, duplicate derived list state and nested unbounded layout. The workout list uses the available screen height and leaves bottom space for the existing floating button. The calendar tutorial anchor remains on Add workout.
+
+Verification: 29 frontend tests, TypeScript and scoped lint pass. Calendar regressions cover weekday filtering, saved-exercise navigation, waiting for deletion success, preserving workouts on deletion failure, and retry after a failed load. iOS simulator checks covered populated/empty days, the removal confirmation (cancelled), and Add workout navigation. Screenshots of populated and empty-day states were captured. Android layout still requires device verification.
