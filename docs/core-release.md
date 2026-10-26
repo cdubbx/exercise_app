@@ -25,7 +25,7 @@ Implementation does not automatically close issues. Device and hosted-provider v
 ## Verification
 
 - Backend: 31 tests cover registration/OTP and resend, inactive-account login, JWT refresh, cursor search, repeated saves/plans, sets/reps validation, custom exercise ownership, deletion ownership/cascades, privacy, streaks, password reset, image uploads, reporting, and historical free-text repetitions.
-- Frontend: 44 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
+- Frontend: 48 automated API/session, navigation, signed-in/signed-out routing, and planning-form tests; TypeScript and scoped lint checks.
 - Clean installation from the checked-in dependency lockfile succeeds. `.npmrc` retains the original installer's legacy peer-dependency setting. The installer now uses the lockfile without deleting it.
 - Native iOS Debug build succeeded with Xcode/iOS 26 SDK using the existing installed Pods.
 - iPhone 17 Pro / iOS 26 simulator: sign-in, existing Home artwork, Biceps browsing, exercise detail, save, already-saved feedback, profile saved exercise, 3 × 10 Monday plan, calendar display, Settings replay, all seven tutorial steps, tutorial Back from chat to profile, and completion verified.
@@ -108,3 +108,11 @@ Profile now follows the same monochrome palette and rounded cards as Calendar an
 Edit Profile uses controlled fields, grouped cards, a scrollable keyboard-aware form and a persistent Save Profile button. Each open starts from saved account data; Cancel discards draft fields/photos. Phone and numeric fields use appropriate keyboards, existing values are prefilled, height is optional and only submitted if adjusted, and save payloads contain editable fields rather than the entire account. Photo selection cancellation stays quiet, pending uploads disable saving, and stale upload results cannot overwrite a later draft. Success/error toasts remain visible, including errors within the modal.
 
 Verification: all 44 frontend tests, TypeScript and scoped lint pass. Added regression checks for Cancel/reopen, controlled save payloads, keeping drafts on save failure, cancelled image selection, optional height clearing, saved-workout/menu destinations and fetch errors. iOS simulator verified the main screen, edit form with persistent save, cancelling an unsaved username, and the native menu. Profile/editor screenshots were captured. Android layout remains unverified.
+
+## Home UI refinement
+
+Home keeps all five original body-part photographs, labels and exercise-category pills. A clear heading, profile-avatar shortcut, full-width search field and consistent margins replace the unused menu and nested offsets. Rounded image cards use a subtle contrast overlay with content laid out inside the card, including wrapping category pills. Search results use the same rounded white cards as Calendar and Profile. Blank/short queries retain browsing, while searching, failed requests and empty results have distinct feedback; search can be cleared and failures retried. Scrolling leaves room for the existing floating shortcut and adjusts keyboard insets on iOS. Existing exercise routes and tutorial anchors remain.
+
+Removed unused Home imports/state and corrected the Home navigator exercise-detail parameter type to match the existing exercise object. The existing three-character threshold, 300ms debounce and stale-response protection remain.
+
+Verification: 48 frontend tests, TypeScript and scoped lint pass. New Home checks cover five body-part links and profile navigation, debounce/threshold, opening a result, clearing search, stale responses after clearing, and retry after failure. iOS simulator checked the original-artwork catalog, live curl search and opening an exercise result; catalog/search screenshots were captured. Android layout remains unverified.

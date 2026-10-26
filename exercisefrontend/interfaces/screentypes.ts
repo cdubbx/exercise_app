@@ -1,5 +1,6 @@
 import type {NavigatorScreenParams} from '@react-navigation/native';
 import {User} from './types';
+import type {Exercise} from './interfaces';
 
 // Define AuthStackParamList outside of the App component
 export type AuthStackParamList = {
@@ -24,7 +25,7 @@ export type ExploreStackParamList = {
   BodyPart: {bodyParts: string};
   PublicWorkoutsScreen: {publicWorkouts: any[]};
   ExplorePage: undefined;
-  ExerciseCard: {item: string};
+  ExerciseCard: {item: Exercise};
   BotScreen: undefined;
 };
 
