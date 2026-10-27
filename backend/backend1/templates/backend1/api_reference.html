@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Exercise Plus backend API reference and React Native client methods.">
+  <title>Exercise Plus · API reference</title>
+  <style>
+    :root { color-scheme: light; --ink:#111; --muted:#686868; --line:#e4e4e4; --soft:#f5f5f5; --paper:#fff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#fafafa; color:var(--ink); font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    a { color:inherit; }
+    header { background:#111; color:white; padding:44px max(24px,calc((100vw - 1120px)/2)); }
+    header .brand { text-transform:uppercase; letter-spacing:.14em; font-size:12px; opacity:.72; }
+    h1 { font-size:clamp(32px,5vw,48px); line-height:1.1; margin:14px 0 12px; }
+    header p { max-width:700px; color:#d2d2d2; margin:0; }
+    main { max-width:1120px; padding:28px 24px 64px; margin:auto; }
+    .notice { border:1px solid var(--line); background:white; border-radius:14px; padding:18px 20px; margin:0 0 24px; }
+    .notice strong { display:block; margin-bottom:4px; }
+    .notice p { margin:0; color:var(--muted); }
+    .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:24px 0 18px; }
+    .tabs { display:flex; gap:8px; }
+    button, input { font:inherit; }
+    button { border:1px solid var(--line); background:white; color:var(--ink); padding:9px 14px; border-radius:999px; cursor:pointer; }
+    button[aria-pressed="true"] { background:#111; color:white; border-color:#111; }
+    input { flex:1 1 240px; min-width:200px; padding:11px 14px; border:1px solid var(--line); border-radius:10px; background:white; }
+    .spec { margin-left:auto; color:var(--muted); font-size:13px; }
+    .spec a { text-underline-offset:3px; }
+    .section-title { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:30px 0 12px; }
+    h2 { font-size:22px; margin:0; }
+    .count { color:var(--muted); font-size:13px; }
+    .grid { display:grid; gap:10px; }
+    article { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+    .route-top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .verb { font-size:11px; font-weight:800; letter-spacing:.05em; min-width:64px; text-align:center; border-radius:6px; padding:4px 7px; color:#111; background:#eee; }
+    .verb.post { background:#111; color:white; }
+    .verb.delete { background:#f1e8e8; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.92em; overflow-wrap:anywhere; }
+    .route { font-weight:700; }
+    .auth { margin-left:auto; color:var(--muted); font-size:12px; }
+    article h3 { font-size:16px; margin:12px 0 4px; }
+    article p { margin:5px 0; color:#444; }
+    .detail-label { color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .frontend { display:inline-block; margin-top:9px; color:#555; font-size:12px; }
+    .method-name { font-weight:700; }
+    .empty, .loading { color:var(--muted); padding:24px 4px; }
+    footer { margin-top:42px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:13px; }
+    @media (max-width:600px) { header { padding-top:34px; padding-bottom:34px; } main { padding:20px 14px 44px; } .spec { margin-left:0; width:100%; } article { padding:14px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Exercise Plus</div>
+    <h1>API reference</h1>
+    <p>Backend endpoints and the React Native methods that use them, documented together on this service.</p>
+  </header>
+  <main>
+    <section class="notice">
+      <strong>Base URL</strong>
+      <p><code id="base-url">/api</code> · Authenticated routes use <code>Authorization: Bearer &lt;access-token&gt;</code>. The mobile client gets its host from <code>API_BASE_URL</code>; point it at this Heroku app with the <code>/api</code> suffix.</p>
+    </section>
+    <div class="toolbar">
+      <div class="tabs" role="group" aria-label="Reference section">
+        <button type="button" data-view="backend" aria-pressed="true">Backend API</button>
+        <button type="button" data-view="frontend" aria-pressed="false">Frontend methods</button>
+      </div>
+      <input id="search" type="search" placeholder="Search endpoints and methods…" aria-label="Search reference">
+      <span class="spec"><a href="/api-reference.json">OpenAPI JSON</a></span>
+    </div>
+    <div id="content" class="loading" role="status">Loading reference…</div>
+    <footer>Reference source: Django route configuration and React Native hooks/contexts. Keep these entries current when routes or client methods change.</footer>
+  </main>
+  <script>
+    const content = document.getElementById('content');
+    const search = document.getElementById('search');
+    let spec;
+    let view = 'backend';
+    const escapeText = value => String(value ?? '');
+    const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = escapeText(text); return node; };
+    function render() {
+      if (!spec) return;
+      const term = search.value.trim().toLowerCase();
+      const entries = view === 'backend'
+        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0})))
+        : spec['x-frontend-methods'];
+      const filtered = entries.filter(item => JSON.stringify(item).toLowerCase().includes(term));
+      const groups = [...new Set(filtered.map(item => item.group))];
+      content.replaceChildren();
+      if (!filtered.length) { content.append(make('div', 'empty', 'No matching entries.')); return; }
+      for (const group of groups) {
+        const section = make('section');
+        const title = make('div', 'section-title');
+        title.append(make('h2', '', group), make('span', 'count', `${filtered.filter(item => item.group === group).length} entries`));
+        section.append(title);
+        const grid = make('div', 'grid');
+        for (const item of filtered.filter(entry => entry.group === group)) {
+          const card = make('article');
+          if (view === 'backend') {
+            const top = make('div', 'route-top');
+            top.append(make('span', `verb ${item.method.toLowerCase()}`, item.method), make('code', 'route', item.path), make('span', 'auth', item.auth ? 'Bearer token required' : 'Public'));
+            card.append(top, make('h3', '', item.summary));
+            const [, requestText = '', responseText = '', frontendText = ''] = item.description.match(/Request: (.*?) Response: (.*?) Frontend: (.*)$/) || [];
+            if (requestText && requestText !== 'none') { card.append(make('p', '', `Request · ${requestText}`)); }
+            if (responseText) { card.append(make('p', '', `Response · ${responseText}`)); }
+            if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
+          } else {
+            card.append(make('div', 'method-name', item.name), make('p', '', item.summary), make('span', 'frontend', `Source · ${item.source}`));
+          }
+          grid.append(card);
+        }
+        section.append(grid); content.append(section);
+      }
+    }
+    document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
+      view = button.dataset.view;
+      document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      render();
+    }));
+    search.addEventListener('input', render);
+    fetch('/api-reference.json', {headers: {Accept: 'application/json'}})
+      .then(response => { if (!response.ok) throw new Error(); return response.json(); })
+      .then(data => { spec = data; render(); })
+      .catch(() => { content.className = 'empty'; content.textContent = 'The reference could not be loaded. Please refresh this page.'; });
+  </script>
+</body>
+</html>

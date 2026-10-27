@@ -27,6 +27,20 @@ class CoreAppTests(TestCase):
         user.set_password('Training-plan-2026!'); user.save()
         return user
 
+    def test_api_reference_and_frontend_method_docs_are_public(self):
+        self.client.force_authenticate(None)
+        page = self.client.get('/docs/')
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'Frontend methods')
+        document = self.client.get('/api-reference.json')
+        self.assertEqual(document.status_code, 200)
+        import json
+        spec = json.loads(document.content)
+        self.assertEqual(spec['openapi'], '3.1.0')
+        self.assertIn('/gpt-chat/', spec['paths'])
+        self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
+        self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
+
     def save(self):
         return self.client.post('/api/saveWorkOuts', {'workout': {'id': str(self.exercise.id)}}, format='json')
 
