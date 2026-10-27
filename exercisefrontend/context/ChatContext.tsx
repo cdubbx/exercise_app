@@ -88,7 +88,7 @@ export const ChatProvider: React.FC<{children: React.ReactNode}> = ({children}) 
     try {
       await readResponse(await apiFetch(`${API_URL}/plannedWorkouts/`, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({workouts: action.workouts.map(item => ({exercise: item.exercise, day: action.day, reps: item.reps, sets: item.sets}))}),
+        body: JSON.stringify({workouts: action.workouts.map(item => ({exercise: item.exercise, day: action.day, time_of_day: action.time_of_day, reps: item.reps, sets: item.sets}))}),
       }));
       setMessages(previous => previous.map(item => item.id === messageId ? {...item, calendarActionStatus: 'added'} : item));
     } catch {
@@ -105,7 +105,7 @@ export const ChatProvider: React.FC<{children: React.ReactNode}> = ({children}) 
 function isCalendarWorkoutAction(value: unknown): value is CalendarWorkoutAction {
   if (!value || typeof value !== 'object') return false;
   const action = value as CalendarWorkoutAction;
-  return typeof action.day === 'string' && Array.isArray(action.workouts) && action.workouts.length > 0
+  return typeof action.day === 'string' && ['Morning', 'Afternoon', 'Evening', 'Anytime'].includes(action.time_of_day) && Array.isArray(action.workouts) && action.workouts.length > 0
     && action.workouts.every(item => typeof item.exercise?.id === 'string' && typeof item.exercise?.name === 'string'
       && Number.isInteger(item.reps) && Number.isInteger(item.sets));
 }

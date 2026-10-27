@@ -95,6 +95,7 @@ class PlannedWorkoutSerializer(serializers.ModelSerializer):
     exercise = UserUploadWorkoutsSerializer(source='custom_workout', read_only=True)
     reps = PlanRepetitionsField(min_value=1, max_value=1000)
     sets = serializers.IntegerField(min_value=1, max_value=100)
+    time_of_day = serializers.ChoiceField(choices=PlannedWorkout.TIMES_OF_DAY, required=False, default='Anytime')
 
     class Meta:
         model = PlannedWorkout

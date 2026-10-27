@@ -112,8 +112,8 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
             <Text style={styles.exerciseName}>{exercise.name}</Text><Text style={styles.exerciseHint}>View exercise →</Text>
           </TouchableOpacity>)}
           {item.role === 'assistant' && item.calendarAction && <View style={styles.calendarAction}>
-            <Text style={styles.calendarActionTitle}>Weekly calendar plan</Text>
-            <Text style={styles.exerciseHint}>{item.calendarAction.day}</Text>
+            <Text style={styles.calendarActionTitle}>Workout plan</Text>
+            <Text style={styles.exerciseHint}>{item.calendarAction.day} · {item.calendarAction.time_of_day}</Text>
             {item.calendarAction.workouts.map(workout => <View key={workout.exercise.id} style={styles.calendarWorkoutRow}>
               <Text style={styles.exerciseName}>{workout.exercise.name}</Text>
               <Text style={styles.exerciseHint}>{workout.sets} sets × {workout.reps} reps</Text>

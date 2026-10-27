@@ -41,6 +41,17 @@ test('weekday selection filters workouts and the add action opens saved exercise
   await press('Add workout');
   expect(mockNavigate).toHaveBeenCalledWith('SavedExerciseList', {exercises: []});
 });
+test('groups multiple same-day sessions under their selected time slots', async () => {
+  await act(async () => tree.unmount());
+  mockFetch.mockResolvedValue([
+    {...plan, id: 11, time_of_day: 'Morning'},
+    {...plan, id: 12, time_of_day: 'Evening'},
+  ]);
+  await act(async () => { tree = renderer.create(<Calendar navigation={{navigate: mockNavigate} as any} />); });
+  await press('Tuesday');
+  expect(texts()).toContain('Morning'); expect(texts()).toContain('Evening');
+  expect(texts().match(/Curl/g)).toHaveLength(2);
+});
 test('confirmed removal updates the plan only after the server succeeds', async () => {
   let resolve!: () => void;
   mockDelete.mockImplementation(() => new Promise<void>(done => { resolve = done; }));

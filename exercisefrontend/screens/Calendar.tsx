@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text,
+  ActivityIndicator, Alert, SectionList, RefreshControl, StyleSheet, Text,
   TouchableOpacity, View,
 } from 'react-native';
 import {NavigationProp, useFocusEffect} from '@react-navigation/native';
@@ -13,6 +13,7 @@ import PlannedExercise from '../cards/PlannedExercise';
 import {useWalkThrough} from '../utils/TutorialSystemService';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const timesOfDay = ['Morning', 'Afternoon', 'Evening', 'Anytime'] as const;
 interface CalendarScreenProps {
   navigation: NavigationProp<CalendarParamList, 'Calendar'>;
 }
@@ -29,6 +30,10 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
   const tour = useWalkThrough();
   const {register} = tour;
   const dailyWorkouts = useMemo(() => (workouts ?? []).filter(workout => workout.day_of_the_week === selectedDay), [workouts, selectedDay]);
+  const sections = useMemo(() => timesOfDay.map(title => ({
+    title,
+    data: dailyWorkouts.filter(workout => (workout.time_of_day || 'Anytime') === title),
+  })).filter(section => section.data.length > 0), [dailyWorkouts]);
   const plannedDays = useMemo(() => new Set((workouts ?? []).map(workout => workout.day_of_the_week)), [workouts]);
   const addWorkout = () => navigation.navigate('SavedExerciseList', {exercises: []});
 
@@ -75,10 +80,11 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
   );
   return (
     <View style={[styles.screen, {paddingTop: insets.top + 12}]}>
-      <FlatList
-        data={dailyWorkouts}
+      <SectionList
+        sections={sections}
         keyExtractor={item => String(item.id)}
         contentContainerStyle={styles.content}
+        stickySectionHeadersEnabled={false}
         refreshControl={<RefreshControl refreshing={loading && workouts !== null} onRefresh={refresh} tintColor="black" />}
         ListHeaderComponent={<View>
           <View style={styles.header}>
@@ -118,6 +124,7 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
           </TouchableOpacity>
         </View>}
         ListFooterComponent={dailyWorkouts.length > 0 ? <Text style={styles.footerHint}>Use ••• or hold a workout to remove it from your plan.</Text> : null}
+        renderSectionHeader={({section}) => <View style={styles.timeHeading}><Text style={styles.timeTitle}>{section.title}</Text><View style={styles.timeRule} /></View>}
         renderItem={({item}) => <TouchableOpacity accessible={false} onLongPress={() => confirmDelete(item)} style={styles.workoutCard}>
           <PlannedExercise item={item} />
           <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Options for ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'}`}
@@ -147,6 +154,9 @@ const styles = StyleSheet.create({
   blackDot: {backgroundColor: 'black'},
   dayHeading: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14},
   sectionTitle: {fontSize: 18, fontWeight: '600', color: 'black', flexShrink: 1},
+  timeHeading: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10},
+  timeTitle: {fontSize: 13, fontWeight: '600', color: '#555'},
+  timeRule: {height: 1, backgroundColor: '#ddd', flex: 1},
   count: {fontSize: 13, color: '#555'},
   workoutCard: {flexDirection: 'row', alignItems: 'flex-start', backgroundColor: 'white', padding: 14, borderRadius: 20, marginBottom: 12},
   menuButton: {minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -6, marginTop: -6},

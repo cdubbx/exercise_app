@@ -23,6 +23,7 @@ interface SavedExerciseScreenProps {
 }
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const timesOfDay = ['Morning', 'Afternoon', 'Evening', 'Anytime'] as const;
 
 function QuantityInput({label, value, onChange, maximum}: {
   label: string; value: string; onChange: (value: string) => void; maximum: number;
@@ -55,6 +56,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({route, navigation}) 
   const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('');
   const [selectedDay, setSelectedDay] = useState('');
+  const [selectedTime, setSelectedTime] = useState<typeof timesOfDay[number]>('Anytime');
   const submitting = useRef(false);
   const {savePlannedWorkouts, loading} = useSavePlannedWorkouts();
   const {addExercises} = useSetExercise();
@@ -69,7 +71,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({route, navigation}) 
     if (!validQuantities) { Alert.alert('Invalid workout', 'Enter 1–100 sets and 1–1000 repetitions.'); return; }
     submitting.current = true;
     try {
-      const result = await savePlannedWorkouts({exercise: item, reps: Number(reps), sets: Number(sets), day: selectedDay});
+      const result = await savePlannedWorkouts({exercise: item, reps: Number(reps), sets: Number(sets), day: selectedDay, time_of_day: selectedTime});
       if (result) {
         addExercises(result);
         Alert.alert('Success', `${item?.name} is in your plan.`);
@@ -111,6 +113,18 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({route, navigation}) 
             </View>
           </View>
           <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Time of day</Text>
+            <View style={styles.days}>
+              {timesOfDay.map(time => (
+                <TouchableOpacity key={time} accessibilityRole="button" accessibilityLabel={`Time of day: ${time}`}
+                  accessibilityState={{selected: selectedTime === time}} onPress={() => setSelectedTime(time)}
+                  style={[styles.day, styles.timeChoice, selectedTime === time && styles.selected]}>
+                  <Text style={[styles.choiceText, selectedTime === time && styles.selectedText]}>{time}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Choose a day</Text>
             <View style={styles.days}>
               {days.map(day => (
@@ -123,7 +137,7 @@ const SavedExercise: React.FC<SavedExerciseScreenProps> = ({route, navigation}) 
             </View>
           </View>
           <View style={styles.footer}>
-            <Text style={styles.summary}>{validQuantities ? `${sets} sets × ${reps} reps${selectedDay ? ` · ${selectedDay}` : ''}` : 'Set your reps and choose a day.'}</Text>
+            <Text style={styles.summary}>{validQuantities ? `${sets} sets × ${reps} reps · ${selectedTime}${selectedDay ? ` · ${selectedDay}` : ''}` : 'Set your reps and choose a day.'}</Text>
             <TouchableOpacity accessibilityRole="button" disabled={loading} onPress={onSubmit}
               style={[styles.submit, loading && styles.disabled]}>
               <Text style={styles.submitText}>{loading ? 'Adding…' : 'Add to Plan'}</Text>
@@ -158,6 +172,7 @@ const styles = StyleSheet.create({
   preset: {minHeight: 44, paddingHorizontal: 14, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, alignItems: 'center', justifyContent: 'center'},
   days: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
   day: {flexGrow: 1, minWidth: 44, minHeight: 44, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4},
+  timeChoice: {minWidth: 84, paddingHorizontal: 10},
   choiceText: {fontSize: 13, color: 'black'},
   selected: {backgroundColor: 'black', borderColor: 'black'},
   selectedText: {color: 'white'},

@@ -31,6 +31,7 @@ export interface Exercise {
     saved_workout: number;
     saved_workout_details: SavedWorkout;
     day_of_the_week: string;
+    time_of_day: 'Morning' | 'Afternoon' | 'Evening' | 'Anytime';
     exercise: Exercise
     reps: string;
     sets: number;
@@ -53,5 +54,6 @@ export interface ChatMessage {
 
 export interface CalendarWorkoutAction {
   day: string;
+  time_of_day: 'Morning' | 'Afternoon' | 'Evening' | 'Anytime';
   workouts: Array<{exercise: {id: string; name: string}; reps: number; sets: number}>;
 }

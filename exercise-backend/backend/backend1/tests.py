@@ -89,13 +89,31 @@ class CoreAppTests(TestCase):
         again = self.save(); self.assertEqual(again.status_code, 200)
         self.assertFalse(again.data['created']); self.assertEqual(SavedWorkout.objects.count(), 1)
 
-    def test_duplicate_plans_keep_one_entry_and_return_sets_reps(self):
+    def test_duplicate_plans_keep_one_entry_per_day_and_time_and_return_sets_reps(self):
         self.save(); first = self.plan(); second = self.plan()
         self.assertEqual(first.status_code, 201, first.data); self.assertEqual(second.status_code, 200, second.data)
         self.assertEqual(first.data['id'], second.data['id']); self.assertEqual(PlannedWorkout.objects.count(), 1)
         result = self.client.get('/api/plannedWorkouts/').data[0]
         self.assertEqual(result['sets'], 3); self.assertEqual(result['reps'], 10)
+        self.assertEqual(result['time_of_day'], 'Anytime')
         self.assertEqual(result['saved_workout_details']['exercise']['name'], self.exercise.name)
+
+    def test_same_exercise_can_be_planned_twice_on_one_day_in_different_time_slots(self):
+        self.save()
+        morning = self.plan(time_of_day='Morning')
+        evening = self.plan(time_of_day='Evening')
+        duplicate_evening = self.plan(time_of_day='Evening')
+        self.assertEqual(morning.status_code, 201, morning.data)
+        self.assertEqual(evening.status_code, 201, evening.data)
+        self.assertEqual(duplicate_evening.status_code, 200, duplicate_evening.data)
+        self.assertNotEqual(morning.data['id'], evening.data['id'])
+        self.assertEqual(PlannedWorkout.objects.count(), 2)
+
+    def test_invalid_time_slot_is_rejected(self):
+        self.save()
+        response = self.plan(time_of_day='Midnight')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(PlannedWorkout.objects.exists())
 
     def test_calendar_plan_can_save_a_catalog_exercise_directly(self):
         response = self.plan()
@@ -279,13 +297,13 @@ class CoreAppTests(TestCase):
         plank = Exercise.objects.create(name='Plank', primaryMuscles=['abdominals'])
         post.return_value = Mock(status_code=200, json=lambda: {'output': [
             {'type': 'output_text', 'text': "I can't directly add events to your calendar."},
-            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Biceps curl","reps":10,"sets":3},{"exercise_name":"Plank","reps":30,"sets":2}]}'},
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","time_of_day":"Morning","workouts":[{"exercise_name":"Biceps curl","reps":10,"sets":3},{"exercise_name":"Plank","reps":30,"sets":2}]}'},
         ]})
         with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
             response = self.client.post('/api/gpt-chat/', {'query': 'Add biceps curl Monday'}, format='json')
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data['calendar_action'], {
-            'day': 'Monday', 'workouts': [
+            'day': 'Monday', 'time_of_day': 'Morning', 'workouts': [
                 {'exercise': {'id': str(self.exercise.id), 'name': 'Biceps curl'}, 'reps': 10, 'sets': 3},
                 {'exercise': {'id': str(plank.id), 'name': 'Plank'}, 'reps': 30, 'sets': 2},
             ],
@@ -307,7 +325,7 @@ class CoreAppTests(TestCase):
             response = self.client.post('/api/gpt-chat/', {'query': 'Add these back exercises on Monday'}, format='json')
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data['calendar_action'], {
-            'day': 'Monday', 'workouts': [
+            'day': 'Monday', 'time_of_day': 'Anytime', 'workouts': [
                 {'exercise': {'id': str(bent_over_row.id), 'name': 'Bent Over Barbell Row'}, 'reps': 10, 'sets': 3},
                 {'exercise': {'id': str(pullups.id), 'name': 'Pullups'}, 'reps': 8, 'sets': 3},
             ],

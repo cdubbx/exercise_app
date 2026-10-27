@@ -28,6 +28,7 @@ afterEach(() => {
 });
 const enter = (label: string, value: string) => act(() => tree.root.findAllByType(TextInput).find(field => field.props.accessibilityLabel === label)!.props.onChangeText(value));
 const selectDay = () => act(() => tree.root.findAllByType(TouchableOpacity).find(node => node.props.accessibilityLabel === 'Monday')!.props.onPress());
+const selectTime = (time: string) => act(() => tree.root.findAllByType(TouchableOpacity).find(node => node.props.accessibilityLabel === `Time of day: ${time}`)!.props.onPress());
 const submit = async () => {
   const button = tree.root.findAllByType(TouchableOpacity).find(node => node.findAllByType(Text).some(text => text.props.children === 'Add to Plan'))!;
   await act(async () => { await button.props.onPress(); });
@@ -42,8 +43,8 @@ test('invalid sets and repetitions do not submit or leave the screen', async () 
 });
 test('saves numeric sets/reps and returns once after server success', async () => {
   mockSave.mockResolvedValue({id: 12, sets: 3, reps: 10});
-  selectDay(); enter('Sets', '3'); enter('Repetitions', '10'); await submit();
-  expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({day: 'Monday', sets: 3, reps: 10, exercise: expect.objectContaining({id: 'exercise-1'})}));
+  selectDay(); selectTime('Morning'); enter('Sets', '3'); enter('Repetitions', '10'); await submit();
+  expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({day: 'Monday', time_of_day: 'Morning', sets: 3, reps: 10, exercise: expect.objectContaining({id: 'exercise-1'})}));
   expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({id: 12})); expect(back).toHaveBeenCalledTimes(1);
 });
 test('a failed save retains the form and does not add a phantom workout', async () => {
@@ -55,7 +56,7 @@ test('rep presets and steppers update the saved quantities', async () => {
   const press = (label: string) => act(() => tree.root.findAllByType(TouchableOpacity).find(node => node.props.accessibilityLabel === label)!.props.onPress());
   mockSave.mockResolvedValue({id: 13});
   selectDay(); press('12 reps'); press('Increase repetitions'); press('Decrease sets'); await submit();
-  expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({sets: 2, reps: 13, day: 'Monday'}));
+  expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({sets: 2, reps: 13, day: 'Monday', time_of_day: 'Anytime'}));
 });
 test('steppers stop at the quantity limits and require a selected day', async () => {
   enter('Sets', '1'); enter('Repetitions', '1000');
