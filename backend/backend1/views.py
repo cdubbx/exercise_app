@@ -27,9 +27,25 @@ from asgiref.sync import async_to_sync
 from django.db.models import Q
 import os
 import hashlib
+import json
 
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_catalog_exercise(name):
+    """Resolve exact catalog names, including common plural and slash-separated labels."""
+    candidates = [name.strip()]
+    candidates.extend(part.strip() for part in name.split('/') if part.strip())
+    for candidate in list(candidates):
+        last_word = candidate.rsplit(' ', 1)
+        if last_word[-1].endswith('s') and not last_word[-1].endswith('ss'):
+            candidates.append(' '.join(last_word[:-1] + [last_word[-1][:-1]]))
+    for candidate in candidates:
+        exercise = Exercise.objects.filter(name__iexact=candidate).first()
+        if exercise:
+            return exercise
+    return None
 
 import jwt
 import datetime
@@ -300,12 +316,35 @@ class UserPlannedWorkoutsView(APIView):
         return Response(PlannedWorkoutSerializer(workouts, many=True).data)
 
     def post(self, request):
-        workout = request.data.get('workout', {})
+        workouts = request.data.get('workouts')
+        is_batch = isinstance(workouts, list)
+        if is_batch and (not workouts or len(workouts) > 8):
+            raise ValidationError({'workouts': 'Add between 1 and 8 exercises at a time.'})
+        if not is_batch:
+            workouts = [request.data.get('workout', {})]
+        plans = []
+        any_created = False
+        with transaction.atomic():
+            for workout in workouts:
+                if not isinstance(workout, dict):
+                    raise ValidationError({'workouts': 'Each planned exercise must be an object.'})
+                plan, created = self._create_planned_workout(request, workout)
+                plans.append(plan)
+                any_created = any_created or created
+        if is_batch:
+            return Response(PlannedWorkoutSerializer(plans, many=True).data, status=201 if any_created else 200)
+        return Response(PlannedWorkoutSerializer(plans[0]).data, status=201 if any_created else 200)
+
+    def _create_planned_workout(self, request, workout):
         exercise_id = workout.get('exercise', {}).get('id')
         from rest_framework.serializers import UUIDField
         exercise_id = UUIDField().run_validation(exercise_id)
         custom = UserUploadWorkedouts.objects.filter(id=exercise_id, user=request.user).first() if exercise_id else None
-        saved = None if custom else get_object_or_404(SavedWorkout, exercise_id=exercise_id, user=request.user)
+        if custom:
+            saved = None
+        else:
+            exercise = get_object_or_404(Exercise, id=exercise_id)
+            saved, _ = SavedWorkout.objects.get_or_create(user=request.user, exercise=exercise)
         serializer = PlannedWorkoutSerializer(data={
             'saved_workout': saved.id if saved else None,
             'custom_workout': str(custom.id) if custom else None,
@@ -315,13 +354,11 @@ class UserPlannedWorkoutsView(APIView):
         })
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
-        with transaction.atomic():
-            plan, created = PlannedWorkout.objects.get_or_create(
-                user=request.user, saved_workout=saved, custom_workout=custom,
-                day_of_the_week=values['day_of_the_week'],
-                defaults={'reps': values['reps'], 'sets': values['sets']},
-            )
-        return Response(PlannedWorkoutSerializer(plan).data, status=201 if created else 200)
+        return PlannedWorkout.objects.get_or_create(
+            user=request.user, saved_workout=saved, custom_workout=custom,
+            day_of_the_week=values['day_of_the_week'],
+            defaults={'reps': values['reps'], 'sets': values['sets']},
+        )
 
 
 class CheckAuthenticationView(APIView):
@@ -548,6 +585,41 @@ class ExerciseChatView(APIView):
                 '**bold labels**, and bullets or numbered steps. Never use tables or HTML.'
             ),
             'input': history + [{'role': 'user', 'content': query}],
+            'tools': [{
+                'type': 'function',
+                'name': 'propose_calendar_workout',
+                'description': (
+                    'Propose adding a complete set of existing exercises to one weekday in the user’s weekly workout calendar. '
+                    'Use only when the user clearly asks to schedule or add a workout. '
+                    'Do not claim it was added; the user must confirm the proposal in the app. '
+                    'Include the exercises in the requested plan, using catalog names. Omit warm-ups or advice that are not catalog exercises. '
+                    'Ask a question instead if the weekday or plan is unclear.'
+                ),
+                'strict': True,
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'day': {'type': 'string', 'enum': [label for value, label in PlannedWorkout.DAYS_OF_WEEK]},
+                        'workouts': {
+                            'type': 'array', 'minItems': 1, 'maxItems': 8,
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    'exercise_name': {'type': 'string'},
+                                    'reps': {'type': 'integer', 'minimum': 1, 'maximum': 1000},
+                                    'sets': {'type': 'integer', 'minimum': 1, 'maximum': 100},
+                                },
+                                'required': ['exercise_name', 'reps', 'sets'],
+                                'additionalProperties': False,
+                            },
+                        },
+                    },
+                    'required': ['day', 'workouts'],
+                    'additionalProperties': False,
+                },
+            }],
+            'tool_choice': 'auto',
+            'parallel_tool_calls': False,
             'prompt_cache_key': 'exercise-plus-user-' + hashlib.sha256(str(request.user.pk).encode('utf-8')).hexdigest()[:24],
             'max_output_tokens': 500,
             'store': False,
@@ -592,12 +664,51 @@ class ExerciseChatView(APIView):
                 for part in item.get('content', [])
                 if part.get('type') == 'output_text' and isinstance(part.get('text'), str)
             ).strip()
+            calendar_action = None
+            for item in result.get('output', []):
+                if item.get('type') != 'function_call' or item.get('name') != 'propose_calendar_workout':
+                    continue
+                try:
+                    proposal = json.loads(item.get('arguments', '{}'))
+                    day = proposal.get('day')
+                    proposed_workouts = proposal.get('workouts')
+                    if (day not in dict(PlannedWorkout.DAYS_OF_WEEK)
+                            or not isinstance(proposed_workouts, list)
+                            or not 1 <= len(proposed_workouts) <= 8):
+                        continue
+                    resolved_workouts = []
+                    missing_exercise = None
+                    for proposed in proposed_workouts:
+                        if (not isinstance(proposed, dict)
+                                or not isinstance(proposed.get('exercise_name'), str)
+                                or not isinstance(proposed.get('reps'), int)
+                                or not isinstance(proposed.get('sets'), int)):
+                            missing_exercise = 'an invalid exercise'
+                            break
+                        exercise = resolve_catalog_exercise(proposed['exercise_name'])
+                        if not exercise:
+                            missing_exercise = proposed['exercise_name']
+                            break
+                        resolved_workouts.append({
+                            'exercise': {'id': str(exercise.id), 'name': exercise.name},
+                            'reps': proposed['reps'],
+                            'sets': proposed['sets'],
+                        })
+                    if missing_exercise:
+                        answer = answer or f"I couldn't match “{missing_exercise}” to an exercise in the library, so I haven't added this plan. Try another exercise name."
+                    else:
+                        calendar_action = {'day': day, 'workouts': resolved_workouts}
+                        answer = answer or 'Review this complete workout plan and add it to your weekly calendar when you are ready.'
+                except (TypeError, ValueError, AttributeError):
+                    logger.warning('Exercise chat returned invalid calendar action arguments')
+                break
         except (ValueError, AttributeError, TypeError):
             answer = ''
+            calendar_action = None
         if not answer:
             logger.warning('Exercise chat provider returned no text output')
             return Response({'error': 'Exercise chat could not create a reply. Please try again.'}, status=503)
-        return Response({'gpt_response': answer, 'exercises': []})
+        return Response({'gpt_response': answer, 'exercises': [], 'calendar_action': calendar_action})
 
 class ResendOTPAPIView(APIView):
     permission_classes = [AllowAny]

@@ -83,6 +83,30 @@ class CoreAppTests(TestCase):
         self.assertEqual(result['sets'], 3); self.assertEqual(result['reps'], 10)
         self.assertEqual(result['saved_workout_details']['exercise']['name'], self.exercise.name)
 
+    def test_calendar_plan_can_save_a_catalog_exercise_directly(self):
+        response = self.plan()
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(SavedWorkout.objects.filter(user=self.user, exercise=self.exercise).count(), 1)
+        self.assertEqual(PlannedWorkout.objects.count(), 1)
+
+    def test_calendar_batch_plan_is_atomic(self):
+        second = Exercise.objects.create(name='Plank', primaryMuscles=['abdominals'])
+        response = self.client.post('/api/plannedWorkouts/', {'workouts': [
+            {'exercise': {'id': str(self.exercise.id)}, 'day': 'Monday', 'reps': 10, 'sets': 3},
+            {'exercise': {'id': str(second.id)}, 'day': 'Monday', 'reps': 30, 'sets': 2},
+        ]}, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(PlannedWorkout.objects.count(), 2)
+        self.assertEqual(SavedWorkout.objects.filter(user=self.user).count(), 2)
+
+        invalid = self.client.post('/api/plannedWorkouts/', {'workouts': [
+            {'exercise': {'id': str(self.exercise.id)}, 'day': 'Tuesday', 'reps': 10, 'sets': 3},
+            {'exercise': {'id': str(second.id)}, 'day': 'Yesterday', 'reps': 30, 'sets': 2},
+        ]}, format='json')
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(PlannedWorkout.objects.count(), 2)
+
     def test_invalid_plan_inputs(self):
         self.save()
         for changes in [{'sets': 0}, {'reps': 0}, {'sets': 101}, {'reps': 'abc'}, {'day': 'Yesterday'}]:
@@ -193,15 +217,50 @@ class CoreAppTests(TestCase):
                 'ignored': 'discard',
             }, format='json')
         self.assertEqual(response.status_code, 200, response.data)
-        self.assertEqual(response.data, {'gpt_response': 'Try three sets of eight controlled reps.', 'exercises': []})
+        self.assertEqual(response.data, {'gpt_response': 'Try three sets of eight controlled reps.', 'exercises': [], 'calendar_action': None})
         self.assertEqual(post.call_args.kwargs['json']['input'], [
             {'role': 'user', 'content': 'What is a set?'},
             {'role': 'assistant', 'content': 'A group of reps.'},
             {'role': 'user', 'content': 'How many reps?'},
         ])
         self.assertTrue(post.call_args.kwargs['json']['prompt_cache_key'].startswith('exercise-plus-user-'))
+        self.assertEqual(post.call_args.kwargs['json']['tools'][0]['name'], 'propose_calendar_workout')
+        self.assertEqual(post.call_args.kwargs['json']['tool_choice'], 'auto')
         self.assertEqual(post.call_args.kwargs['json']['store'], False)
         self.assertEqual(post.call_args.kwargs['headers']['Authorization'], 'Bearer test-key')
+
+    @patch('backend1.views.requests.post')
+    def test_exercise_chat_returns_confirmable_calendar_proposal_for_catalog_workout(self, post):
+        from unittest.mock import Mock
+        import os
+        plank = Exercise.objects.create(name='Plank', primaryMuscles=['abdominals'])
+        post.return_value = Mock(status_code=200, json=lambda: {'output': [
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Biceps curl","reps":10,"sets":3},{"exercise_name":"Plank","reps":30,"sets":2}]}'},
+        ]})
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
+            response = self.client.post('/api/gpt-chat/', {'query': 'Add biceps curl Monday'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['calendar_action'], {
+            'day': 'Monday', 'workouts': [
+                {'exercise': {'id': str(self.exercise.id), 'name': 'Biceps curl'}, 'reps': 10, 'sets': 3},
+                {'exercise': {'id': str(plank.id), 'name': 'Plank'}, 'reps': 30, 'sets': 2},
+            ],
+        })
+        self.assertIn('Review', response.data['gpt_response'])
+        self.assertFalse(PlannedWorkout.objects.exists())
+
+    @patch('backend1.views.requests.post')
+    def test_exercise_chat_rejects_unknown_workout_for_calendar_proposal(self, post):
+        from unittest.mock import Mock
+        import os
+        post.return_value = Mock(status_code=200, json=lambda: {'output': [
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Imaginary curl","reps":10,"sets":3}]}'},
+        ]})
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
+            response = self.client.post('/api/gpt-chat/', {'query': 'Add imaginary curl Monday'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data['calendar_action'])
+        self.assertIn("couldn't match", response.data['gpt_response'])
 
     def test_exercise_chat_rejects_invalid_conversation_history(self):
         response = self.client.post('/api/gpt-chat/', {
