@@ -43,6 +43,8 @@
     .detail-label { color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
     .frontend { display:inline-block; margin-top:9px; color:#555; font-size:12px; }
     .method-name { font-weight:700; }
+    .error-signal { font-weight:700; color:#111; }
+    .error-action { border-left:3px solid #111; padding-left:12px; }
     .empty, .loading { color:var(--muted); padding:24px 4px; }
     footer { margin-top:42px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:13px; }
     @media (max-width:600px) { header { padding-top:34px; padding-bottom:34px; } main { padding:20px 14px 44px; } .spec { margin-left:0; width:100%; } article { padding:14px; } }
@@ -63,6 +65,7 @@
       <div class="tabs" role="group" aria-label="Reference section">
         <button type="button" data-view="backend" aria-pressed="true">Backend API</button>
         <button type="button" data-view="frontend" aria-pressed="false">Frontend methods</button>
+        <button type="button" data-view="errors" aria-pressed="false">Error analysis</button>
       </div>
       <input id="search" type="search" placeholder="Search endpoints and methods…" aria-label="Search reference">
       <span class="spec"><a href="/api-reference.json">OpenAPI JSON</a></span>
@@ -82,7 +85,7 @@
       const term = search.value.trim().toLowerCase();
       const entries = view === 'backend'
         ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0})))
-        : spec['x-frontend-methods'];
+        : view === 'frontend' ? spec['x-frontend-methods'] : spec['x-error-analysis'];
       const filtered = entries.filter(item => JSON.stringify(item).toLowerCase().includes(term));
       const groups = [...new Set(filtered.map(item => item.group))];
       content.replaceChildren();
@@ -103,8 +106,10 @@
             if (requestText && requestText !== 'none') { card.append(make('p', '', `Request · ${requestText}`)); }
             if (responseText) { card.append(make('p', '', `Response · ${responseText}`)); }
             if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
-          } else {
+          } else if (view === 'frontend') {
             card.append(make('div', 'method-name', item.name), make('p', '', item.summary), make('span', 'frontend', `Source · ${item.source}`));
+          } else {
+            card.append(make('div', 'error-signal', item.signal), make('p', '', item.meaning), make('p', 'error-action', `What to check · ${item.action}`));
           }
           grid.append(card);
         }

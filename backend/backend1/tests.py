@@ -32,6 +32,7 @@ class CoreAppTests(TestCase):
         page = self.client.get('/docs/')
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, 'Frontend methods')
+        self.assertContains(page, 'Error analysis')
         document = self.client.get('/api-reference.json')
         self.assertEqual(document.status_code, 200)
         import json
@@ -40,6 +41,7 @@ class CoreAppTests(TestCase):
         self.assertIn('/gpt-chat/', spec['paths'])
         self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
         self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
+        self.assertTrue(any('status_code=200' in item['signal'] and 'Heroku v94' in item['action'] for item in spec['x-error-analysis']))
 
     def save(self):
         return self.client.post('/api/saveWorkOuts', {'workout': {'id': str(self.exercise.id)}}, format='json')

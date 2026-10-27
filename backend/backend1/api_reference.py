@@ -84,6 +84,57 @@ FRONTEND_METHODS = [
     ('API client', 'readResponse(response)', 'Parse JSON and convert API failures into client errors.', 'services/api.ts'),
 ]
 
+ERROR_ANALYSIS = [
+    {
+        'group': 'Spotify playback',
+        'signal': 'Spotify provider GET returns 204; app GET /api/spotify/player/ returns 200 with no track and device_active=false.',
+        'meaning': 'The OAuth connection is valid, but Spotify reports no active playback session for this account.',
+        'action': 'Start playback in Spotify on a device signed into the same Spotify account, then refresh the player.',
+    },
+    {
+        'group': 'Spotify playback',
+        'signal': 'spotify_playback_request method=POST action=next|previous status_code=200 followed by spotify_app_request_succeeded.',
+        'meaning': 'The control succeeded. Spotify may return HTTP 200 with an empty response body for a playback action.',
+        'action': 'The backend ignores control response bodies and returns 204 to the app. This behavior is covered by the HTTP 200 empty-body regression test (Heroku v94).',
+    },
+    {
+        'group': 'Spotify playback',
+        'signal': 'spotify_playback_no_active_device with provider status 404.',
+        'meaning': 'Spotify has no device available for remote playback controls.',
+        'action': 'Open Spotify and start or resume playback on a device connected to the same account.',
+    },
+    {
+        'group': 'Spotify playback',
+        'signal': 'spotify_playback_forbidden with provider status 403.',
+        'meaning': 'Spotify denied the control request; the account may lack Premium playback access or app access may be restricted.',
+        'action': 'Check the connected Spotify account and its playback entitlement. The API maps this provider rejection to a client validation error.',
+    },
+    {
+        'group': 'Spotify playback',
+        'signal': 'spotify_playback_rate_limited with provider status 429 and retry_after.',
+        'meaning': 'Spotify rate-limited playback requests.',
+        'action': 'Wait for the logged Retry-After interval before retrying. The backend returns 429.',
+    },
+    {
+        'group': 'Spotify playback',
+        'signal': 'spotify_playback_auth_rejected or spotify_stored_token_invalid.',
+        'meaning': 'The stored access token failed after refresh, or could not be decrypted.',
+        'action': 'The backend clears the unusable Spotify connection. Connect Spotify again in the app.',
+    },
+    {
+        'group': 'Spotify playback',
+        'signal': 'spotify_playback_network_error or spotify_playback_provider_error with status 5xx.',
+        'meaning': 'The provider request timed out, could not connect, or Spotify returned a server error.',
+        'action': 'Retry after connectivity recovers. Logs include the HTTP status or exception type and duration, never tokens or response bodies.',
+    },
+    {
+        'group': 'Tracing a player request',
+        'signal': 'Match spotify_playback_request and spotify_app_request_succeeded / spotify_app_request_failed by action and timestamp.',
+        'meaning': 'The first event records Spotify’s provider response; the second records the app-facing outcome.',
+        'action': 'If the provider returns 2xx but the app reports failure, compare the deployed Heroku release and the control response handling. Do not log OAuth tokens or provider response bodies.',
+    },
+]
+
 
 def openapi_document():
     """Build a lightweight OpenAPI 3.1 reference from the published route catalog."""
@@ -114,4 +165,5 @@ def openapi_document():
         'components': {'securitySchemes': {'BearerAuth': {'type': 'http', 'scheme': 'bearer', 'bearerFormat': 'JWT'}}},
         'paths': paths,
         'x-frontend-methods': [dict(group=group, name=name, summary=summary, source=source) for group, name, summary, source in FRONTEND_METHODS],
+        'x-error-analysis': ERROR_ANALYSIS,
     }
