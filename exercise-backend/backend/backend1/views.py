@@ -45,6 +45,8 @@ def resolve_catalog_exercise(name):
         'chinups': 'Chin-Up',
         'pushup': 'Pushups',
         'pushups': 'Pushups',
+        'jumpingjack': 'Star Jump',
+        'jumpingjacks': 'Star Jump',
     }
     candidates = [name.strip()]
     candidates.extend(part.strip() for part in name.split('/') if part.strip())

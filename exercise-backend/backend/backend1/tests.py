@@ -318,8 +318,9 @@ class CoreAppTests(TestCase):
         import os
         bent_over_row = Exercise.objects.create(name='Bent Over Barbell Row', primaryMuscles=['lats'])
         pullups = Exercise.objects.create(name='Pullups', primaryMuscles=['lats'])
+        star_jump = Exercise.objects.create(name='Star Jump', primaryMuscles=['quadriceps'])
         post.return_value = Mock(status_code=200, json=lambda: {'output': [
-            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Bent-over rows","reps":10,"sets":3},{"exercise_name":"Pull-ups","reps":8,"sets":3}]}'},
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Bent-over rows","reps":10,"sets":3},{"exercise_name":"Pull-ups","reps":8,"sets":3},{"exercise_name":"Jumping Jacks","reps":20,"sets":3}]}'},
         ]})
         with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
             response = self.client.post('/api/gpt-chat/', {'query': 'Add these back exercises on Monday'}, format='json')
@@ -328,6 +329,7 @@ class CoreAppTests(TestCase):
             'day': 'Monday', 'time_of_day': 'Anytime', 'workouts': [
                 {'exercise': {'id': str(bent_over_row.id), 'name': 'Bent Over Barbell Row'}, 'reps': 10, 'sets': 3},
                 {'exercise': {'id': str(pullups.id), 'name': 'Pullups'}, 'reps': 8, 'sets': 3},
+                {'exercise': {'id': str(star_jump.id), 'name': 'Star Jump'}, 'reps': 20, 'sets': 3},
             ],
         })
 
