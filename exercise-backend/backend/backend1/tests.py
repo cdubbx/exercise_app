@@ -295,6 +295,25 @@ class CoreAppTests(TestCase):
         self.assertFalse(PlannedWorkout.objects.exists())
 
     @patch('backend1.views.requests.post')
+    def test_exercise_chat_resolves_common_aliases_to_catalog_names(self, post):
+        from unittest.mock import Mock
+        import os
+        bent_over_row = Exercise.objects.create(name='Bent Over Barbell Row', primaryMuscles=['lats'])
+        pullups = Exercise.objects.create(name='Pullups', primaryMuscles=['lats'])
+        post.return_value = Mock(status_code=200, json=lambda: {'output': [
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Bent-over rows","reps":10,"sets":3},{"exercise_name":"Pull-ups","reps":8,"sets":3}]}'},
+        ]})
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
+            response = self.client.post('/api/gpt-chat/', {'query': 'Add these back exercises on Monday'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['calendar_action'], {
+            'day': 'Monday', 'workouts': [
+                {'exercise': {'id': str(bent_over_row.id), 'name': 'Bent Over Barbell Row'}, 'reps': 10, 'sets': 3},
+                {'exercise': {'id': str(pullups.id), 'name': 'Pullups'}, 'reps': 8, 'sets': 3},
+            ],
+        })
+
+    @patch('backend1.views.requests.post')
     def test_exercise_chat_rejects_unknown_workout_for_calendar_proposal(self, post):
         from unittest.mock import Mock
         import os
