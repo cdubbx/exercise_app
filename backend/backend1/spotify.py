@@ -197,7 +197,9 @@ def player_request(connection, method, path):
             logger.warning('spotify_playback_provider_error method=%s action=%s status_code=%s',
                            method, path.strip('/') or 'current', response.status_code)
             raise SpotifyError()
-        return None if response.status_code == 204 else response.json()
+        # Playback-control endpoints may return 200 with an empty body. Their
+        # response payload is unused; only the current-player query needs JSON.
+        return None if path or response.status_code == 204 else response.json()
     except InvalidToken:
         logger.warning('spotify_stored_token_invalid action=%s', path.strip('/') or 'current')
         connection.access_token = ''; connection.refresh_token = ''; connection.save()

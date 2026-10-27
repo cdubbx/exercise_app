@@ -107,6 +107,18 @@ class SpotifyTests(TestCase):
         self.assertEqual(self.client.post('/api/spotify/player/', {'action': 'delete'}).status_code, 400)
 
     @patch('backend1.spotify.requests.request')
+    def test_playback_control_accepts_http_200_without_parsing_body(self, request):
+        self.connected()
+        response = Mock(ok=True, status_code=200, headers={})
+        response.json.side_effect = AssertionError('control response body should not be parsed')
+        request.return_value = response
+
+        result = self.client.post('/api/spotify/player/', {'action': 'previous'})
+
+        self.assertEqual(result.status_code, 204)
+        response.json.assert_not_called()
+
+    @patch('backend1.spotify.requests.request')
     def test_spotify_provider_failures_log_status_without_credentials_or_body(self, request):
         self.connected(); request.return_value = Mock(ok=False, status_code=503, headers={'Retry-After': '2'}, text='sensitive provider body')
         with self.assertLogs('backend1.spotify', level='WARNING') as captured:
