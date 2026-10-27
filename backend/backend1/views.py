@@ -26,6 +26,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.db.models import Q
 import os
+import hashlib
 
 
 logger = logging.getLogger(__name__)
@@ -519,6 +520,18 @@ class ExerciseChatView(APIView):
         if len(query) > 2000:
             raise ValidationError({'query': 'Keep your question under 2000 characters.'})
 
+        conversation = request.data.get('conversation', [])
+        if not isinstance(conversation, list):
+            raise ValidationError({'conversation': 'Conversation history must be a list.'})
+        history = []
+        for message in conversation[-12:]:
+            if not isinstance(message, dict) or message.get('role') not in {'user', 'assistant'}:
+                raise ValidationError({'conversation': 'Conversation messages must be from the user or assistant.'})
+            content = message.get('content')
+            if not isinstance(content, str) or not content.strip() or len(content) > 2000:
+                raise ValidationError({'conversation': 'Each conversation message must contain 1 to 2000 characters.'})
+            history.append({'role': message['role'], 'content': content.strip()})
+
         api_key = os.getenv('OPENAI_API_KEY', '').strip()
         if not api_key:
             return Response({'error': 'Exercise chat is not configured yet.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -530,9 +543,12 @@ class ExerciseChatView(APIView):
                 'Give practical, general fitness guidance. Ask a brief clarifying question when needed. '
                 'Do not diagnose injuries or medical conditions, prescribe treatment, or encourage training through pain. '
                 'For pain, injury, or medical concerns, advise the user to stop and consult a qualified clinician. '
-                'Keep workout suggestions beginner-aware and remind users to use safe form and suitable loads.'
+                'Keep workout suggestions beginner-aware and remind users to use safe form and suitable loads. '
+                'Format replies for a phone screen using short paragraphs, Markdown headings when useful, '
+                '**bold labels**, and bullets or numbered steps. Never use tables or HTML.'
             ),
-            'input': query,
+            'input': history + [{'role': 'user', 'content': query}],
+            'prompt_cache_key': 'exercise-plus-user-' + hashlib.sha256(str(request.user.pk).encode('utf-8')).hexdigest()[:24],
             'max_output_tokens': 500,
             'store': False,
         }
@@ -562,6 +578,13 @@ class ExerciseChatView(APIView):
 
         try:
             result = upstream.json()
+            usage = result.get('usage', {})
+            input_details = usage.get('input_tokens_details', {}) if isinstance(usage, dict) else {}
+            if isinstance(input_details, dict):
+                logger.info(
+                    'Exercise chat token usage input=%s cached_input=%s',
+                    usage.get('input_tokens'), input_details.get('cached_tokens', 0),
+                )
             answer = '\n'.join(
                 part.get('text', '')
                 for item in result.get('output', [])
