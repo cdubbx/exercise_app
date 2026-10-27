@@ -27,17 +27,26 @@ load_dotenv(dotenv_path=dotenv_path)
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(@&^ci%yw$1736u24yroz+4k!j8!%5%c6^b2m5xqkf9yjgoeli'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'development-only-change-before-deploying-please')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
+
+# Heroku terminates TLS at its router and forwards the original scheme.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.0.13', ' 192.168.0.8',  '*' ,'0.0.0.0']
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_HSTS_SECONDS', '3600' if not DEBUG else '0'))
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+if not DEBUG and not os.getenv('DJANGO_SECRET_KEY'):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured('Set DJANGO_SECRET_KEY before running with DEBUG disabled.')
+
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,testserver').split(',')
 
 # Application definition
 
-
-# him
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,7 +60,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'social_django',
     'channels',
-    'pgvector.django'
 ]
 
 MIDDLEWARE = [
@@ -88,23 +96,28 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [{
-                "address": os.environ.get("REDIS_URL", "redis://127.0.0.1:6379"),
-                "ssl_cert_reqs": None  # ✅ Disable SSL verification properly
-            }]
+REDIS_URL = os.getenv("REDIS_URL")
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissions'
+        'rest_framework.permissions.IsAuthenticated'
     ],
       'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -114,7 +127,11 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'backend1.User'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = [origin for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if origin]
+
+
+
 
 
 LOGGING = {
@@ -133,7 +150,7 @@ LOGGING = {
 
 
 # settings.py
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -144,15 +161,14 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 
-SOCIAL_AUTH_APPLE_PRIVATE_KEY = os.getenv("SOCIAL_AUTH_APPLE_PRIVATE_KEY", "").replace("\\n", "\n")
+SOCIAL_AUTH_APPLE_PRIVATE_KEY = os.getenv("SOCIAL_AUTH_APPLE_PRIVATE_KEY")
 SOCIAL_AUTH_APPLE_TEAM_ID = os.getenv("SOCIAL_AUTH_APPLE_TEAM_ID")
 SOCIAL_AUTH_APPLE_CLIENT_ID = os.getenv("SOCIAL_AUTH_APPLE_CLIENT_ID")
 SOCIAL_AUTH_APPLE_KEY_ID = os.getenv("SOCIAL_AUTH_APPLE_KEY_ID")
 FRONTEND_REDIRECT_URL = os.getenv("FRONTEND_REDIRECT_URL")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=15),
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=15),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -162,11 +178,11 @@ SIMPLE_JWT = {
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+default_sqlite_url = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
+        default=os.getenv("DATABASE_URL", default_sqlite_url),
         conn_max_age=600,
-        ssl_require=True  # Enforce SSL for Heroku PostgreSQL
     )
 }
 
@@ -208,7 +224,24 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ASGI_APPLICATION = 'backend.asgi.application'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'exercise@localhost')
+REPORT_EMAIL = os.getenv('REPORT_EMAIL', '')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
+CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}} if REDIS_URL else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min'}
+
+# Spotify uses a server callback; no provider credentials belong in the mobile app.
+SPOTIFY_ENABLED = os.getenv('SPOTIFY_ENABLED', 'false').lower() == 'true'
+SPOTIFY_REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI', '')
+SPOTIFY_TOKEN_ENCRYPTION_KEY = os.getenv('SPOTIFY_TOKEN_ENCRYPTION_KEY', '')
+AWS_S3_SIGNED_URL_SECONDS = 3600

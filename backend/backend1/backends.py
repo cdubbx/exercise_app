@@ -4,7 +4,7 @@ import requests
 from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.backends import BaseBackend
-from backend1.models import User
+from .models import User
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,11 +38,12 @@ class AppleAuthenticationBackend(BaseBackend):
             }
         )
         if created:
-            print(f"Created new user: {user}")
+            user.set_unusable_password()
+            user.save(update_fields=['password'])
         else:
             print(f"Authenticated existing user: {user}")
 
-        return user
+        return user if user.is_active else None
    
     def get_user(self, user_id):
         try:
@@ -53,7 +54,7 @@ class AppleAuthenticationBackend(BaseBackend):
     def _verify_id_token(self, id_token):
         try:
             print("Fetching Apple public keys...")
-            response = requests.get("https://appleid.apple.com/auth/keys")
+            response = requests.get("https://appleid.apple.com/auth/keys", timeout=10)
             response.raise_for_status()
             apple_keys = response.json()["keys"]
             print(f"Apple keys: {apple_keys}")
