@@ -698,7 +698,7 @@ class ExerciseChatView(APIView):
                         answer = answer or f"I couldn't match “{missing_exercise}” to an exercise in the library, so I haven't added this plan. Try another exercise name."
                     else:
                         calendar_action = {'day': day, 'workouts': resolved_workouts}
-                        answer = answer or 'Review this complete workout plan and add it to your weekly calendar when you are ready.'
+                        answer = f'I prepared this workout plan for {day}. Review the exercises below, then tap Add to calendar to save it.'
                 except (TypeError, ValueError, AttributeError):
                     logger.warning('Exercise chat returned invalid calendar action arguments')
                 break

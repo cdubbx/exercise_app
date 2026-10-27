@@ -235,6 +235,7 @@ class CoreAppTests(TestCase):
         import os
         plank = Exercise.objects.create(name='Plank', primaryMuscles=['abdominals'])
         post.return_value = Mock(status_code=200, json=lambda: {'output': [
+            {'type': 'output_text', 'text': "I can't directly add events to your calendar."},
             {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Biceps curl","reps":10,"sets":3},{"exercise_name":"Plank","reps":30,"sets":2}]}'},
         ]})
         with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
@@ -246,7 +247,8 @@ class CoreAppTests(TestCase):
                 {'exercise': {'id': str(plank.id), 'name': 'Plank'}, 'reps': 30, 'sets': 2},
             ],
         })
-        self.assertIn('Review', response.data['gpt_response'])
+        self.assertIn('tap Add to calendar', response.data['gpt_response'])
+        self.assertNotIn("can't directly add", response.data['gpt_response'])
         self.assertFalse(PlannedWorkout.objects.exists())
 
     @patch('backend1.views.requests.post')
