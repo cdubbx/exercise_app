@@ -123,6 +123,12 @@ class PlannedWorkout(models.Model):
         ('Saturday', 'Saturday'),
         ('Sunday', 'Sunday'),
     ]
+    TIMES_OF_DAY = [
+        ('Morning', 'Morning'),
+        ('Afternoon', 'Afternoon'),
+        ('Evening', 'Evening'),
+        ('Anytime', 'Anytime'),
+    ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='planned_workouts')
     saved_workout = models.ForeignKey(SavedWorkout, on_delete=models.CASCADE, related_name='planned_workouts', null=True, blank=True)
     custom_workout = models.ForeignKey(UserUploadWorkedouts, on_delete=models.CASCADE, null=True, blank=True)
@@ -131,10 +137,11 @@ class PlannedWorkout(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(condition=(models.Q(saved_workout__isnull=False, custom_workout__isnull=True) | models.Q(saved_workout__isnull=True, custom_workout__isnull=False)), name='plan_one_exercise_source'),
-            models.UniqueConstraint(fields=['user', 'saved_workout', 'day_of_the_week'], name='unique_saved_plan_day'),
-            models.UniqueConstraint(fields=['user', 'custom_workout', 'day_of_the_week'], name='unique_custom_plan_day'),
+            models.UniqueConstraint(fields=['user', 'saved_workout', 'day_of_the_week', 'time_of_day'], name='unique_saved_plan_day_time'),
+            models.UniqueConstraint(fields=['user', 'custom_workout', 'day_of_the_week', 'time_of_day'], name='unique_custom_plan_day_time'),
         ]
     day_of_the_week = models.CharField(max_length=9, choices=DAYS_OF_WEEK)
+    time_of_day = models.CharField(max_length=10, choices=TIMES_OF_DAY, default='Anytime')
     reps = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):

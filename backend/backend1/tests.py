@@ -89,13 +89,31 @@ class CoreAppTests(TestCase):
         again = self.save(); self.assertEqual(again.status_code, 200)
         self.assertFalse(again.data['created']); self.assertEqual(SavedWorkout.objects.count(), 1)
 
-    def test_duplicate_plans_keep_one_entry_and_return_sets_reps(self):
+    def test_duplicate_plans_keep_one_entry_per_day_and_time_and_return_sets_reps(self):
         self.save(); first = self.plan(); second = self.plan()
         self.assertEqual(first.status_code, 201, first.data); self.assertEqual(second.status_code, 200, second.data)
         self.assertEqual(first.data['id'], second.data['id']); self.assertEqual(PlannedWorkout.objects.count(), 1)
         result = self.client.get('/api/plannedWorkouts/').data[0]
         self.assertEqual(result['sets'], 3); self.assertEqual(result['reps'], 10)
+        self.assertEqual(result['time_of_day'], 'Anytime')
         self.assertEqual(result['saved_workout_details']['exercise']['name'], self.exercise.name)
+
+    def test_same_exercise_can_be_planned_twice_on_one_day_in_different_time_slots(self):
+        self.save()
+        morning = self.plan(time_of_day='Morning')
+        evening = self.plan(time_of_day='Evening')
+        duplicate_evening = self.plan(time_of_day='Evening')
+        self.assertEqual(morning.status_code, 201, morning.data)
+        self.assertEqual(evening.status_code, 201, evening.data)
+        self.assertEqual(duplicate_evening.status_code, 200, duplicate_evening.data)
+        self.assertNotEqual(morning.data['id'], evening.data['id'])
+        self.assertEqual(PlannedWorkout.objects.count(), 2)
+
+    def test_invalid_time_slot_is_rejected(self):
+        self.save()
+        response = self.plan(time_of_day='Midnight')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(PlannedWorkout.objects.exists())
 
     def test_calendar_plan_can_save_a_catalog_exercise_directly(self):
         response = self.plan()
@@ -250,13 +268,13 @@ class CoreAppTests(TestCase):
         plank = Exercise.objects.create(name='Plank', primaryMuscles=['abdominals'])
         post.return_value = Mock(status_code=200, json=lambda: {'output': [
             {'type': 'output_text', 'text': "I can't directly add events to your calendar."},
-            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Biceps curl","reps":10,"sets":3},{"exercise_name":"Plank","reps":30,"sets":2}]}'},
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","time_of_day":"Morning","workouts":[{"exercise_name":"Biceps curl","reps":10,"sets":3},{"exercise_name":"Plank","reps":30,"sets":2}]}'},
         ]})
         with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
             response = self.client.post('/api/gpt-chat/', {'query': 'Add biceps curl Monday'}, format='json')
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data['calendar_action'], {
-            'day': 'Monday', 'workouts': [
+            'day': 'Monday', 'time_of_day': 'Morning', 'workouts': [
                 {'exercise': {'id': str(self.exercise.id), 'name': 'Biceps curl'}, 'reps': 10, 'sets': 3},
                 {'exercise': {'id': str(plank.id), 'name': 'Plank'}, 'reps': 30, 'sets': 2},
             ],
@@ -271,16 +289,18 @@ class CoreAppTests(TestCase):
         import os
         bent_over_row = Exercise.objects.create(name='Bent Over Barbell Row', primaryMuscles=['lats'])
         pullups = Exercise.objects.create(name='Pullups', primaryMuscles=['lats'])
+        star_jump = Exercise.objects.create(name='Star Jump', primaryMuscles=['quadriceps'])
         post.return_value = Mock(status_code=200, json=lambda: {'output': [
-            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Bent-over rows","reps":10,"sets":3},{"exercise_name":"Pull-ups","reps":8,"sets":3}]}'},
+            {'type': 'function_call', 'name': 'propose_calendar_workout', 'arguments': '{"day":"Monday","workouts":[{"exercise_name":"Bent-over rows","reps":10,"sets":3},{"exercise_name":"Pull-ups","reps":8,"sets":3},{"exercise_name":"Jumping Jacks","reps":20,"sets":3}]}'},
         ]})
         with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
             response = self.client.post('/api/gpt-chat/', {'query': 'Add these back exercises on Monday'}, format='json')
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data['calendar_action'], {
-            'day': 'Monday', 'workouts': [
+            'day': 'Monday', 'time_of_day': 'Anytime', 'workouts': [
                 {'exercise': {'id': str(bent_over_row.id), 'name': 'Bent Over Barbell Row'}, 'reps': 10, 'sets': 3},
                 {'exercise': {'id': str(pullups.id), 'name': 'Pullups'}, 'reps': 8, 'sets': 3},
+                {'exercise': {'id': str(star_jump.id), 'name': 'Star Jump'}, 'reps': 20, 'sets': 3},
             ],
         })
 
@@ -373,10 +393,9 @@ class CoreAppTests(TestCase):
         self.client.force_authenticate(None)
         self.assertEqual(self.client.post('/api/login/', {'identifier': self.user.email, 'password': 'Training-plan-2026!'}, format='json').status_code, 401)
 
-    def test_reset_email_opens_webpage_then_app_and_consumed_link_expires(self):
+    def test_reset_email_opens_web_reset_form_and_consumed_link_expires(self):
         from django.core import mail
         from urllib.parse import parse_qs, urlsplit
-        from html import unescape
         import re
         self.client.force_authenticate(None)
         response = self.client.post('/api/request-password-reset/', {'email': self.user.email}, format='json')
@@ -384,18 +403,17 @@ class CoreAppTests(TestCase):
         link = re.search(r'href="([^"]+)"', mail.outbox[-1].body).group(1)
         self.assertTrue(link.startswith('http://testserver/api/password-reset/?'))
         page = self.client.get(link)
-        self.assertContains(page, 'Open App')
+        self.assertContains(page, 'Set a new password')
+        self.assertContains(page, 'id="new-password"', html=False)
+        self.assertContains(page, 'id="confirm-password"', html=False)
+        self.assertContains(page, r'/api/reset\u002Dpassword/')
         self.assertEqual(page['Cache-Control'], 'no-store')
         self.assertEqual(page['Referrer-Policy'], 'no-referrer')
-        app_link = unescape(re.search(r'href="([^"]+)"', page.content.decode()).group(1))
-        self.assertTrue(app_link.startswith('exercisefrontend://reset-password?'))
-        query = parse_qs(urlsplit(app_link).query)
-        self.assertEqual(query['email'], [self.user.email])
-        response = self.client.post('/api/reset-password/', {'email': self.user.email, 'token': query['token'][0], 'new_password': 'Changed-training-2026!'}, format='json')
+        response = self.client.post('/api/reset-password/', {'email': self.user.email, 'token': parse_qs(urlsplit(link).query)['token'][0], 'new_password': 'Changed-training-2026!'}, format='json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.client.get(link).status_code, 400)
 
-    def test_invalid_reset_landing_does_not_offer_app_link(self):
+    def test_invalid_reset_landing_does_not_expose_reset_form(self):
         for query in ('', '?email=first@example.com&token=invalid', '?email=missing@example.com&token=invalid'):
             response = self.client.get('/api/password-reset/' + query)
             self.assertContains(response, 'invalid or has expired', status_code=400)

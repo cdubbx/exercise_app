@@ -45,6 +45,8 @@ def resolve_catalog_exercise(name):
         'chinups': 'Chin-Up',
         'pushup': 'Pushups',
         'pushups': 'Pushups',
+        'jumpingjack': 'Star Jump',
+        'jumpingjacks': 'Star Jump',
     }
     candidates = [name.strip()]
     candidates.extend(part.strip() for part in name.split('/') if part.strip())
@@ -363,6 +365,7 @@ class UserPlannedWorkoutsView(APIView):
             'saved_workout': saved.id if saved else None,
             'custom_workout': str(custom.id) if custom else None,
             'day_of_the_week': workout.get('day'),
+            'time_of_day': workout.get('time_of_day', 'Anytime'),
             'reps': workout.get('reps'),
             'sets': workout.get('sets', 1),
         })
@@ -371,6 +374,7 @@ class UserPlannedWorkoutsView(APIView):
         return PlannedWorkout.objects.get_or_create(
             user=request.user, saved_workout=saved, custom_workout=custom,
             day_of_the_week=values['day_of_the_week'],
+            time_of_day=values['time_of_day'],
             defaults={'reps': values['reps'], 'sets': values['sets']},
         )
 
@@ -603,9 +607,10 @@ class ExerciseChatView(APIView):
                 'type': 'function',
                 'name': 'propose_calendar_workout',
                 'description': (
-                    'Propose adding a complete set of existing exercises to one weekday in the user’s weekly workout calendar. '
+                    'Propose adding a complete set of existing exercises to one time slot on a weekday in the user’s weekly workout calendar. '
                     'Use only when the user clearly asks to schedule or add a workout. '
                     'Do not claim it was added; the user must confirm the proposal in the app. '
+                    'Use the time of day requested by the user; choose Anytime when they do not specify one. '
                     'Include the exercises in the requested plan, using catalog names. Omit warm-ups or advice that are not catalog exercises. '
                     'Ask a question instead if the weekday or plan is unclear.'
                 ),
@@ -614,6 +619,7 @@ class ExerciseChatView(APIView):
                     'type': 'object',
                     'properties': {
                         'day': {'type': 'string', 'enum': [label for value, label in PlannedWorkout.DAYS_OF_WEEK]},
+                        'time_of_day': {'type': 'string', 'enum': [label for value, label in PlannedWorkout.TIMES_OF_DAY]},
                         'workouts': {
                             'type': 'array', 'minItems': 1, 'maxItems': 8,
                             'items': {
@@ -628,7 +634,7 @@ class ExerciseChatView(APIView):
                             },
                         },
                     },
-                    'required': ['day', 'workouts'],
+                    'required': ['day', 'time_of_day', 'workouts'],
                     'additionalProperties': False,
                 },
             }],
@@ -685,8 +691,10 @@ class ExerciseChatView(APIView):
                 try:
                     proposal = json.loads(item.get('arguments', '{}'))
                     day = proposal.get('day')
+                    time_of_day = proposal.get('time_of_day', 'Anytime')
                     proposed_workouts = proposal.get('workouts')
                     if (day not in dict(PlannedWorkout.DAYS_OF_WEEK)
+                            or time_of_day not in dict(PlannedWorkout.TIMES_OF_DAY)
                             or not isinstance(proposed_workouts, list)
                             or not 1 <= len(proposed_workouts) <= 8):
                         continue
@@ -711,8 +719,12 @@ class ExerciseChatView(APIView):
                     if missing_exercise:
                         answer = answer or f"I couldn't match “{missing_exercise}” to an exercise in the library, so I haven't added this plan. Try another exercise name."
                     else:
-                        calendar_action = {'day': day, 'workouts': resolved_workouts}
-                        answer = f'I prepared this workout plan for {day}. Review the exercises below, then tap Add to calendar to save it.'
+                        calendar_action = {
+                            'day': day,
+                            'time_of_day': time_of_day,
+                            'workouts': resolved_workouts,
+                        }
+                        answer = f'I prepared this {time_of_day.lower()} workout plan for {day}. Review the exercises below, then tap Add to calendar to save it.'
                 except (TypeError, ValueError, AttributeError):
                     logger.warning('Exercise chat returned invalid calendar action arguments')
                 break
