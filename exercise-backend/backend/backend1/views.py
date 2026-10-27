@@ -25,9 +25,27 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync 
 from django.db.models import Q
+import os
+import hashlib
+import json
 
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_catalog_exercise(name):
+    """Resolve exact catalog names, including common plural and slash-separated labels."""
+    candidates = [name.strip()]
+    candidates.extend(part.strip() for part in name.split('/') if part.strip())
+    for candidate in list(candidates):
+        last_word = candidate.rsplit(' ', 1)
+        if last_word[-1].endswith('s') and not last_word[-1].endswith('ss'):
+            candidates.append(' '.join(last_word[:-1] + [last_word[-1][:-1]]))
+    for candidate in candidates:
+        exercise = Exercise.objects.filter(name__iexact=candidate).first()
+        if exercise:
+            return exercise
+    return None
 
 import jwt
 import datetime
@@ -298,12 +316,35 @@ class UserPlannedWorkoutsView(APIView):
         return Response(PlannedWorkoutSerializer(workouts, many=True).data)
 
     def post(self, request):
-        workout = request.data.get('workout', {})
+        workouts = request.data.get('workouts')
+        is_batch = isinstance(workouts, list)
+        if is_batch and (not workouts or len(workouts) > 8):
+            raise ValidationError({'workouts': 'Add between 1 and 8 exercises at a time.'})
+        if not is_batch:
+            workouts = [request.data.get('workout', {})]
+        plans = []
+        any_created = False
+        with transaction.atomic():
+            for workout in workouts:
+                if not isinstance(workout, dict):
+                    raise ValidationError({'workouts': 'Each planned exercise must be an object.'})
+                plan, created = self._create_planned_workout(request, workout)
+                plans.append(plan)
+                any_created = any_created or created
+        if is_batch:
+            return Response(PlannedWorkoutSerializer(plans, many=True).data, status=201 if any_created else 200)
+        return Response(PlannedWorkoutSerializer(plans[0]).data, status=201 if any_created else 200)
+
+    def _create_planned_workout(self, request, workout):
         exercise_id = workout.get('exercise', {}).get('id')
         from rest_framework.serializers import UUIDField
         exercise_id = UUIDField().run_validation(exercise_id)
         custom = UserUploadWorkedouts.objects.filter(id=exercise_id, user=request.user).first() if exercise_id else None
-        saved = None if custom else get_object_or_404(SavedWorkout, exercise_id=exercise_id, user=request.user)
+        if custom:
+            saved = None
+        else:
+            exercise = get_object_or_404(Exercise, id=exercise_id)
+            saved, _ = SavedWorkout.objects.get_or_create(user=request.user, exercise=exercise)
         serializer = PlannedWorkoutSerializer(data={
             'saved_workout': saved.id if saved else None,
             'custom_workout': str(custom.id) if custom else None,
@@ -313,13 +354,11 @@ class UserPlannedWorkoutsView(APIView):
         })
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
-        with transaction.atomic():
-            plan, created = PlannedWorkout.objects.get_or_create(
-                user=request.user, saved_workout=saved, custom_workout=custom,
-                day_of_the_week=values['day_of_the_week'],
-                defaults={'reps': values['reps'], 'sets': values['sets']},
-            )
-        return Response(PlannedWorkoutSerializer(plan).data, status=201 if created else 200)
+        return PlannedWorkout.objects.get_or_create(
+            user=request.user, saved_workout=saved, custom_workout=custom,
+            day_of_the_week=values['day_of_the_week'],
+            defaults={'reps': values['reps'], 'sets': values['sets']},
+        )
 
 
 class CheckAuthenticationView(APIView):
@@ -505,11 +544,174 @@ class DeleteUserUploadedWorkoutView(APIView):
         get_object_or_404(UserUploadWorkedouts, id=workout_id, user=request.user).delete()
         return Response(status=204)
 
-class ChatUnavailableView(APIView):
+class ExerciseChatView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'chat'
 
     def post(self, request):
-        return Response({'error': 'Exercise recommendations are planned for a later release. You can find and save exercises using Search.'}, status=503)
+        query = request.data.get('query') if isinstance(request.data, dict) else None
+        if not isinstance(query, str) or not query.strip():
+            raise ValidationError({'query': 'Enter a question for the exercise coach.'})
+        query = query.strip()
+        if len(query) > 2000:
+            raise ValidationError({'query': 'Keep your question under 2000 characters.'})
+
+        conversation = request.data.get('conversation', [])
+        if not isinstance(conversation, list):
+            raise ValidationError({'conversation': 'Conversation history must be a list.'})
+        history = []
+        for message in conversation[-12:]:
+            if not isinstance(message, dict) or message.get('role') not in {'user', 'assistant'}:
+                raise ValidationError({'conversation': 'Conversation messages must be from the user or assistant.'})
+            content = message.get('content')
+            if not isinstance(content, str) or not content.strip() or len(content) > 2000:
+                raise ValidationError({'conversation': 'Each conversation message must contain 1 to 2000 characters.'})
+            history.append({'role': message['role'], 'content': content.strip()})
+
+        api_key = os.getenv('OPENAI_API_KEY', '').strip()
+        if not api_key:
+            return Response({'error': 'Exercise chat is not configured yet.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        payload = {
+            'model': os.getenv('OPENAI_MODEL', 'gpt-4.1-mini'),
+            'instructions': (
+                'You are Exercise Plus, a concise and supportive exercise coach. '
+                'Give practical, general fitness guidance. Ask a brief clarifying question when needed. '
+                'Do not diagnose injuries or medical conditions, prescribe treatment, or encourage training through pain. '
+                'For pain, injury, or medical concerns, advise the user to stop and consult a qualified clinician. '
+                'Keep workout suggestions beginner-aware and remind users to use safe form and suitable loads. '
+                'Format replies for a phone screen using short paragraphs, Markdown headings when useful, '
+                '**bold labels**, and bullets or numbered steps. Never use tables or HTML.'
+            ),
+            'input': history + [{'role': 'user', 'content': query}],
+            'tools': [{
+                'type': 'function',
+                'name': 'propose_calendar_workout',
+                'description': (
+                    'Propose adding a complete set of existing exercises to one weekday in the user’s weekly workout calendar. '
+                    'Use only when the user clearly asks to schedule or add a workout. '
+                    'Do not claim it was added; the user must confirm the proposal in the app. '
+                    'Include the exercises in the requested plan, using catalog names. Omit warm-ups or advice that are not catalog exercises. '
+                    'Ask a question instead if the weekday or plan is unclear.'
+                ),
+                'strict': True,
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'day': {'type': 'string', 'enum': [label for value, label in PlannedWorkout.DAYS_OF_WEEK]},
+                        'workouts': {
+                            'type': 'array', 'minItems': 1, 'maxItems': 8,
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    'exercise_name': {'type': 'string'},
+                                    'reps': {'type': 'integer', 'minimum': 1, 'maximum': 1000},
+                                    'sets': {'type': 'integer', 'minimum': 1, 'maximum': 100},
+                                },
+                                'required': ['exercise_name', 'reps', 'sets'],
+                                'additionalProperties': False,
+                            },
+                        },
+                    },
+                    'required': ['day', 'workouts'],
+                    'additionalProperties': False,
+                },
+            }],
+            'tool_choice': 'auto',
+            'parallel_tool_calls': False,
+            'prompt_cache_key': 'exercise-plus-user-' + hashlib.sha256(str(request.user.pk).encode('utf-8')).hexdigest()[:24],
+            'max_output_tokens': 500,
+            'store': False,
+        }
+        try:
+            upstream = requests.post(
+                'https://api.openai.com/v1/responses',
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json=payload,
+                timeout=(5, 35),
+            )
+        except requests.RequestException:
+            logger.exception('Exercise chat request failed before receiving a response')
+            return Response({'error': 'Exercise chat could not reach its service. Please try again.'}, status=503)
+
+        if upstream.status_code >= 400:
+            logger.warning('Exercise chat provider returned HTTP %s', upstream.status_code)
+            try:
+                provider_error = upstream.json().get('error', {})
+            except (ValueError, AttributeError):
+                provider_error = {}
+            if provider_error.get('code') in {'insufficient_quota', 'credit_balance_exhausted', 'billing_hard_limit_reached'}:
+                return Response(
+                    {'error': 'Exercise chat needs available OpenAI API credits. Please try again later.'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            return Response({'error': 'Exercise chat is temporarily unavailable. Please try again.'}, status=503)
+
+        try:
+            result = upstream.json()
+            usage = result.get('usage', {})
+            input_details = usage.get('input_tokens_details', {}) if isinstance(usage, dict) else {}
+            if isinstance(input_details, dict):
+                logger.info(
+                    'Exercise chat token usage input=%s cached_input=%s',
+                    usage.get('input_tokens'), input_details.get('cached_tokens', 0),
+                )
+            answer = '\n'.join(
+                part.get('text', '')
+                for item in result.get('output', [])
+                if item.get('type') == 'message'
+                for part in item.get('content', [])
+                if part.get('type') == 'output_text' and isinstance(part.get('text'), str)
+            ).strip()
+            calendar_action = None
+            for item in result.get('output', []):
+                if item.get('type') != 'function_call' or item.get('name') != 'propose_calendar_workout':
+                    continue
+                try:
+                    proposal = json.loads(item.get('arguments', '{}'))
+                    day = proposal.get('day')
+                    proposed_workouts = proposal.get('workouts')
+                    if (day not in dict(PlannedWorkout.DAYS_OF_WEEK)
+                            or not isinstance(proposed_workouts, list)
+                            or not 1 <= len(proposed_workouts) <= 8):
+                        continue
+                    resolved_workouts = []
+                    missing_exercise = None
+                    for proposed in proposed_workouts:
+                        if (not isinstance(proposed, dict)
+                                or not isinstance(proposed.get('exercise_name'), str)
+                                or not isinstance(proposed.get('reps'), int)
+                                or not isinstance(proposed.get('sets'), int)):
+                            missing_exercise = 'an invalid exercise'
+                            break
+                        exercise = resolve_catalog_exercise(proposed['exercise_name'])
+                        if not exercise:
+                            missing_exercise = proposed['exercise_name']
+                            break
+                        resolved_workouts.append({
+                            'exercise': {'id': str(exercise.id), 'name': exercise.name},
+                            'reps': proposed['reps'],
+                            'sets': proposed['sets'],
+                        })
+                    if missing_exercise:
+                        answer = answer or f"I couldn't match “{missing_exercise}” to an exercise in the library, so I haven't added this plan. Try another exercise name."
+                    else:
+                        calendar_action = {
+                            'day': day,
+                            'workouts': resolved_workouts,
+                        }
+                        answer = f'I prepared this workout plan for {day}. Review the exercises below, then tap Add to calendar to save it.'
+                except (TypeError, ValueError, AttributeError):
+                    logger.warning('Exercise chat returned invalid calendar action arguments')
+                break
+        except (ValueError, AttributeError, TypeError):
+            answer = ''
+            calendar_action = None
+        if not answer:
+            logger.warning('Exercise chat provider returned no text output')
+            return Response({'error': 'Exercise chat could not create a reply. Please try again.'}, status=503)
+        return Response({'gpt_response': answer, 'exercises': [], 'calendar_action': calendar_action})
 
 class ResendOTPAPIView(APIView):
     permission_classes = [AllowAny]

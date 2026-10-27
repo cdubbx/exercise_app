@@ -10,6 +10,7 @@ import {ChatMessage} from '../interfaces/interfaces';
 import {useChat} from '../context/ChatContext';
 import {openTab} from '../services/navigation';
 import {useWalkThrough} from '../utils/TutorialSystemService';
+import ChatRichText from '../components/ChatRichText';
 
 const suggestions = ['Find exercises for my back', 'Explain sets and reps', 'Help me plan a workout'];
 type Props = NativeStackScreenProps<RootStackParamList, 'BotScreen'>;
@@ -20,7 +21,7 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
   const list = useRef<FlatList<ChatMessage>>(null);
   const composer = useRef<TextInput>(null);
   const nearBottom = useRef(true);
-  const {messages, sendMessage, loading, error, retryMessage, clearConversation} = useChat();
+  const {messages, sendMessage, loading, error, retryMessage, addWorkoutToCalendar, clearConversation} = useChat();
   const tour = useWalkThrough();
   const insets = useSafeAreaInsets();
   const canSend = !!input.trim() && !loading;
@@ -36,6 +37,13 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
     setInput('');
   };
   const browseExercises = () => { Keyboard.dismiss(); openTab('Home1', {screen: 'Home'}); };
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('BottomTabs');
+    }
+  };
   const confirmClear = () => Alert.alert('Clear conversation?', 'This clears the messages in this chat.', [
     {text: 'Cancel', style: 'cancel'},
     {text: 'Clear', style: 'destructive', onPress: () => { clearConversation(); setInput(''); }},
@@ -54,7 +62,7 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
 
   return <View style={[styles.screen, {paddingTop: insets.top}]}>
     <View style={styles.header}>
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Back" onPress={() => navigation.goBack()} style={styles.headerButton}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Back" onPress={handleBack} style={styles.headerButton}>
         <Text style={styles.backIcon}>‹</Text>
       </TouchableOpacity>
       <Text style={styles.title}>Exercise Bot</Text>
@@ -96,11 +104,29 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
         </View>}
         renderItem={({item}) => <View style={[styles.message, item.role === 'user' ? styles.userMessage : styles.botMessage]}>
           <Text style={[styles.sender, item.role === 'user' && styles.whiteText]}>{item.role === 'user' ? 'You' : 'Exercise Bot'}</Text>
-          <Text selectable style={[styles.messageText, item.role === 'user' && styles.whiteText]}>{item.content}</Text>
+          {item.role === 'assistant'
+            ? <ChatRichText content={item.content} />
+            : <Text selectable style={[styles.messageText, styles.whiteText]}>{item.content}</Text>}
           {item.role === 'assistant' && item.exercises?.map((exercise, index) => <TouchableOpacity key={exercise.id ?? index} accessibilityRole="button"
             onPress={() => navigation.navigate('ExerciseCard', {item: exercise})} style={styles.exerciseLink}>
             <Text style={styles.exerciseName}>{exercise.name}</Text><Text style={styles.exerciseHint}>View exercise →</Text>
           </TouchableOpacity>)}
+          {item.role === 'assistant' && item.calendarAction && <View style={styles.calendarAction}>
+            <Text style={styles.calendarActionTitle}>Weekly calendar plan</Text>
+            <Text style={styles.exerciseHint}>{item.calendarAction.day}</Text>
+            {item.calendarAction.workouts.map(workout => <View key={workout.exercise.id} style={styles.calendarWorkoutRow}>
+              <Text style={styles.exerciseName}>{workout.exercise.name}</Text>
+              <Text style={styles.exerciseHint}>{workout.sets} sets × {workout.reps} reps</Text>
+            </View>)}
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add workout plan to calendar"
+              accessibilityState={{disabled: item.calendarActionStatus === 'saving' || item.calendarActionStatus === 'added'}}
+              disabled={item.calendarActionStatus === 'saving' || item.calendarActionStatus === 'added'}
+              onPress={() => { if (item.id) void addWorkoutToCalendar(item.id); }}
+              style={[styles.calendarButton, (item.calendarActionStatus === 'saving' || item.calendarActionStatus === 'added') && styles.disabled]}>
+              <Text style={styles.calendarButtonText}>{item.calendarActionStatus === 'saving' ? 'Adding…' : item.calendarActionStatus === 'added' ? 'Added to calendar' : 'Add to calendar'}</Text>
+            </TouchableOpacity>
+            {item.calendarActionStatus === 'error' && <Text accessibilityRole="alert" style={styles.exerciseHint}>Couldn’t add it. Tap to try again.</Text>}
+          </View>}
         </View>}
       />
       {tour.wrap('bot-screen-tooltip', inputComposer, {
@@ -148,5 +174,10 @@ const styles = StyleSheet.create({
   exerciseLink: {backgroundColor: '#f2f2f2', borderRadius: 10, padding: 14, gap: 6},
   exerciseName: {fontSize: 14, fontWeight: '600', color: 'black'},
   exerciseHint: {fontSize: 12, color: '#555'},
+  calendarAction: {backgroundColor: '#f2f2f2', borderRadius: 12, padding: 14, gap: 8},
+  calendarActionTitle: {fontSize: 12, color: '#555', fontWeight: '600'},
+  calendarWorkoutRow: {paddingVertical: 4, gap: 2},
+  calendarButton: {backgroundColor: 'black', borderRadius: 10, minHeight: 42, alignItems: 'center', justifyContent: 'center', marginTop: 4},
+  calendarButtonText: {fontSize: 13, color: 'white', fontWeight: '600'},
 });
 export default BotScreen;

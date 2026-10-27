@@ -41,5 +41,13 @@ target 'exercisefrontend' do
       config[:reactNativePath],
       :mac_catalyst_enabled => false
     )
+
+    # CocoaPods static libraries do not need app distribution signatures.
+    # Keep signing scoped to the app target so Xcode can archive for TestFlight.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      end
+    end
   end
 end

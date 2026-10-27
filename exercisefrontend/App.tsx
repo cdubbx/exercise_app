@@ -283,8 +283,8 @@ export default function App(): React.JSX.Element {
               <WalkthroughProvider>
                 <FloatingButtonContextProvider>
                   <NavigationContainer ref={navigationRef} linking={linking}>
-                    <FloatingButton />
                     <MainNavigator />
+                    <FloatingButton />
                   </NavigationContainer>
                 </FloatingButtonContextProvider>
               </WalkthroughProvider>

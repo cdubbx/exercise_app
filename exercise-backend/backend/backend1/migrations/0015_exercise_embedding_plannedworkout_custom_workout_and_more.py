@@ -10,6 +10,23 @@ def ensure_vector_extension(apps, schema_editor):
         schema_editor.execute('CREATE EXTENSION IF NOT EXISTS vector')
 
 
+def add_embedding_column_if_missing(apps, schema_editor):
+    exercise_model = apps.get_model('backend1', 'Exercise')
+    table_name = exercise_model._meta.db_table
+    with schema_editor.connection.cursor() as cursor:
+        columns = {
+            column.name
+            for column in schema_editor.connection.introspection.get_table_description(cursor, table_name)
+        }
+    if 'embedding' in columns:
+        return
+
+    field = pgvector.django.vector.VectorField(blank=True, dimensions=1536, null=True)
+    field.set_attributes_from_name('embedding')
+    field.model = exercise_model
+    schema_editor.add_field(exercise_model, field)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -18,10 +35,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(ensure_vector_extension, migrations.RunPython.noop),
-        migrations.AddField(
-            model_name='exercise',
-            name='embedding',
-            field=pgvector.django.vector.VectorField(blank=True, dimensions=1536, null=True),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(add_embedding_column_if_missing, migrations.RunPython.noop),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='exercise',
+                    name='embedding',
+                    field=pgvector.django.vector.VectorField(blank=True, dimensions=1536, null=True),
+                ),
+            ],
         ),
         migrations.AddField(
             model_name='plannedworkout',

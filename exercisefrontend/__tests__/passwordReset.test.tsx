@@ -44,6 +44,6 @@ test('failed reset retains the form and does not report success', async () => {
   mockReset.mockRejectedValue(new Error('Invalid or expired reset link.'));
   fill('New-password-2026!', 'New-password-2026!'); await submit();
   expect(mockNavigate).not.toHaveBeenCalled();
-  expect(Alert.alert).toHaveBeenCalledWith('Error', expect.stringContaining('expired'));
+  expect(Alert.alert).toHaveBeenCalledWith('Could not reset password', expect.stringContaining('expired'));
   expect(tree.root.findAllByType(TextInput)[0].props.value).toBe('New-password-2026!');
 });

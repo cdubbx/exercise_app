@@ -32,6 +32,13 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'development-only-change-before-depl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
 
+# Heroku terminates TLS at its router and forwards the original scheme.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_HSTS_SECONDS', '3600' if not DEBUG else '0'))
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
 if not DEBUG and not os.getenv('DJANGO_SECRET_KEY'):
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured('Set DJANGO_SECRET_KEY before running with DEBUG disabled.')
@@ -230,8 +237,19 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
-CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}} if REDIS_URL else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
-REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min'}
+CACHES = (
+    {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            # Heroku Key-Value Store presents a self-signed TLS certificate.
+            'OPTIONS': {'ssl_cert_reqs': None},
+        }
+    }
+    if REDIS_URL
+    else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+)
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min', 'chat': '20/min'}
 
 # Spotify uses a server callback; no provider credentials belong in the mobile app.
 SPOTIFY_ENABLED = os.getenv('SPOTIFY_ENABLED', 'false').lower() == 'true'

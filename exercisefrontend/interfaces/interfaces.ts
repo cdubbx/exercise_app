@@ -45,6 +45,13 @@ export interface ChatMessage {
   role:string;
   content:string;
   exercises?: Exercise[] | any[];
+  calendarAction?: CalendarWorkoutAction;
+  calendarActionStatus?: 'idle' | 'saving' | 'added' | 'error';
   timestamp: number;
 
+}
+
+export interface CalendarWorkoutAction {
+  day: string;
+  workouts: Array<{exercise: {id: string; name: string}; reps: number; sets: number}>;
 }

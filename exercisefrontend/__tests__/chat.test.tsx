@@ -36,6 +36,16 @@ test('failed messages can be retried without duplicating the question', async ()
   expect(chat.messages.map(message => message.role)).toEqual(['user', 'assistant']);
   expect(chat.error).toBeNull();
 });
+test('sends recent conversation history with the next question', async () => {
+  await act(async () => { await chat.sendMessage('What is a set?'); });
+  await act(async () => { await chat.sendMessage('How many reps?'); });
+  const body = JSON.parse(mockFetch.mock.calls[1][1].body);
+  expect(body.query).toBe('How many reps?');
+  expect(body.conversation).toEqual([
+    {role: 'user', content: 'What is a set?'},
+    {role: 'assistant', content: 'A reply'},
+  ]);
+});
 test('unavailable service produces an explicit state rather than an assistant answer', async () => {
   mockFetch.mockResolvedValueOnce({status: 503}); mockRead.mockRejectedValueOnce(new Error('Recommendations are not available yet.'));
   await act(async () => { await chat.sendMessage('Plan a workout'); });
@@ -59,4 +69,18 @@ test('a missing assistant response remains recoverable instead of a fabricated a
   mockRead.mockResolvedValueOnce({exercises: []});
   await act(async () => { await chat.sendMessage('Any ideas?'); });
   expect(chat.messages).toHaveLength(1); expect(chat.error?.message).toContain('No reply');
+});
+
+test('calendar suggestions require a separate authenticated confirmation request', async () => {
+  mockRead.mockResolvedValueOnce({gpt_response: 'Review this plan.', calendar_action: {
+    day: 'Monday', workouts: [{exercise: {id: 'exercise-1', name: 'Biceps curl'}, reps: 10, sets: 3}],
+  }});
+  await act(async () => { await chat.sendMessage('Add biceps curls Monday'); });
+  const message = chat.messages[1];
+  expect(message.calendarActionStatus).toBe('idle');
+  await act(async () => { await chat.addWorkoutToCalendar(message.id!); });
+  expect(mockFetch).toHaveBeenLastCalledWith('http://localhost/api/plannedWorkouts/', expect.objectContaining({
+    method: 'POST', body: JSON.stringify({workouts: [{exercise: {id: 'exercise-1', name: 'Biceps curl'}, day: 'Monday', reps: 10, sets: 3}]}),
+  }));
+  expect(chat.messages[1].calendarActionStatus).toBe('added');
 });

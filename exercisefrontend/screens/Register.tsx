@@ -1,216 +1,139 @@
+import React, {useState} from 'react';
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
+  ScrollView,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
-  StyleSheet,
+  View,
 } from 'react-native';
-import {Stack, VStack, Text, HStack} from '@react-native-material/core';
-import React, {useState} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {NavigationProp, useNavigation} from '@react-navigation/native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {Text} from '@react-native-material/core';
+import {NavigationProp} from '@react-navigation/native';
 import {useLogin, useRegister} from '../hooks/auth';
 import {AuthStackParamList} from '../interfaces/screentypes';
-import {
-  appleAuth,
-  AppleButton,
-} from '@invertase/react-native-apple-authentication';
+import {appleAuth, AppleButton} from '@invertase/react-native-apple-authentication';
 
 interface RegisterScreenProps {
   navigation: NavigationProp<AuthStackParamList, 'Register'>;
 }
 
 const Register: React.FC<RegisterScreenProps> = ({navigation}) => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const {register} = useRegister();
   const {appleLogin} = useLogin();
 
   const onSubmit = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert('Create account', 'Enter your email and choose a password to continue.');
+      return;
+    }
+    setLoading(true);
     try {
-      const userData = {
-        email: email,
-        password: password,
-      };
-
-      await register(userData);
-      navigation.navigate('OTP', {
-        email: email,
-      });
+      await register({email: email.trim(), password});
+      navigation.navigate('OTP', {email: email.trim()});
     } catch (error: any) {
-      console.log(error);
-      Alert.alert('Registration Error', error.message); // Display the error message to the user
+      Alert.alert('Could not create account', error.message || 'Please check your details and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   async function onAppleButtonPress() {
     try {
-      const appleAuthRequestResponse = await appleAuth.performRequest({
+      const response = await appleAuth.performRequest({
         requestedOperation: appleAuth.Operation.LOGIN,
         requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
       });
-
-      const {user, email, identityToken} = appleAuthRequestResponse;
-      const appleObject = {
-        email: email,
-        id_token: identityToken,
-      };
-
-      await appleLogin(appleObject);
-      navigation.navigate('Tabs');
+      await appleLogin({email: response.email, id_token: response.identityToken});
     } catch (error: any) {
-      if (error?.code === appleAuth.Error.CANCELED) {
-        console.warn('User canceled Apple Sign');
-      } else console.error(error);
+      if (error?.code !== appleAuth.Error.CANCELED) {
+        Alert.alert('Apple sign in', error.message || 'Apple sign in could not be completed.');
+      }
     }
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack>
-        <Stack justify="center" items="center" >
-          <Text style={styles.signUpText}>Execise App</Text>
-        </Stack>
-        <Stack
-          justify="center"
-          items="center"
-          mt={20}
-          spacing={5}
-          direction="column">
-          <Stack style={styles.inputStack}>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.card}>
+            <Text style={styles.brand}>Exercise Plus+</Text>
+            <Text style={styles.title}>Create your account</Text>
+            <Text style={styles.subtitle}>Build a routine that feels good and keeps you moving.</Text>
+
+            <Text style={styles.label}>Email address</Text>
             <TextInput
               style={styles.input}
-              placeholder="Email"
-              onChangeText={text => setEmail(text)}
+              placeholder="you@example.com"
+              placeholderTextColor="#777"
+              value={email}
+              onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="email"
+              returnKeyType="next"
             />
+            <Text style={styles.label}>Password</Text>
             <TextInput
               style={styles.input}
-              placeholder="Password"
-              secureTextEntry={true}
-              onChangeText={text => setPassword(text)}
+              placeholder="Choose a password"
+              placeholderTextColor="#777"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="new-password"
+              returnKeyType="go"
+              onSubmitEditing={onSubmit}
             />
-          </Stack>
-        </Stack>
-
-        <VStack style={styles.buttonStack}>
-          <TouchableOpacity
-            activeOpacity={1}
-            style={styles.button}
-            onPress={onSubmit}>
-            <Text style={styles.buttonText}>Sign up</Text>
-          </TouchableOpacity>
-          <HStack style={styles.alreadyUserStack}>
-            <Text>Already a user</Text>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('Login');
-              }}>
-              <Text>Login</Text>
+            <TouchableOpacity disabled={loading} onPress={onSubmit} style={[styles.primary, loading && styles.disabled]}>
+              <Text style={styles.primaryText}>{loading ? 'Creating account…' : 'Create account'}</Text>
             </TouchableOpacity>
-          </HStack>
-
-               <HStack style={styles.divider}>
-                      <View style={styles.dividerLine}></View>
-                      <Text style={styles.dividerText}>Or</Text>
-                      <View style={styles.dividerLine}></View>
-                    </HStack>
-
-          <View>
-            <AppleButton
-              buttonStyle={AppleButton.Style.BLACK}
-              buttonType={AppleButton.Type.SIGN_IN}
-              style={styles.appleButton}
-              onPress={onAppleButtonPress}
-            />
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.link}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
+            {Platform.OS === 'ios' && (
+              <>
+                <View style={styles.divider}><View style={styles.dividerLine} /><Text style={styles.dividerText}>OR</Text><View style={styles.dividerLine} /></View>
+                <AppleButton buttonStyle={AppleButton.Style.WHITE_OUTLINE} buttonType={AppleButton.Type.SIGN_UP} style={styles.appleButton} onPress={onAppleButtonPress} />
+              </>
+            )}
           </View>
-        </VStack>
-      </Stack>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    flex:1,
-    marginTop:80
-  },
-  appleButton: {
-    width: 200,
-    height: 44,
-    marginTop:50,
-  },
-  input: {
-    margin: 16,
-    width: 300,
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  inputStack: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 5,
-    flexDirection: 'column',
-    marginBottom: 10,
-
-  },
-  alreadyUserStack: {
-    justifyContent: 'center',
-    marginTop:10,
-    gap:10
-  },
-  button: {
-    backgroundColor: 'black',
-    paddingVertical: 10,
-    paddingHorizontal: 60,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  buttonStack: {
-    // marginTop: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop:30,
-  },
-  divider: {
-    width: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 5,
-    marginVertical: 10,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ccc',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#666',
-    fontWeight: 'bold',
-  },
-  signUpText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop:20,
-    marginBottom:50,
-  },
+  flex: {flex: 1},
+  safeArea: {flex: 1, backgroundColor: '#f2f2f2'},
+  scroll: {flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 22},
+  card: {width: '100%', maxWidth: 440, padding: 24, borderRadius: 12, backgroundColor: 'white'},
+  brand: {color: 'black', fontSize: 14, fontWeight: '600'},
+  title: {marginTop: 28, color: 'black', fontSize: 26, fontWeight: 'bold'},
+  subtitle: {marginTop: 8, marginBottom: 24, color: '#555', fontSize: 14, lineHeight: 21},
+  label: {marginBottom: 8, color: '#333', fontSize: 13, fontWeight: '600'},
+  input: {height: 50, marginBottom: 18, paddingHorizontal: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, backgroundColor: 'white', color: 'black', fontSize: 15},
+  primary: {minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: 'black'},
+  disabled: {opacity: 0.65},
+  primaryText: {color: 'white', fontSize: 15, fontWeight: '600'},
+  footer: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, marginTop: 24},
+  footerText: {color: '#555', fontSize: 14},
+  link: {color: 'black', fontSize: 14, fontWeight: '600'},
+  divider: {flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22},
+  dividerLine: {height: 1, flex: 1, backgroundColor: '#ddd'},
+  dividerText: {color: '#555', fontSize: 11, fontWeight: '600'},
+  appleButton: {width: '100%', height: 48},
 });
 
 export default Register;

@@ -54,8 +54,8 @@ urlpatterns += [
     path('uploads/', ImageUploadView.as_view()),
 ]
 
-from .views import ChatUnavailableView
-urlpatterns += [path('gpt-chat/', ChatUnavailableView.as_view())]
+from .views import ExerciseChatView
+urlpatterns += [path('gpt-chat/', ExerciseChatView.as_view())]
 
 from .views import ResendOTPAPIView
 urlpatterns += [path('resend-otp/', ResendOTPAPIView.as_view())]

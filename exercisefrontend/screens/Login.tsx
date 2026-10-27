@@ -1,238 +1,147 @@
+import React, {useState} from 'react';
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
+  ScrollView,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
-  StyleSheet,
+  View,
 } from 'react-native';
-import {Stack, VStack, Text, HStack} from '@react-native-material/core';
-import React, {useState} from 'react';
+import {Text} from '@react-native-material/core';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useLogin, useResetPassword} from '../hooks/auth';
-import appleAuth, {
-  AppleButton,
-} from '@invertase/react-native-apple-authentication';
+import {useLogin} from '../hooks/auth';
+import appleAuth, {AppleButton} from '@invertase/react-native-apple-authentication';
 
 type RootStackParamList = {
-  Register: undefined; // Add other screens as needed
+  Register: undefined;
   Tabs: undefined;
-  RequestResetPassword: undefined; // Add the reset password screen route
+  RequestResetPassword: undefined;
 };
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Register'
->;
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
 export default function Login(): React.JSX.Element {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const {login, appleLogin} = useLogin();
-  const {requestPasswordReset} = useResetPassword(); // Hook for reset password
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
-    try {
-      const isSuccess = await login(email, password);
-      if (isSuccess) {
-        // The shared authentication state opens the signed-in navigator.
-      }
-    } catch (error: any) {
-      console.log('Login failed:', error.message);
-      Alert.alert('Login Error', error.message);
-    }
-  };
-
-  async function onAppleButtonPress() {
-    try {
-      const appleAuthRequestResponse = await appleAuth.performRequest({
-        requestedOperation: appleAuth.Operation.LOGIN,
-        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
-      });
-
-      const {user, email, identityToken} = appleAuthRequestResponse;
-      const appleObject = {
-        email: email,
-        id_token: identityToken,
-      };
-
-      await appleLogin(appleObject);
-      // The shared authentication state opens the signed-in navigator.
-    } catch (error: any) {
-      if (error?.code === appleAuth.Error.CANCELED) {
-        console.warn('User canceled Apple Sign');
-      } else console.error(error);
-    }
-  }
-
-  const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert(
-        'Error',
-        'Please enter your email address to reset your password.',
-      );
+    if (!email.trim() || !password) {
+      Alert.alert('Sign in', 'Enter your email and password to continue.');
       return;
     }
-
     setLoading(true);
     try {
-      const message = await requestPasswordReset(email);
-      Alert.alert('Success', message);
+      await login(email.trim(), password);
     } catch (error: any) {
-      console.log('Reset password error:', error.message);
-      Alert.alert('Error', error.message);
+      Alert.alert('Could not sign in', error.message || 'Check your details and try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  async function onAppleButtonPress() {
+    try {
+      const response = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
+      });
+      await appleLogin({email: response.email, id_token: response.identityToken});
+    } catch (error: any) {
+      if (error?.code !== appleAuth.Error.CANCELED) {
+        Alert.alert('Apple sign in', error.message || 'Apple sign in could not be completed.');
+      }
+    }
+  }
+
   return (
-    <SafeAreaView>
-      <Stack mt={80}>
-        <Stack style={styles.headerStack}>
-          <Text style={styles.signInText}>Sign in</Text>
-        </Stack>
-        <Stack style={styles.inputStack}>
-          <TextInput
-            style={styles.input}
-            placeholder="Username or email"
-            onChangeText={text => setEmail(text)}
-            keyboardType="default"
-            placeholderTextColor={"black"}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={"black"}
-            secureTextEntry={true}
-            onChangeText={text => setPassword(text)}
-          />
-        </Stack>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.card}>
+            <Text style={styles.brand}>Exercise Plus+</Text>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>Sign in to pick up where your last workout left off.</Text>
 
-        <VStack style={styles.buttonStack}>
-          <Stack style={styles.buttonContainer}>
-            <TouchableOpacity onPress={onSubmit} style={styles.button}>
-              <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.label}>Email or username</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              placeholderTextColor="#777"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              returnKeyType="next"
+            />
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Your password"
+              placeholderTextColor="#777"
+              value={password}
+              secureTextEntry
+              onChangeText={setPassword}
+              autoCapitalize="none"
+              autoComplete="password"
+              returnKeyType="go"
+              onSubmitEditing={onSubmit}
+            />
+
+            <TouchableOpacity style={styles.forgot} onPress={() => navigation.navigate('RequestResetPassword')}>
+              <Text style={styles.link}>Forgot password?</Text>
             </TouchableOpacity>
-          </Stack>
+            <TouchableOpacity disabled={loading} onPress={onSubmit} style={[styles.primary, loading && styles.disabled]}>
+              <Text style={styles.primaryText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('RequestResetPassword');
-            }}
-            style={styles.link}>
-            <Text style={styles.linkText}>
-              {loading ? 'Sending reset link...' : 'Forgot Password?'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => navigation.navigate('Register')}
-            style={styles.link}>
-            <Text style={styles.linkText}>Create account</Text>
-          </TouchableOpacity>
-          <HStack style={styles.divider}>
-            <View style={styles.dividerLine}></View>
-            <Text style={styles.dividerText}>Or</Text>
-            <View style={styles.dividerLine}></View>
-          </HStack>
-          
-          <AppleButton
-            buttonStyle={AppleButton.Style.BLACK}
-            buttonType={AppleButton.Type.SIGN_IN}
-            style={styles.appleButton}
-            onPress={onAppleButtonPress}
-          />
-        </VStack>
-      </Stack>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>New to Exercise Plus+?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.link}>Create account</Text>
+              </TouchableOpacity>
+            </View>
+
+            {Platform.OS === 'ios' && (
+              <>
+                <View style={styles.divider}><View style={styles.dividerLine} /><Text style={styles.dividerText}>OR</Text><View style={styles.dividerLine} /></View>
+                <AppleButton buttonStyle={AppleButton.Style.WHITE_OUTLINE} buttonType={AppleButton.Type.SIGN_IN} style={styles.appleButton} onPress={onAppleButtonPress} />
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
-    margin: 16,
-    width: 300,
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginBottom: 50,
-  },
-  button: {
-    backgroundColor: 'black',
-    paddingVertical: 12,
-    paddingHorizontal: 80,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  link: {
-    marginTop: 10,
-  },
-  linkText: {
-    color: 'black',
-    fontSize: 14,
-  },
-  headerStack: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    paddingBottom: 40,
-    flexDirection: 'row',
-  },
-  inputStack: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    gap: 5,
-    flexDirection: 'column',
-  },
-  buttonStack: {
-    marginTop: -30,
-    alignItems: 'center',
-    padding: 40,
-    justifyContent: 'center',
-  },
-  buttonContainer: {
-    gap: 10,
-  },
-  signInText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  appleButton: {
-    width: 200,
-    height: 44,
-    marginTop: 50,
-  },
-  divider: {
-    width: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 5,
-    marginVertical: 10,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ccc',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#666',
-    fontWeight: 'bold',
-  },
+  flex: {flex: 1},
+  safeArea: {flex: 1, backgroundColor: '#f2f2f2'},
+  scroll: {flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 22},
+  card: {width: '100%', maxWidth: 440, padding: 24, borderRadius: 12, backgroundColor: 'white'},
+  brand: {color: 'black', fontSize: 14, fontWeight: '600'},
+  title: {marginTop: 28, color: 'black', fontSize: 26, fontWeight: 'bold'},
+  subtitle: {marginTop: 8, marginBottom: 24, color: '#555', fontSize: 14, lineHeight: 21},
+  label: {marginBottom: 8, color: '#333', fontSize: 13, fontWeight: '600'},
+  input: {height: 50, marginBottom: 18, paddingHorizontal: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, backgroundColor: 'white', color: 'black', fontSize: 15},
+  forgot: {alignSelf: 'flex-end', marginTop: -8, marginBottom: 22, paddingVertical: 4},
+  link: {color: 'black', fontSize: 14, fontWeight: '600'},
+  primary: {minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: 'black'},
+  disabled: {opacity: 0.65},
+  primaryText: {color: 'white', fontSize: 15, fontWeight: '600'},
+  footer: {flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, marginTop: 24},
+  footerText: {color: '#555', fontSize: 14},
+  divider: {flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22},
+  dividerLine: {height: 1, flex: 1, backgroundColor: '#ddd'},
+  dividerText: {color: '#555', fontSize: 11, fontWeight: '600'},
+  appleButton: {width: '100%', height: 48},
 });

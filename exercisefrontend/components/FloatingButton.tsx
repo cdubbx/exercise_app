@@ -47,7 +47,12 @@ const FloatingButton = () => {
   const state = useFloatingButtonState();
   const {isAuthenticated} = useUserContext();
   const [routeName, setRouteName] = React.useState<string | undefined>();
-  useEffect(() => navigationRef.addListener('state', () => setRouteName(navigationRef.getCurrentRoute()?.name)), []);
+  useEffect(() => {
+    const updateRoute = () => setRouteName(navigationRef.getCurrentRoute()?.name);
+    updateRoute();
+    const unsubscribe = navigationRef.addListener('state', updateRoute);
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     moveToBottomRight();

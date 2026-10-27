@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from backend1.api_docs import ApiReferenceView, api_reference_json, documentation_home
 urlpatterns = [
+    path('', documentation_home, name='documentation-home'),
+    path('docs/', ApiReferenceView.as_view(), name='api-reference'),
+    path('api-reference.json', api_reference_json, name='api-reference-json'),
     path('admin/', admin.site.urls),
     path('api/', include('backend1.urls')),  # Adjust 'accounts.urls' if your app name/path is different
     path('api-auth/', include('rest_framework.urls'))
