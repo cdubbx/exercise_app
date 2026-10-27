@@ -178,6 +178,28 @@ class CoreAppTests(TestCase):
         from django.core import mail
         self.assertEqual(len(mail.outbox), 1)
 
+    @patch('backend1.views.requests.post')
+    def test_exercise_chat_uses_responses_api_and_returns_text(self, post):
+        from unittest.mock import Mock
+        import os
+        post.return_value = Mock(status_code=200, json=lambda: {'output': [
+            {'type': 'reasoning', 'summary': []},
+            {'type': 'message', 'content': [{'type': 'output_text', 'text': 'Try three sets of eight controlled reps.'}]},
+        ]})
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
+            response = self.client.post('/api/gpt-chat/', {'query': 'How many reps?', 'ignored': 'discard'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data, {'gpt_response': 'Try three sets of eight controlled reps.', 'exercises': []})
+        self.assertEqual(post.call_args.kwargs['json']['input'], 'How many reps?')
+        self.assertEqual(post.call_args.kwargs['headers']['Authorization'], 'Bearer test-key')
+
+    def test_exercise_chat_validates_input_and_reports_missing_configuration(self):
+        import os
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(self.client.post('/api/gpt-chat/', {'query': ' '}, format='json').status_code, 400)
+            response = self.client.post('/api/gpt-chat/', {'query': 'What should I train?'}, format='json')
+        self.assertEqual(response.status_code, 503)
+
     def test_account_delete_cascades(self):
         self.save(); self.plan()
         self.assertEqual(self.client.delete('/api/user/delete/').status_code, 204)

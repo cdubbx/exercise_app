@@ -25,6 +25,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.db.models import Q
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -505,11 +506,66 @@ class DeleteUserUploadedWorkoutView(APIView):
         get_object_or_404(UserUploadWorkedouts, id=workout_id, user=request.user).delete()
         return Response(status=204)
 
-class ChatUnavailableView(APIView):
+class ExerciseChatView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'chat'
 
     def post(self, request):
-        return Response({'error': 'Exercise recommendations are planned for a later release. You can find and save exercises using Search.'}, status=503)
+        query = request.data.get('query') if isinstance(request.data, dict) else None
+        if not isinstance(query, str) or not query.strip():
+            raise ValidationError({'query': 'Enter a question for the exercise coach.'})
+        query = query.strip()
+        if len(query) > 2000:
+            raise ValidationError({'query': 'Keep your question under 2000 characters.'})
+
+        api_key = os.getenv('OPENAI_API_KEY', '').strip()
+        if not api_key:
+            return Response({'error': 'Exercise chat is not configured yet.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        payload = {
+            'model': os.getenv('OPENAI_MODEL', 'gpt-4.1-mini'),
+            'instructions': (
+                'You are Exercise Plus, a concise and supportive exercise coach. '
+                'Give practical, general fitness guidance. Ask a brief clarifying question when needed. '
+                'Do not diagnose injuries or medical conditions, prescribe treatment, or encourage training through pain. '
+                'For pain, injury, or medical concerns, advise the user to stop and consult a qualified clinician. '
+                'Keep workout suggestions beginner-aware and remind users to use safe form and suitable loads.'
+            ),
+            'input': query,
+            'max_output_tokens': 500,
+            'store': False,
+        }
+        try:
+            upstream = requests.post(
+                'https://api.openai.com/v1/responses',
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json=payload,
+                timeout=(5, 35),
+            )
+        except requests.RequestException:
+            logger.exception('Exercise chat request failed before receiving a response')
+            return Response({'error': 'Exercise chat could not reach its service. Please try again.'}, status=503)
+
+        if upstream.status_code >= 400:
+            logger.warning('Exercise chat provider returned HTTP %s', upstream.status_code)
+            return Response({'error': 'Exercise chat is temporarily unavailable. Please try again.'}, status=503)
+
+        try:
+            result = upstream.json()
+            answer = '\n'.join(
+                part.get('text', '')
+                for item in result.get('output', [])
+                if item.get('type') == 'message'
+                for part in item.get('content', [])
+                if part.get('type') == 'output_text' and isinstance(part.get('text'), str)
+            ).strip()
+        except (ValueError, AttributeError, TypeError):
+            answer = ''
+        if not answer:
+            logger.warning('Exercise chat provider returned no text output')
+            return Response({'error': 'Exercise chat could not create a reply. Please try again.'}, status=503)
+        return Response({'gpt_response': answer, 'exercises': []})
 
 class ResendOTPAPIView(APIView):
     permission_classes = [AllowAny]

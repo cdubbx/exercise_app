@@ -249,7 +249,7 @@ CACHES = (
     if REDIS_URL
     else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
 )
-REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min'}
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min', 'chat': '20/min'}
 
 # Spotify uses a server callback; no provider credentials belong in the mobile app.
 SPOTIFY_ENABLED = os.getenv('SPOTIFY_ENABLED', 'false').lower() == 'true'
