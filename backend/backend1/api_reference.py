@@ -135,6 +135,40 @@ ERROR_ANALYSIS = [
     },
 ]
 
+API_RELEASE_NOTES = [
+    {
+        'group': 'v94 · October 27, 2026',
+        'version': 'v94',
+        'date': 'October 27, 2026',
+        'category': 'Fixed',
+        'title': 'Playback controls accept successful responses without a body',
+        'endpoints': ['POST /api/spotify/player/'],
+        'summary': 'Spotify returned HTTP 200 for a playback action, while the app received HTTP 503.',
+        'details': 'The backend attempted to decode a response body that the control action does not use. Successful control responses are now accepted without parsing the body, and the app receives HTTP 204.',
+        'diagnostics': [],
+        'compatibility': 'No request or client changes are required. Existing play, pause, next, and previous controls use the corrected behavior.',
+    },
+    {
+        'group': 'v93 · October 27, 2026',
+        'version': 'v93',
+        'date': 'October 27, 2026',
+        'category': 'Diagnostics',
+        'title': 'Spotify player requests include structured diagnostic events',
+        'endpoints': ['GET /api/spotify/player/', 'POST /api/spotify/player/'],
+        'summary': 'Provider outcomes and app-facing outcomes are logged separately so support can trace a request by action and timestamp.',
+        'details': 'Playback logs include method, action, provider status, retry attempt, and duration. Network failures log exception type. Logs exclude access tokens and provider response bodies.',
+        'diagnostics': [
+            {'signal': 'Provider GET 204', 'meaning': 'No active playback session is available for this Spotify account.'},
+            {'signal': 'Provider 403', 'meaning': 'Spotify denied playback access; check the connected account and its playback entitlement.'},
+            {'signal': 'Provider 404', 'meaning': 'No active Spotify device is available for remote controls.'},
+            {'signal': 'Provider 429', 'meaning': 'Spotify rate-limited the request; wait for the logged Retry-After interval.'},
+            {'signal': '401 after refresh or invalid stored token', 'meaning': 'The backend clears the unusable connection; reconnect Spotify in the app.'},
+            {'signal': 'Network failure or provider 5xx', 'meaning': 'Check connectivity/provider availability and retry after recovery.'},
+        ],
+        'compatibility': 'No API response shape changed. Match spotify_playback_request with spotify_app_request_succeeded or spotify_app_request_failed by action and timestamp.',
+    },
+]
+
 
 def openapi_document():
     """Build a lightweight OpenAPI 3.1 reference from the published route catalog."""
@@ -166,4 +200,5 @@ def openapi_document():
         'paths': paths,
         'x-frontend-methods': [dict(group=group, name=name, summary=summary, source=source) for group, name, summary, source in FRONTEND_METHODS],
         'x-error-analysis': ERROR_ANALYSIS,
+        'x-api-release-notes': API_RELEASE_NOTES,
     }

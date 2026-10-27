@@ -45,6 +45,19 @@
     .method-name { font-weight:700; }
     .error-signal { font-weight:700; color:#111; }
     .error-action { border-left:3px solid #111; padding-left:12px; }
+    .release-card { padding:0; overflow:hidden; }
+    .release-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:13px 18px; background:#f5f5f5; border-bottom:1px solid var(--line); }
+    .release-version { font-weight:800; letter-spacing:.04em; }
+    .release-date { color:var(--muted); font-size:13px; }
+    .release-body { padding:16px 18px; }
+    .release-badge { display:inline-block; border:1px solid #aaa; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+    .release-endpoints { display:flex; gap:7px; flex-wrap:wrap; margin:10px 0; }
+    .release-endpoints code { border:1px solid var(--line); border-radius:6px; padding:4px 7px; background:#fafafa; }
+    .release-list { margin:10px 0; padding-left:20px; }
+    .release-list li { margin:6px 0; color:#444; }
+    .release-signal { font-weight:700; color:#111; }
+    .compatibility { border-top:1px solid var(--line); margin-top:14px !important; padding-top:12px; }
+    @media (max-width:600px) { .release-header { padding:12px 14px; } .release-body { padding:14px; } }
     .empty, .loading { color:var(--muted); padding:24px 4px; }
     footer { margin-top:42px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:13px; }
     @media (max-width:600px) { header { padding-top:34px; padding-bottom:34px; } main { padding:20px 14px 44px; } .spec { margin-left:0; width:100%; } article { padding:14px; } }
@@ -65,9 +78,9 @@
       <div class="tabs" role="group" aria-label="Reference section">
         <button type="button" data-view="backend" aria-pressed="true">Backend API</button>
         <button type="button" data-view="frontend" aria-pressed="false">Frontend methods</button>
-        <button type="button" data-view="errors" aria-pressed="false">Error analysis</button>
+        <button type="button" data-view="releases" aria-pressed="false">API release notes</button>
       </div>
-      <input id="search" type="search" placeholder="Search endpoints and methods…" aria-label="Search reference">
+      <input id="search" type="search" placeholder="Search endpoints, methods, and releases…" aria-label="Search reference">
       <span class="spec"><a href="/api-reference.json">OpenAPI JSON</a></span>
     </div>
     <div id="content" class="loading" role="status">Loading reference…</div>
@@ -85,7 +98,7 @@
       const term = search.value.trim().toLowerCase();
       const entries = view === 'backend'
         ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0})))
-        : view === 'frontend' ? spec['x-frontend-methods'] : spec['x-error-analysis'];
+        : view === 'frontend' ? spec['x-frontend-methods'] : spec['x-api-release-notes'];
       const filtered = entries.filter(item => JSON.stringify(item).toLowerCase().includes(term));
       const groups = [...new Set(filtered.map(item => item.group))];
       content.replaceChildren();
@@ -93,7 +106,7 @@
       for (const group of groups) {
         const section = make('section');
         const title = make('div', 'section-title');
-        title.append(make('h2', '', group), make('span', 'count', `${filtered.filter(item => item.group === group).length} entries`));
+        title.append(make('h2', '', group), make('span', 'count', `${filtered.filter(item => item.group === group).length} ${view === 'releases' ? 'release note' : 'entries'}`));
         section.append(title);
         const grid = make('div', 'grid');
         for (const item of filtered.filter(entry => entry.group === group)) {
@@ -108,7 +121,28 @@
             if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
           } else if (view === 'frontend') {
             card.append(make('div', 'method-name', item.name), make('p', '', item.summary), make('span', 'frontend', `Source · ${item.source}`));
+          } else if (view === 'releases') {
+            card.className = 'release-card';
+            const heading = make('div', 'release-header');
+            heading.append(make('span', 'release-version', `${item.version} · ${item.date}`), make('span', 'release-badge', item.category));
+            const body = make('div', 'release-body');
+            body.append(make('h3', '', item.title), make('p', '', item.summary));
+            const endpoints = make('div', 'release-endpoints');
+            item.endpoints.forEach(endpoint => endpoints.append(make('code', '', endpoint)));
+            body.append(endpoints, make('p', '', item.details));
+            if (item.diagnostics.length) {
+              const list = make('ul', 'release-list');
+              item.diagnostics.forEach(diagnostic => {
+                const entry = make('li');
+                entry.append(make('span', 'release-signal', `${diagnostic.signal} · `), document.createTextNode(diagnostic.meaning));
+                list.append(entry);
+              });
+              body.append(list);
+            }
+            body.append(make('p', 'compatibility', `Compatibility · ${item.compatibility}`));
+            card.append(heading, body);
           } else {
+            card.append(make('div', 'error-signal', item.signal), make('p', '', item.meaning), make('p', 'error-action', `What to check · ${item.action}`));
             card.append(make('div', 'error-signal', item.signal), make('p', '', item.meaning), make('p', 'error-action', `What to check · ${item.action}`));
           }
           grid.append(card);
