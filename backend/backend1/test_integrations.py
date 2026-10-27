@@ -2,6 +2,8 @@ from datetime import timedelta
 from io import BytesIO
 from urllib.parse import parse_qs, urlsplit
 from unittest.mock import Mock, patch
+
+import requests
 from cryptography.fernet import Fernet
 from botocore.exceptions import ClientError
 from django.core.cache import cache
@@ -103,6 +105,30 @@ class SpotifyTests(TestCase):
             request.return_value = Mock(ok=False, status_code=status)
             self.assertEqual(self.client.post('/api/spotify/player/', {'action': 'play'}).status_code, expected)
         self.assertEqual(self.client.post('/api/spotify/player/', {'action': 'delete'}).status_code, 400)
+
+    @patch('backend1.spotify.requests.request')
+    def test_spotify_provider_failures_log_status_without_credentials_or_body(self, request):
+        self.connected(); request.return_value = Mock(ok=False, status_code=503, headers={'Retry-After': '2'}, text='sensitive provider body')
+        with self.assertLogs('backend1.spotify', level='WARNING') as captured:
+            response = self.client.post('/api/spotify/player/', {'action': 'pause'})
+        self.assertEqual(response.status_code, 503)
+        logs = '\n'.join(captured.output)
+        self.assertIn('spotify_playback_provider_error', logs)
+        self.assertIn('status_code=503', logs)
+        self.assertIn('action=pause', logs)
+        self.assertNotIn('sensitive provider body', logs)
+        self.assertNotIn('Bearer access', logs)
+
+    @patch('backend1.spotify.requests.request')
+    def test_spotify_network_failures_log_exception_type_only(self, request):
+        self.connected(); request.side_effect = requests.Timeout('secret-bearing request URL')
+        with self.assertLogs('backend1.spotify', level='WARNING') as captured:
+            response = self.client.post('/api/spotify/player/', {'action': 'pause'})
+        self.assertEqual(response.status_code, 503)
+        logs = '\n'.join(captured.output)
+        self.assertIn('spotify_playback_network_error', logs)
+        self.assertIn('exception_type=Timeout', logs)
+        self.assertNotIn('secret-bearing request URL', logs)
 
     @patch('backend1.spotify.requests.request')
     @patch('backend1.spotify.requests.post')

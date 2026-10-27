@@ -1,7 +1,9 @@
 """Account-bound Spotify OAuth and remote controls. Never return provider tokens."""
 import base64
 import hashlib
+import logging
 import secrets
+import time
 from datetime import timedelta
 from urllib.parse import urlencode, urlsplit
 
@@ -19,6 +21,7 @@ from rest_framework.views import APIView
 from .models import SpotifyConnection
 
 SCOPES = 'user-read-playback-state user-modify-playback-state'
+logger = logging.getLogger(__name__)
 
 
 class SpotifyError(APIException):
@@ -41,18 +44,30 @@ def cipher():
 
 
 def token_request(payload):
+    grant_type = payload.get('grant_type', 'unknown')
+    started = time.monotonic()
     try:
         response = requests.post('https://accounts.spotify.com/api/token', data=payload,
                                  auth=(settings.SPOTIFY_CLIENT_ID, settings.SPOTIFY_CLIENT_SECRET), timeout=10)
+        logger.info('spotify_token_request grant_type=%s status_code=%s duration_ms=%s',
+                    grant_type, response.status_code, round((time.monotonic() - started) * 1000))
         if response.status_code == 400:
+            logger.warning('spotify_token_rejected grant_type=%s status_code=400', grant_type)
             raise ValidationError({'error': 'Spotify authorization expired. Connect Spotify again.'})
         if not response.ok:
+            logger.warning('spotify_token_provider_error grant_type=%s status_code=%s', grant_type, response.status_code)
             raise SpotifyError()
         data = response.json()
         if not isinstance(data, dict) or not isinstance(data.get('access_token'), str) or not data['access_token'] or not isinstance(data.get('expires_in'), int) or data['expires_in'] <= 0:
+            logger.warning('spotify_token_invalid_response grant_type=%s', grant_type)
             raise SpotifyError()
         return data
-    except (requests.RequestException, ValueError):
+    except requests.RequestException as error:
+        logger.warning('spotify_token_network_error grant_type=%s exception_type=%s duration_ms=%s',
+                       grant_type, type(error).__name__, round((time.monotonic() - started) * 1000))
+        raise SpotifyError()
+    except ValueError as error:
+        logger.warning('spotify_token_invalid_json grant_type=%s exception_type=%s', grant_type, type(error).__name__)
         raise SpotifyError()
 
 
@@ -146,29 +161,52 @@ def player_request(connection, method, path):
         if not connection.expires_at or connection.expires_at <= timezone.now() + timedelta(seconds=30):
             refresh()
         for attempt in range(2):
-            response = requests.request(method, 'https://api.spotify.com/v1/me/player' + path,
-                                        headers={'Authorization': 'Bearer ' + cipher().decrypt(connection.access_token.encode()).decode()}, timeout=10)
+            started = time.monotonic()
+            try:
+                response = requests.request(method, 'https://api.spotify.com/v1/me/player' + path,
+                                            headers={'Authorization': 'Bearer ' + cipher().decrypt(connection.access_token.encode()).decode()}, timeout=10)
+            except requests.RequestException as error:
+                logger.warning('spotify_playback_network_error method=%s action=%s exception_type=%s duration_ms=%s',
+                               method, path.strip('/') or 'current', type(error).__name__, round((time.monotonic() - started) * 1000))
+                raise
+            logger.info('spotify_playback_request method=%s action=%s status_code=%s attempt=%s duration_ms=%s',
+                        method, path.strip('/') or 'current', response.status_code, attempt + 1,
+                        round((time.monotonic() - started) * 1000))
             if response.status_code != 401 or attempt:
                 break
+            logger.warning('spotify_playback_token_refresh method=%s action=%s reason=unauthorized',
+                           method, path.strip('/') or 'current')
             refresh()
         if response.status_code == 401:
+            logger.warning('spotify_playback_auth_rejected method=%s action=%s status_code=401', method, path.strip('/') or 'current')
             connection.access_token = ''; connection.refresh_token = ''; connection.save()
             raise ValidationError({'error': 'Spotify disconnected. Connect your account again.'})
         if response.status_code == 403:
+            logger.warning('spotify_playback_forbidden method=%s action=%s status_code=403', method, path.strip('/') or 'current')
             raise ValidationError({'error': 'Spotify denied access. Playback needs Premium and this account must be allowed to use the Spotify app.'})
         if response.status_code == 404:
+            logger.warning('spotify_playback_no_active_device method=%s action=%s status_code=404', method, path.strip('/') or 'current')
             raise ValidationError({'error': 'Open Spotify and start music on a device first.'})
         if response.status_code == 429:
+            logger.warning('spotify_playback_rate_limited method=%s action=%s status_code=429 retry_after=%s',
+                           method, path.strip('/') or 'current', response.headers.get('Retry-After'))
             error = SpotifyError('Spotify request limit reached. Wait a moment before trying again.')
             error.status_code = 429
             raise error
         if not response.ok:
+            logger.warning('spotify_playback_provider_error method=%s action=%s status_code=%s',
+                           method, path.strip('/') or 'current', response.status_code)
             raise SpotifyError()
         return None if response.status_code == 204 else response.json()
     except InvalidToken:
+        logger.warning('spotify_stored_token_invalid action=%s', path.strip('/') or 'current')
         connection.access_token = ''; connection.refresh_token = ''; connection.save()
         raise ValidationError({'error': 'Spotify disconnected. Connect your account again.'})
-    except (requests.RequestException, ValueError):
+    except requests.RequestException:
+        raise SpotifyError()
+    except ValueError as error:
+        logger.warning('spotify_playback_invalid_json method=%s action=%s exception_type=%s',
+                       method, path.strip('/') or 'current', type(error).__name__)
         raise SpotifyError()
 
 
@@ -196,10 +234,13 @@ class SpotifyPlayerView(APIView):
             try:
                 data = player_request(connection, 'POST' if action in ('next', 'previous') else 'PUT' if action else 'GET', '/' + action if action else '')
             except APIException as error:
+                logger.warning('spotify_app_request_failed action=%s status_code=%s error_type=%s',
+                               action or 'current', error.status_code, type(error).__name__)
                 failure = error
         # Token invalidation must survive error responses.
         if failure:
             raise failure
+        logger.info('spotify_app_request_succeeded action=%s', action or 'current')
         if action:
             return Response(status=204)
         item = (data or {}).get('item') or {}

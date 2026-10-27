@@ -146,6 +146,13 @@ LOGGING = {
         "handlers": ["console"],
         "level": "WARNING",
     },
+    "loggers": {
+        "backend1.spotify": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
 
 
