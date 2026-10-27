@@ -237,7 +237,18 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
-CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}} if REDIS_URL else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+CACHES = (
+    {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            # Heroku Key-Value Store presents a self-signed TLS certificate.
+            'OPTIONS': {'ssl_cert_reqs': None},
+        }
+    }
+    if REDIS_URL
+    else {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+)
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'auth': '10/min', 'otp': '5/min', 'uploads': '20/hour', 'reports': '5/hour', 'spotify': '120/min'}
 
 # Spotify uses a server callback; no provider credentials belong in the mobile app.
