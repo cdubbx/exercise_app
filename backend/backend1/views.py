@@ -34,9 +34,23 @@ logger = logging.getLogger(__name__)
 
 
 def resolve_catalog_exercise(name):
-    """Resolve exact catalog names, including common plural and slash-separated labels."""
+    """Resolve catalog labels and common natural-language names to canonical exercises."""
+    normalized_name = ''.join(character for character in name.casefold() if character.isalnum())
+    aliases = {
+        'bentoverrow': 'Bent Over Barbell Row',
+        'bentoverrows': 'Bent Over Barbell Row',
+        'pullup': 'Pullups',
+        'pullups': 'Pullups',
+        'chinup': 'Chin-Up',
+        'chinups': 'Chin-Up',
+        'pushup': 'Pushups',
+        'pushups': 'Pushups',
+    }
     candidates = [name.strip()]
     candidates.extend(part.strip() for part in name.split('/') if part.strip())
+    alias = aliases.get(normalized_name)
+    if alias:
+        candidates.insert(0, alias)
     for candidate in list(candidates):
         last_word = candidate.rsplit(' ', 1)
         if last_word[-1].endswith('s') and not last_word[-1].endswith('ss'):
