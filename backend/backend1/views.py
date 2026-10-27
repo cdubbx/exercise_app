@@ -549,6 +549,15 @@ class ExerciseChatView(APIView):
 
         if upstream.status_code >= 400:
             logger.warning('Exercise chat provider returned HTTP %s', upstream.status_code)
+            try:
+                provider_error = upstream.json().get('error', {})
+            except (ValueError, AttributeError):
+                provider_error = {}
+            if provider_error.get('code') in {'insufficient_quota', 'credit_balance_exhausted', 'billing_hard_limit_reached'}:
+                return Response(
+                    {'error': 'Exercise chat needs available OpenAI API credits. Please try again later.'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
             return Response({'error': 'Exercise chat is temporarily unavailable. Please try again.'}, status=503)
 
         try:

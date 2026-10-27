@@ -200,6 +200,16 @@ class CoreAppTests(TestCase):
             response = self.client.post('/api/gpt-chat/', {'query': 'What should I train?'}, format='json')
         self.assertEqual(response.status_code, 503)
 
+    @patch('backend1.views.requests.post')
+    def test_exercise_chat_explains_provider_credit_exhaustion(self, post):
+        from unittest.mock import Mock
+        import os
+        post.return_value = Mock(status_code=429, json=lambda: {'error': {'code': 'credit_balance_exhausted'}})
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-key'}):
+            response = self.client.post('/api/gpt-chat/', {'query': 'Suggest a simple workout'}, format='json')
+        self.assertEqual(response.status_code, 503)
+        self.assertIn('available OpenAI API credits', response.data['error'])
+
     def test_account_delete_cascades(self):
         self.save(); self.plan()
         self.assertEqual(self.client.delete('/api/user/delete/').status_code, 204)
