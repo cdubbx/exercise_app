@@ -48,6 +48,7 @@ class CoreAppTests(TestCase):
         guide = self.client.get('/docs/developer-guide/')
         self.assertEqual(guide.status_code, 200)
         self.assertContains(guide, '/favicon.png')
+        self.assertNotContains(guide, 'plain-language guide')
         self.assertContains(guide, 'Develop with Docker')
         self.assertContains(guide, '/docs/integrations/s3/')
         self.assertContains(guide, '/docs/integrations/spotify/')
@@ -68,6 +69,7 @@ class CoreAppTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, '/favicon.png')
+            self.assertNotContains(response, 'This guide describes the current Exercise Plus implementation')
             for phrase in phrases:
                 self.assertContains(response, phrase)
         self.assertEqual(self.client.get('/docs/integrations/unknown/').status_code, 404)

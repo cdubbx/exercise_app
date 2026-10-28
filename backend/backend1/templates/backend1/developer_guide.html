@@ -21,7 +21,7 @@ footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;color:v
 @media(max-width:650px){header{padding:32px 18px}main{padding:18px 12px 40px}section,.intro{padding:16px}pre{font-size:12px}}
 </style></head>
 <body><header><div class="brand">Exercise Plus</div><h1>Developer guide</h1>
-<p>A plain-language guide to the app, its server, and the services it uses, with local setup and production steps.</p>
+<p>Architecture, integrations, local development, testing, and production release procedures.</p>
 <nav><a href="/docs/">API reference</a> · <a href="/api-reference.json">OpenAPI JSON</a></nav></header>
 <main>
 <div class="intro"><strong>Architecture at a glance</strong>
@@ -92,7 +92,7 @@ npm test -- --runInBand
 npm run typecheck
 npm run lint:core</code></pre>
 <p>The backend tests cover account creation and sign-in, workout saving and calendar planning, privacy and permissions, image validation, Exercise Bot behavior, and integration success and failure cases. The mobile tests check key app behavior such as API requests, chat, and calendar flows. A passing automated test is a useful safety check; it does not replace opening the changed screen on iOS and Android or checking a real production integration when one changes.</p>
-<p><strong>What “migration check” means:</strong> Django compares the current database models with the migration files that describe database changes. The check fails if a code change needs a new migration file. It does not change the production database.</p></section>
+<p><strong>Database migration check:</strong> Django compares the current database models with the migration files that describe database changes. The check fails if a code change needs a new migration file. It does not change the production database.</p></section>
 
 
 
