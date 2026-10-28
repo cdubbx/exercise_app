@@ -1,0 +1,22 @@
+<section><h2>Exercise Bot and calendar proposals</h2>
+<p>The user explicitly allows chat sharing in the app. Django sends the current question and recent conversation to the OpenAI Responses API with store=false and a stable, user-scoped prompt cache key. The bot can propose a calendar workout, but it cannot save one by itself: every exercise must match the catalog, then the user reviews and taps Add to calendar.</p>
+<div class="diagram mermaid">
+sequenceDiagram
+ actor User
+ participant App as React Native app
+ participant API as Django API
+ participant OpenAI as OpenAI Responses API
+ participant DB as Workout database
+ User->>App: Allow sharing and ask a question
+ App->>API: POST gpt-chat with JWT and recent messages
+ API->>API: Validate and apply per-user throttle
+ API->>OpenAI: Instructions, conversation, cache key; store=false
+ OpenAI-->>API: Reply and optional calendar proposal
+ API->>DB: Resolve proposed exercises against catalog
+ API-->>App: Reply and catalog-backed proposal
+ User->>App: Review and confirm Add to calendar
+ App->>API: POST plannedWorkouts with selected day/time/exercises
+ API->>DB: Validate and save plan atomically
+ API-->>App: Saved calendar workout
+</div>
+<p>The bot endpoint is limited to 20 requests per minute by its configured throttle scope. Configure OPENAI_API_KEY on the backend. OPENAI_MODEL is optional and defaults to gpt-4.1-mini.</p></section>

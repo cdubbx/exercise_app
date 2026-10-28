@@ -41,16 +41,23 @@ class CoreAppTests(TestCase):
         guide = self.client.get('/docs/developer-guide/')
         self.assertEqual(guide.status_code, 200)
         self.assertContains(guide, 'Develop with Docker')
-        self.assertContains(guide, 'AWS S3 setup and access')
+        self.assertContains(guide, '/docs/integrations/s3/')
+        self.assertContains(guide, '/docs/integrations/spotify/')
+        self.assertContains(guide, '/docs/integrations/exercise-bot/')
         self.assertContains(guide, 'mermaid')
         self.assertNotContains(guide, 'Simple word guide')
-        self.assertContains(guide, 'What happens when you connect')
-        self.assertContains(guide, 'SPOTIFY_TOKEN_ENCRYPTION_KEY')
-        self.assertContains(guide, 'Spotify Premium')
-        self.assertContains(guide, 'multipart/form-data')
-        self.assertContains(guide, 'temporary signed link')
-        self.assertContains(guide, 'does not remove that user’s image files from S3')
-        self.assertContains(guide, 'ImageUploadView.post')
+        integrations = {
+            '/docs/integrations/s3/': ('AWS S3 setup and access', 'multipart/form-data', 'ImageUploadView.post'),
+            '/docs/integrations/spotify/': ('What happens when you connect', 'SPOTIFY_TOKEN_ENCRYPTION_KEY', 'Spotify Premium'),
+            '/docs/integrations/exercise-bot/': ('Exercise Bot and calendar proposals', 'OpenAI Responses API', '20 requests per minute'),
+        }
+        for url, phrases in integrations.items():
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            for phrase in phrases:
+                self.assertContains(response, phrase)
+        self.assertEqual(self.client.get('/docs/integrations/unknown/').status_code, 404)
+        self.assertContains(self.client.get('/docs/integrations/s3/'), 'does not remove that user’s image files from S3')
         self.assertNotContains(guide, 'Account deletion removes object versions')
         document = self.client.get('/api-reference.json')
         self.assertEqual(document.status_code, 200)

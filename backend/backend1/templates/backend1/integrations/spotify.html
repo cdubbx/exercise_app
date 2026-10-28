@@ -1,0 +1,43 @@
+<section><h2>Spotify connection and player</h2>
+<p>Spotify connection has two parts: you approve access once, then the app asks our server to check or control playback. The server makes Spotify requests for the signed-in account. Spotify credentials stay on the server; the app never receives them. The app sends playback controls and displays track information, but it does not carry or play the audio itself.</p>
+<h3>What happens when you connect</h3>
+<ol>
+<li>You tap <b>Connect Spotify</b> in the app. The app sends a signed-in request to <code>POST /api/spotify/connect/</code>.</li>
+<li>The server creates two short-lived values for this attempt: a random <b>state</b> value and a private <b>verifier</b>. It saves a one-way fingerprint of the state (a hash) and an encrypted copy of the verifier, tied to your Exercise Plus account. They expire after five minutes. State lets the server check that the person returning from Spotify is finishing the same connection that was just started.</li>
+<li>The server creates a Spotify authorization link and sends it to the app. It includes a <b>PKCE challenge</b> (“P-K-C-E”): a scrambled version of the private verifier. Spotify receives the challenge, while the server keeps the original verifier. This proves that the callback belongs to the connection request without putting the private verifier in the link.</li>
+<li>The app opens Spotify’s sign-in page. Spotify asks you to approve two permissions: reading playback status and controlling playback. These are called <b>scopes</b>—the specific access you are granting.</li>
+<li>After approval, Spotify sends the browser back to <code>/api/spotify/callback/</code> with a short-lived authorization code and the state value. The server checks that the state matches an unexpired connection for your account, then consumes it so it cannot be reused.</li>
+<li>The server sends Spotify the authorization code and the private verifier. Spotify returns an access token, which allows requests for a limited time, and a refresh token, which lets the server obtain a new access token later. The server encrypts both before saving them against your account.</li>
+<li>The browser shows whether the connection succeeded and provides a link back to the app. The app refreshes its connection status.</li>
+</ol>
+<p><b>Why keep the encryption key stable?</b> <code>SPOTIFY_TOKEN_ENCRYPTION_KEY</code> is the server-only key used to lock and unlock the saved Spotify tokens. Keep it in Heroku’s protected configuration and back it up securely. If you replace it, the server can no longer unlock existing tokens; users will need to connect Spotify again.</p>
+<h3>What happens when you use the player</h3>
+<p>The app sends <code>GET /api/spotify/player/</code> to read the current player, or sends <code>POST /api/spotify/player/</code> with an action of <code>play</code>, <code>pause</code>, <code>next</code>, or <code>previous</code>. The request includes the Exercise Plus sign-in token; that token proves who is making the request and is separate from the Spotify credentials.</p>
+<p>The server unlocks your Spotify access token and asks Spotify for the playback information or control. If the access token is about to expire, the server refreshes it first. If Spotify rejects a request because the token expired, the server refreshes once and retries. Spotify’s reply is reduced to information the app needs: whether music is playing, the track and artists, its artwork and Spotify link, whether a playback device is active, and any controls Spotify has disabled.</p>
+<p>Playback controls require Spotify Premium and an account that Spotify allows to use this app. Spotify also needs an active device for the account; if it reports no device, open Spotify and start or resume playback on that account first. Exercise Plus does not stream music, expose Spotify tokens, or send your Spotify credentials to the phone app.</p>
+<h3>Server settings this feature needs</h3>
+<ul><li><code>SPOTIFY_ENABLED=true</code></li><li><code>SPOTIFY_CLIENT_ID</code> and <code>SPOTIFY_CLIENT_SECRET</code> from the Spotify developer app. These identify Exercise Plus to Spotify; keep the secret on the server.</li><li><code>SPOTIFY_REDIRECT_URI</code> set to the exact HTTPS address <code>https://&lt;your-app-host&gt;/api/spotify/callback/</code>, also entered in the Spotify developer app.</li><li>A valid, stable <code>SPOTIFY_TOKEN_ENCRYPTION_KEY</code> used only by the server.</li></ul>
+<div class="diagram mermaid">
+sequenceDiagram
+ actor User
+ participant App as React Native app
+ participant API as Django API
+ participant Spotify as Spotify Accounts/API
+ participant DB as Database
+ User->>App: Connect Spotify
+ App->>API: POST spotify connect with JWT
+ API->>DB: Save one-time state and protected private verifier for five minutes
+ API-->>App: Spotify authorization link with scrambled verifier
+ App->>Spotify: Open authorization URL
+ User->>Spotify: Approve playback scopes
+ Spotify->>API: Secure callback with one-time code and state
+ API->>DB: Check account and expire/consume one-time state
+ API->>Spotify: Exchange code plus private verifier
+ Spotify-->>API: Provider tokens
+ API->>DB: Store encrypted tokens
+ API-->>App: Browser page with a link back to the app
+ App->>API: Read player or send a control with app sign-in token
+ API->>Spotify: Refresh token if needed; read state or perform action
+ Spotify-->>API: Player state
+ API-->>App: Track/state only
+</div></section>
