@@ -33,6 +33,11 @@ class CoreAppTests(TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, 'Frontend methods')
         self.assertContains(page, 'API release notes')
+        guide = self.client.get('/docs/developer-guide/')
+        self.assertEqual(guide.status_code, 200)
+        self.assertContains(guide, 'Develop with Docker')
+        self.assertContains(guide, 'AWS S3 setup and access')
+        self.assertContains(guide, 'mermaid')
         document = self.client.get('/api-reference.json')
         self.assertEqual(document.status_code, 200)
         import json

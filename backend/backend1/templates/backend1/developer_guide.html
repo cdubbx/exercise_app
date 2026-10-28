@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Exercise Plus developer guide for Docker, Heroku, AWS, and application integrations.">
+<title>Exercise Plus · Developer guide</title>
+<style>
+:root{color-scheme:light;--ink:#111;--muted:#686868;--line:#e4e4e4}*{box-sizing:border-box}
+body{margin:0;background:#fafafa;color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:inherit;text-underline-offset:3px}header{background:#111;color:white;padding:42px max(24px,calc((100vw - 1120px)/2))}
+.brand{text-transform:uppercase;letter-spacing:.14em;font-size:12px;opacity:.72}h1{font-size:clamp(32px,5vw,46px);line-height:1.12;margin:12px 0}
+header p{color:#d2d2d2;max-width:760px;margin:0}nav{margin-top:18px;font-size:14px}main{max-width:1120px;padding:28px 24px 64px;margin:auto}
+.intro,section{background:white;border:1px solid var(--line);border-radius:14px;padding:22px;margin:0 0 18px}
+h2{font-size:23px;line-height:1.25;margin:0 0 12px}p{margin:8px 0;color:#3f3f3f}ul{padding-left:22px;color:#3f3f3f}li{margin:5px 0}
+pre{overflow:auto;background:#111;color:#f7f7f7;border-radius:10px;padding:16px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+code{font:.92em ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}:not(pre)>code{background:#f1f1f1;padding:2px 5px;border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:12px 0;display:block;overflow-x:auto}th,td{text-align:left;border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:top}th{background:#f7f7f7}
+.diagram{overflow:auto;border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0;background:#fff}.diagram svg{max-width:100%;height:auto}
+footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px}
+@media(max-width:650px){header{padding:32px 18px}main{padding:18px 12px 40px}section,.intro{padding:16px}pre{font-size:12px}}
+</style></head>
+<body><header><div class="brand">Exercise Plus</div><h1>Developer guide</h1>
+<p>How the mobile app, Django backend, and external services fit together, with local setup and operational configuration.</p>
+<nav><a href="/docs/">API reference</a> · <a href="/api-reference.json">OpenAPI JSON</a></nav></header>
+<main>
+<div class="intro"><strong>Architecture at a glance</strong>
+<p>The React Native client calls Django. Django owns authentication, workout data, integration credentials, and image validation. Heroku hosts the API and configured data services; Docker Compose provides the local backend environment.</p>
+<div class="diagram mermaid">
+flowchart LR
+  Mobile[React Native app] -->|JWT over HTTPS| API[Django REST API]
+  API <--> DB[(PostgreSQL hosted / SQLite local)]
+  API <--> Redis[(Redis)]
+  API --> OpenAI[OpenAI Responses API]
+  API <-->|OAuth and player requests| Spotify[Spotify]
+  API -->|private objects and signed reads| S3[(AWS S3)]
+</div></div>
+<section><h2>Develop with Docker</h2>
+<p>Install Docker Desktop or Docker Engine with Compose. Start the backend from exercise-backend/backend:</p>
+<pre><code>cd exercise-backend/backend
+cp .env.example .env
+docker compose up --build</code></pre>
+<p>The API listens at http://localhost:8000. Compose starts Django and Redis, runs migrations, and keeps SQLite and local media in named volumes. Load the catalog once:</p>
+<pre><code>docker compose exec backend python manage.py loaddata fixed_exercises.json</code></pre>
+<p>Common commands from the backend directory:</p>
+<pre><code>docker compose up -d
+docker compose logs -f backend
+docker compose exec backend python manage.py test backend1
+docker compose exec backend python manage.py makemigrations --check --dry-run
+docker compose exec backend python manage.py shell
+docker compose down
+# Destructive local reset: also deletes SQLite and uploaded media volumes
+docker compose down -v</code></pre>
+<p>Run the app in another terminal:</p><pre><code>cd exercisefrontend
+cp .env.example .env
+npm ci
+npm start</code></pre>
+<table><thead><tr><th>Target</th><th>API_BASE_URL</th></tr></thead><tbody>
+<tr><td>iOS simulator</td><td>http://localhost:8000/api</td></tr><tr><td>Android emulator</td><td>http://10.0.2.2:8000/api</td></tr><tr><td>Physical device</td><td>HTTPS address reachable from the device</td></tr></tbody></table>
+<p>Restart Metro after editing the frontend .env. Keep cloud/provider credentials on the backend. Local email uses Django's console backend; local images use the media volume when debug mode is enabled and S3 is not configured.</p></section>
+<section><h2>Image uploads with S3</h2>
+<p>The authenticated app uploads multipart data to POST /api/uploads/. Django limits images to 5 MB and 16 megapixels, accepts JPEG/PNG/WebP, re-encodes pixels to remove embedded metadata, then stores a private object under the user's profile or exercise prefix. Records retain canonical object addresses; API responses issue presigned read URLs that expire after one hour.</p>
+<div class="diagram mermaid">
+sequenceDiagram
+ actor User
+ participant App as React Native
+ participant API as Django API
+ participant S3 as Private S3 bucket
+ User->>App: Choose an image
+ App->>API: POST uploads with JWT and multipart image
+ API->>API: Validate, resize, re-encode, strip metadata
+ API->>S3: PutObject under per-user prefix
+ S3-->>API: Object stored
+ API-->>App: Canonical object URL
+ App->>API: Save profile or exercise record
+ API->>API: Confirm uploaded object belongs to user
+ App->>API: Load profile or exercise
+ API->>S3: Create one-hour presigned GET URL
+ API-->>App: Data with temporary image link
+</div>
+<p>Account deletion removes object versions and delete markers under both prefixes before deleting the account. The server identity needs version-list and version-delete permissions in addition to upload/read access. Treat signed links as temporary bearer links.</p></section>
+<section><h2>Spotify connection and player</h2>
+<p>Spotify uses a backend-managed authorization-code flow with PKCE. The app receives no provider tokens. The backend stores tokens encrypted using SPOTIFY_TOKEN_ENCRYPTION_KEY and makes playback requests for the signed-in user. The app controls playback; it does not stream audio. Playback requires an eligible Spotify account and active Spotify device.</p>
+<div class="diagram mermaid">
+sequenceDiagram
+ actor User
+ participant App as React Native app
+ participant API as Django API
+ participant Spotify as Spotify Accounts/API
+ participant DB as Database
+ User->>App: Connect Spotify
+ App->>API: POST spotify connect with JWT
+ API->>DB: Save hashed one-time state and encrypted PKCE verifier
+ API-->>App: Authorization URL with PKCE challenge
+ App->>Spotify: Open authorization URL
+ User->>Spotify: Approve playback scopes
+ Spotify->>API: HTTPS callback with code and state
+ API->>DB: Validate and consume short-lived state
+ API->>Spotify: Exchange code and verifier
+ Spotify-->>API: Provider tokens
+ API->>DB: Store encrypted tokens
+ API-->>App: Return link to reopen app
+ App->>API: GET or POST spotify player with JWT
+ API->>Spotify: Read state or perform player action
+ Spotify-->>API: Player state
+ API-->>App: Track/state only
+</div></section>
+<section><h2>Exercise Bot and calendar proposals</h2>
+<p>The user explicitly allows chat sharing in the app. Django sends the current question and recent conversation to the OpenAI Responses API with store=false and a stable, user-scoped prompt cache key. The bot can propose a calendar workout, but it cannot save one by itself: every exercise must match the catalog, then the user reviews and taps Add to calendar.</p>
+<div class="diagram mermaid">
+sequenceDiagram
+ actor User
+ participant App as React Native app
+ participant API as Django API
+ participant OpenAI as OpenAI Responses API
+ participant DB as Workout database
+ User->>App: Allow sharing and ask a question
+ App->>API: POST gpt-chat with JWT and recent messages
+ API->>API: Validate and apply per-user throttle
+ API->>OpenAI: Instructions, conversation, cache key; store=false
+ OpenAI-->>API: Reply and optional calendar proposal
+ API->>DB: Resolve proposed exercises against catalog
+ API-->>App: Reply and catalog-backed proposal
+ User->>App: Review and confirm Add to calendar
+ App->>API: POST plannedWorkouts with selected day/time/exercises
+ API->>DB: Validate and save plan atomically
+ API-->>App: Saved calendar workout
+</div>
+<p>The bot endpoint is limited to 20 requests per minute by its configured throttle scope. Configure OPENAI_API_KEY on the backend. OPENAI_MODEL is optional and defaults to gpt-4.1-mini.</p></section>
+<section><h2>Calendar planning and edits</h2>
+<p>Saved exercises and planned calendar entries are separate records. Plans are scoped to the authenticated account and can share a weekday across Morning, Afternoon, Evening, and Anytime slots. The API accepts one plan or a batch of up to eight in a transaction. Editing updates the day, time, sets, or reps.</p>
+<div class="diagram mermaid">
+flowchart TD
+ Calendar[Calendar screen] -->|tap workout| Details[Workout details]
+ Calendar -->|tap Edit| Edit[Edit planned workout]
+ Details -->|Edit action| Edit
+ Edit -->|PATCH day time sets reps| API[Django API]
+ Calendar -->|GET POST DELETE| API
+ API -->|owner-scoped reads and writes| DB[(Planned workout records)]
+ API -->|updated entries| Calendar
+</div></section>
+<section><h2>Heroku environment variables</h2>
+<p>Examples target the configured Heroku app exerciseplus. Sign in to the CLI. Replace placeholders locally; never commit or share secret values. Add-ons normally populate DATABASE_URL and REDIS_URL.</p>
+<pre><code>heroku config -a exerciseplus
+heroku config:get DJANGO_DEBUG -a exerciseplus
+heroku config:set DJANGO_DEBUG=false -a exerciseplus
+heroku config:set DJANGO_ALLOWED_HOSTS='&lt;your-app-host&gt;' -a exerciseplus
+heroku config:set AWS_STORAGE_BUCKET_NAME='&lt;verified-bucket-name&gt;' AWS_S3_REGION_NAME='&lt;bucket-region&gt;' -a exerciseplus
+heroku config:set OPENAI_API_KEY='&lt;your-api-key&gt;' OPENAI_MODEL='gpt-4.1-mini' -a exerciseplus
+heroku config:set SPOTIFY_ENABLED=true SPOTIFY_CLIENT_ID='&lt;client-id&gt;' SPOTIFY_CLIENT_SECRET='&lt;client-secret&gt;' -a exerciseplus
+heroku config:set SPOTIFY_REDIRECT_URI='https://&lt;your-app-host&gt;/api/spotify/callback/' -a exerciseplus
+heroku config:set SPOTIFY_TOKEN_ENCRYPTION_KEY='&lt;stable-fernet-key&gt;' -a exerciseplus
+heroku config:unset OPENAI_API_KEY -a exerciseplus
+heroku logs --tail -a exerciseplus</code></pre>
+<p>Heroku config output includes credentials; do not paste it into tickets or chat. Prefer the protected config UI or a safe local input method for secrets. Rotating Spotify's encryption key makes existing tokens unreadable, so users must reconnect. Rotate Django's secret key deliberately because it may invalidate signed sessions or tokens. These instructions do not deploy code or alter hosted settings.</p></section>
+<section><h2>AWS S3 setup and access</h2>
+<p>Create or select the intended private bucket and region, then configure AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME on the backend. boto3 uses the standard AWS credential provider chain. Prefer an attached role when available; for Heroku, use a dedicated IAM identity with credentials in protected server configuration. Never use an administrator identity or put credentials in the mobile app.</p>
+<p>Limit the identity to these key prefixes:</p><pre><code>profile-images/&lt;user-id&gt;/&lt;random-uuid&gt;.(jpg|png|webp)
+exercises-images/&lt;user-id&gt;/&lt;random-uuid&gt;.(jpg|png|webp)</code></pre>
+<table><thead><tr><th>S3 action</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>s3:PutObject</td><td>Store validated uploads</td></tr><tr><td>s3:GetObject</td><td>Sign temporary image-read links</td></tr>
+<tr><td>s3:ListBucketVersions</td><td>Find object versions and delete markers for account deletion; constrain prefixes where supported</td></tr>
+<tr><td>s3:DeleteObject, s3:DeleteObjectVersion</td><td>Remove owned objects and versions during account deletion</td></tr></tbody></table>
+<p>Keep S3 Block Public Access enabled, avoid public bucket policies and ACLs, and use server-side encryption. Browser CORS is unnecessary because uploads pass through Django. For customer-managed KMS encryption, grant only the needed key permissions. Test authenticated upload and signed read, then confirm unsigned object access is denied. AWS credential variables, if needed, are AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and optional AWS_SESSION_TOKEN. This app reads AWS_S3_REGION_NAME; verify the real bucket region instead of assuming the example default.</p></section>
+<section><h2>Further reading</h2><ul><li><a href="/docs/">Backend API, frontend methods, and API release notes</a></li><li><a href="/api-reference.json">OpenAPI JSON reference</a></li></ul>
+<p>For repository notes, see docs/integrations-release.md, docs/core-release.md, and docs/app-store-readiness.md.</p></section>
+<footer>Documentation reflects the current repository implementation. Confirm target environment configuration before changing production services.</footer>
+</main>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({startOnLoad:true,securityLevel:'strict',theme:'neutral',flowchart:{htmlLabels:false}});
+</script>
+</body></html>
