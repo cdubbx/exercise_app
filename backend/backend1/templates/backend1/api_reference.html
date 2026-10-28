@@ -42,6 +42,7 @@
     article p { margin:5px 0; color:#444; }
     .detail-label { color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
     .frontend { display:inline-block; margin-top:9px; color:#555; font-size:12px; }
+    .python-handler { display:inline-block; margin:9px 12px 0 0; color:#111; font-size:12px; font-weight:650; text-underline-offset:3px; }
     .method-name { font-weight:700; }
     .method-signature { margin:8px 0 12px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:#fafafa; font-weight:600; }
     .contract { width:100%; border-collapse:collapse; margin:10px 0 14px; font-size:13px; }
@@ -89,6 +90,7 @@
       <p id="method-counts">Loading the method list…</p>
       <p>A <b>parameter</b> is a value you send. Its <b>type</b> tells you what kind of value to use, such as text (<code>string</code>), a whole number (<code>integer</code>), true/false (<code>boolean</code>), or a list (<code>[]</code>). <b>Returns</b> describes the value you get back. “Deprecated” means an older method is still listed for clarity, but new code should use its replacement.</p>
       <p><code>GET</code> looks up information, <code>POST</code> sends or creates something, <code>PATCH</code> changes part of something, and <code>DELETE</code> removes something. Search by task name, such as “reset password” or “add workout.”</p>
+      <p>On backend entries, select <b>Python · …</b> to open the server method in the project’s GitHub branch. For JWT routes provided by a library, the link opens the project file where that route is connected.</p>
     </section>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Reference section">
@@ -134,7 +136,7 @@
       if (!spec) return;
       const term = search.value.trim().toLowerCase();
       const entries = view === 'backend'
-        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice']})))
+        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice'], python: operation['x-python-handler']})))
         : view === 'frontend' ? spec['x-frontend-methods'] : spec['x-api-release-notes'];
       const filtered = entries.filter(item => JSON.stringify(item).toLowerCase().includes(term));
       const groups = [...new Set(filtered.map(item => item.group))];
@@ -159,6 +161,12 @@
             addReturn(card, item.returns);
             if (item.deprecationNotice) card.append(make('p','return-type',item.deprecationNotice));
             if (responseText && !item.returns) { card.append(make('p', '', `Response · ${responseText}`)); }
+            if (item.python) {
+              const link = make('a','python-handler',`Python · ${item.python.name} ↗`);
+              link.href = item.python.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+              link.setAttribute('aria-label', `Open Python method ${item.python.name} in GitHub`);
+              card.append(link);
+            }
             if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
           } else if (view === 'frontend') {
             card.append(make('div', 'method-name', item.name), make('p', '', item.summary));

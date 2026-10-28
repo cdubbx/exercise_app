@@ -45,6 +45,55 @@ ENDPOINTS = [
     ('Legacy Spotify', 'POST', '/spotify/token/refresh/', 'Retired legacy Spotify token endpoint.', False, '', '410 gone.', 'Not used; credentials remain server-side.'),
 ]
 
+# Links point to the backend implementation on the project's shared source
+# branch. Line anchors open the actual request handler (or URL registration for
+# framework-provided JWT handlers that are not defined in this repository).
+GITHUB_SOURCE_ROOT = 'https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/'
+PYTHON_HANDLERS = {
+    ('POST', '/register/'): ('backend1/views.py', 101, 'RegisterAPIView.post'),
+    ('POST', '/verify-otp/'): ('backend1/views.py', 119, 'VerifyOTPAPIView.post'),
+    ('POST', '/resend-otp/'): ('backend1/views.py', 757, 'ResendOTPAPIView.post'),
+    ('POST', '/login/'): ('backend1/views.py', 160, 'LoginAPIView.post'),
+    ('POST', '/social-login/'): ('backend1/views.py', 415, 'SigninWIthApple.post'),
+    ('GET', '/user/'): ('backend1/views.py', 186, 'UserView.get'),
+    ('POST', '/user/update/'): ('backend1/views.py', 222, 'EditUserView.post'),
+    ('DELETE', '/user/delete/'): ('backend1/views.py', 549, 'DeleteUserAccountView.delete'),
+    ('POST', '/logout/'): ('backend1/views.py', 244, 'LogoutView.post'),
+    ('POST', '/token/'): ('backend1/urls.py', 36, 'TokenObtainPairView route (Django REST Framework SimpleJWT)'),
+    ('POST', '/token/refresh/'): ('backend1/urls.py', 37, 'TokenRefreshView route (Django REST Framework SimpleJWT)'),
+    ('POST', '/token/verify/'): ('backend1/urls.py', 38, 'TokenVerifyView route (Django REST Framework SimpleJWT)'),
+    ('POST', '/request-password-reset/'): ('backend1/views.py', 438, 'RequestPasswordResetAPIView.post'),
+    ('POST', '/reset-password/'): ('backend1/views.py', 475, 'ResetPasswordAPIView.post'),
+    ('GET', '/password-reset/'): ('backend1/password_reset.py', 10, 'password_reset_landing'),
+    ('GET', '/exercises/'): ('backend1/views.py', 85, 'ExerciseListView.get_queryset'),
+    ('GET', '/get-specific-exercises/'): ('backend1/views.py', 301, 'GetBodyPartWorkOutView.get'),
+    ('POST', '/saveWorkOuts'): ('backend1/views.py', 317, 'SaveWorkOutView.post'),
+    ('GET', '/userSavedWorkouts/'): ('backend1/views.py', 236, 'UserSavedWorkoutsView.get'),
+    ('GET', '/plannedWorkouts/'): ('backend1/views.py', 331, 'UserPlannedWorkoutsView.get'),
+    ('POST', '/plannedWorkouts/'): ('backend1/views.py', 346, 'UserPlannedWorkoutsView.post'),
+    ('DELETE', '/delete-saved-workout/{saved_workout_id}/'): ('backend1/views.py', 542, 'DeleteSavedWorkoutView.delete'),
+    ('DELETE', '/delete-planned-workout/{planned_workout_id}/'): ('backend1/views.py', 535, 'DeletePlannedWorkoutView.delete'),
+    ('POST', '/user-upload-workout/'): ('backend1/views.py', 254, 'UploadWorkOutView.post'),
+    ('GET', '/user-upload-workouts/'): ('backend1/views.py', 278, 'GetUserUploadedWorkOutView.get_queryset'),
+    ('DELETE', '/delete-user-workout/{workout_id}/'): ('backend1/views.py', 574, 'DeleteUserUploadedWorkoutView.delete'),
+    ('POST', '/uploads/'): ('backend1/uploads.py', 23, 'ImageUploadView.post'),
+    ('GET', '/users/'): ('backend1/views.py', 202, 'UserListView.get_queryset'),
+    ('GET', '/users/{user_id}/'): ('backend1/views.py', 213, 'UserDetailView.get'),
+    ('POST', '/streak/'): ('backend1/views.py', 493, 'TrackStreakView.post'),
+    ('POST', '/now_playing/update'): ('backend1/views.py', 503, 'UpdateNowPlayingView.post'),
+    ('GET', '/now_playing/{user_id}/'): ('backend1/views.py', 519, 'NowPlayingForUserView.get'),
+    ('POST', '/report/'): ('backend1/views.py', 560, 'ReportIssueView.post'),
+    ('POST', '/gpt-chat/'): ('backend1/views.py', 583, 'ExerciseChatView.post'),
+    ('GET', '/spotify/'): ('backend1/spotify.py', 85, 'SpotifyStatusView.get'),
+    ('DELETE', '/spotify/'): ('backend1/spotify.py', 88, 'SpotifyStatusView.delete'),
+    ('POST', '/spotify/connect/'): ('backend1/spotify.py', 99, 'SpotifyConnectView.post'),
+    ('GET', '/spotify/callback/'): ('backend1/spotify.py', 120, 'SpotifyCallbackView.get'),
+    ('GET', '/spotify/player/'): ('backend1/spotify.py', 220, 'SpotifyPlayerView.get'),
+    ('POST', '/spotify/player/'): ('backend1/spotify.py', 223, 'SpotifyPlayerView.post'),
+    ('POST', '/token/swap/'): ('backend1/spotify.py', 261, 'LegacySpotifyTokenView.post'),
+    ('POST', '/spotify/token/refresh/'): ('backend1/spotify.py', 261, 'LegacySpotifyTokenView.post'),
+}
+
 FRONTEND_METHODS = [
     ('Authentication', 'useAuth.checkToken()', 'Check the stored access token against GET /user/.', 'hooks/auth.ts'),
     ('Authentication', 'useVerifyToken.verifyToken(token)', 'Verify a JWT through POST /token/verify/.', 'hooks/auth.ts'),
@@ -300,6 +349,14 @@ def openapi_document():
             'x-parameters': [dict(name=name, type=value_type, required=required, description=description) for name, value_type, required, description in parameters],
             'x-return-type': return_type,
         }
+        source = PYTHON_HANDLERS.get((method, path))
+        if source:
+            source_path, line, symbol = source
+            operation['x-python-handler'] = {
+                'name': symbol,
+                'file': source_path,
+                'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
+            }
         if len(contract) > 2 and contract[2]:
             operation['deprecated'] = True
             operation['x-deprecation-notice'] = contract[3]

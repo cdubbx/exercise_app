@@ -53,6 +53,7 @@ class CoreAppTests(TestCase):
         self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
         self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
         self.assertTrue(all('parameters' in item and item['returns'] for item in spec['x-frontend-methods']))
+        self.assertTrue(all(operation.get('x-python-handler', {}).get('url', '').startswith('https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/') for methods in spec['paths'].values() for operation in methods.values()))
         self.assertTrue(spec['paths']['/register/']['post']['x-parameters'])
         self.assertEqual(spec['paths']['/token/swap/']['post']['deprecated'], True)
         self.assertIn('/spotify/connect/', spec['paths']['/token/swap/']['post']['x-deprecation-notice'])
