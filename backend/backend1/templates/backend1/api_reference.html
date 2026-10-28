@@ -43,6 +43,16 @@
     .detail-label { color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
     .frontend { display:inline-block; margin-top:9px; color:#555; font-size:12px; }
     .method-name { font-weight:700; }
+    .method-signature { margin:8px 0 12px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:#fafafa; font-weight:600; }
+    .contract { width:100%; border-collapse:collapse; margin:10px 0 14px; font-size:13px; }
+    .contract th, .contract td { border-bottom:1px solid var(--line); text-align:left; vertical-align:top; padding:8px 9px; }
+    .contract th { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    .contract td:first-child { font-weight:650; }
+    .contract code { white-space:nowrap; }
+    .contract-wrap { overflow-x:auto; }
+    .return-type { border-left:3px solid #111; padding:8px 11px; background:#f7f7f7; border-radius:0 7px 7px 0; }
+    .deprecated { display:inline-block; background:#f1e8e8; border:1px solid #d8bcbc; color:#642e2e; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .contract-title { margin:13px 0 0; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
     .error-signal { font-weight:700; color:#111; }
     .error-action { border-left:3px solid #111; padding-left:12px; }
     .release-card { padding:0; overflow:hidden; }
@@ -77,7 +87,8 @@
     <section class="notice" id="method-help">
       <strong>How to use this list</strong>
       <p id="method-counts">Loading the method list…</p>
-      <p>A backend request is something the app asks the server to do. A frontend method is a named task in the phone app. <code>GET</code> looks up information, <code>POST</code> sends or creates something, <code>PATCH</code> changes part of something, and <code>DELETE</code> removes something. Search by task name, such as “reset password” or “add workout.”</p>
+      <p>A <b>parameter</b> is a value you send. Its <b>type</b> tells you what kind of value to use, such as text (<code>string</code>), a whole number (<code>integer</code>), true/false (<code>boolean</code>), or a list (<code>[]</code>). <b>Returns</b> describes the value you get back. “Deprecated” means an older method is still listed for clarity, but new code should use its replacement.</p>
+      <p><code>GET</code> looks up information, <code>POST</code> sends or creates something, <code>PATCH</code> changes part of something, and <code>DELETE</code> removes something. Search by task name, such as “reset password” or “add workout.”</p>
     </section>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Reference section">
@@ -98,11 +109,32 @@
     let view = 'backend';
     const escapeText = value => String(value ?? '');
     const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = escapeText(text); return node; };
+    function addContractTable(card, title, parameters) {
+      if (!parameters?.length) return;
+      card.append(make('div', 'contract-title', title));
+      const wrap = make('div', 'contract-wrap');
+      const table = make('table', 'contract');
+      const head = make('thead'); const row = make('tr');
+      ['Name','Type','Required','Description'].forEach(label => row.append(make('th','',label)));
+      head.append(row); table.append(head);
+      const body = make('tbody');
+      parameters.forEach(parameter => {
+        const tr = make('tr');
+        tr.append(make('td','',parameter.name), make('td','',parameter.type), make('td','',parameter.required ? 'Yes' : 'No'), make('td','',parameter.description));
+        body.append(tr);
+      });
+      table.append(body); wrap.append(table); card.append(wrap);
+    }
+    function addReturn(card, value) {
+      if (!value) return;
+      card.append(make('div','contract-title','Returns'));
+      card.append(make('p','return-type',value));
+    }
     function render() {
       if (!spec) return;
       const term = search.value.trim().toLowerCase();
       const entries = view === 'backend'
-        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0})))
+        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice']})))
         : view === 'frontend' ? spec['x-frontend-methods'] : spec['x-api-release-notes'];
       const filtered = entries.filter(item => JSON.stringify(item).toLowerCase().includes(term));
       const groups = [...new Set(filtered.map(item => item.group))];
@@ -121,11 +153,18 @@
             top.append(make('span', `verb ${item.method.toLowerCase()}`, item.method), make('code', 'route', item.path), make('span', 'auth', item.auth ? 'Sign-in required' : 'No sign-in needed'));
             card.append(top, make('h3', '', item.summary));
             const [, requestText = '', responseText = '', frontendText = ''] = item.description.match(/Request: (.*?) Response: (.*?) Frontend: (.*)$/) || [];
+            if (item.deprecated) card.append(make('span','deprecated','Deprecated'));
             if (requestText && requestText !== 'none') { card.append(make('p', '', `Request · ${requestText}`)); }
-            if (responseText) { card.append(make('p', '', `Response · ${responseText}`)); }
+            addContractTable(card, 'Parameters', item.parameters);
+            addReturn(card, item.returns);
+            if (item.deprecationNotice) card.append(make('p','return-type',item.deprecationNotice));
+            if (responseText && !item.returns) { card.append(make('p', '', `Response · ${responseText}`)); }
             if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
           } else if (view === 'frontend') {
-            card.append(make('div', 'method-name', item.name), make('p', '', item.summary), make('span', 'frontend', `Source · ${item.source}`));
+            card.append(make('div', 'method-name', item.name), make('p', '', item.summary));
+            addContractTable(card, 'Parameters', item.parameters);
+            addReturn(card, item.returns);
+            card.append(make('span', 'frontend', `Source · ${item.source}`));
           } else if (view === 'releases') {
             card.className = 'release-card';
             const heading = make('div', 'release-header');
@@ -167,7 +206,7 @@
         spec = data;
         const requestCount = Object.values(spec.paths).reduce((sum, methods) => sum + Object.keys(methods).length, 0);
         const methodCount = (spec['x-frontend-methods'] || []).length;
-        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests and ${methodCount} phone-app methods. Each method shows what it does and where its code lives.`;
+        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests and ${methodCount} phone-app methods. Each entry shows its inputs, types, result, sign-in requirement, and source file.`;
         render();
       })
       .catch(() => { content.className = 'empty'; content.textContent = 'The reference could not be loaded. Please refresh this page.'; });

@@ -60,18 +60,23 @@ FRONTEND_METHODS = [
     ('Authentication', 'useDeleteProfile.deleteProfile()', 'Delete the account and clear client tokens.', 'hooks/auth.ts'),
     ('Authentication', 'useLogout.logout()', 'Clear local access and refresh tokens.', 'hooks/auth.ts'),
     ('Exercises', 'useExercises.searchExercises(search)', 'Search the catalog.', 'hooks/exercises.ts'),
-    ('Exercises', 'useMuscleExercise.refresh() / loadMoreExercises()', 'Load and paginate catalog results by muscle.', 'hooks/exercises.ts'),
+    ('Exercises', 'useMuscleExercise(bodyPart).refresh()', 'Load the first page of catalog results for a muscle.', 'hooks/exercises.ts'),
+    ('Exercises', 'useMuscleExercise(bodyPart).loadMoreExercises()', 'Load the next page of catalog results for the selected muscle.', 'hooks/exercises.ts'),
     ('Workouts', 'useSaveWorkOuts.saveWorkouts(exercise)', 'Save a catalog exercise.', 'hooks/exercises.ts'),
     ('Workouts', 'useSavePlannedWorkouts.savePlannedWorkouts(workout)', 'Create a planned calendar entry.', 'hooks/exercises.ts'),
+    ('Workouts', 'useUpdatePlannedWorkout.updatePlannedWorkout(id, changes)', 'Attempts to change a planned calendar entry. The matching PATCH route is not currently registered by this backend.', 'hooks/exercises.ts'),
     ('Workouts', 'useFetchedSavedWorkOuts.refresh()', 'Load saved catalog exercises.', 'hooks/exercises.ts'),
     ('Workouts', 'useFetchedPlanedWorkouts.fetchPlannedWorkouts()', 'Load planned calendar entries.', 'hooks/exercises.ts'),
-    ('Workouts', 'useUploadWorkOuts.refresh() / addWorkout(exercise)', 'Load custom workouts or create one.', 'hooks/exercises.ts'),
+    ('Workouts', 'useUploadWorkOuts.refresh()', 'Load the signed-in user’s custom workouts and, optionally, public workouts.', 'hooks/exercises.ts'),
+    ('Workouts', 'useUploadWorkOuts.addWorkout(exercise)', 'Create a custom workout for the signed-in user.', 'hooks/exercises.ts'),
     ('Workouts', 'useDeleteWorkout.deleteSavedWorkout(id)', 'Delete a saved exercise.', 'hooks/exercises.ts'),
     ('Workouts', 'useDeleteWorkout.deletePlannedWorkout(id)', 'Delete a calendar entry.', 'hooks/exercises.ts'),
     ('Workouts', 'useDeleteWorkout.deleteUserSavedWorkout(id)', 'Delete a custom workout.', 'hooks/exercises.ts'),
     ('Images', 'useFilePicker.pickFile()', 'Select and validate a local image; no network request.', 'hooks/social.ts'),
     ('Images', 'useS3Uploader.uploadToS3(file, path)', 'Upload the selected image and return its URL.', 'hooks/social.ts'),
     ('Social', 'useUsers.fetchUsers()', 'Load the next page of visible user profiles.', 'hooks/social.ts'),
+    ('Social', 'useReport.reportUser(reportObj)', 'Send an issue or content report.', 'hooks/exercises.ts'),
+    ('Authentication', 'useUserContext()', 'Read or update the signed-in user and session state.', 'hooks/auth.ts'),
     ('Chat', 'useChat.sendMessage(text)', 'Send a question and recent conversation history to the bot.', 'context/ChatContext.tsx'),
     ('Chat', 'useChat.retryMessage()', 'Retry the last failed question.', 'context/ChatContext.tsx'),
     ('Chat', 'useChat.addWorkoutToCalendar(messageId)', 'Submit a bot-proposed plan after explicit user confirmation.', 'context/ChatContext.tsx'),
@@ -80,9 +85,113 @@ FRONTEND_METHODS = [
     ('Spotify', 'useSpotify.connect()', 'Start OAuth and open the Spotify authorization page.', 'context/NowPlayContextSpotify.tsx'),
     ('Spotify', 'useSpotify.disconnect()', 'Disconnect the Spotify account.', 'context/NowPlayContextSpotify.tsx'),
     ('Spotify', 'useSpotify.control(action)', 'Play, pause, skip, or go to the previous track.', 'context/NowPlayContextSpotify.tsx'),
+    ('Spotify', 'useSpotify()', 'Read Spotify connection status, player state, and available controls.', 'context/NowPlayContextSpotify.tsx'),
+    ('Chat', 'useGPTExerciseChat()', 'Legacy alias for useChat; provides the same chat methods.', 'hooks/exercises.ts'),
     ('API client', 'apiFetch(url, options)', 'Attach/refresh the JWT, enforce the configured API origin, and handle session expiry.', 'services/api.ts'),
     ('API client', 'readResponse(response)', 'Parse JSON and convert API failures into client errors.', 'services/api.ts'),
+    ('API client', 'fetchWithTimeout(url, options)', 'Send a request that stops waiting after 20 seconds.', 'services/api.ts'),
+    ('API client', 'getAuthToken()', 'Read the saved access token or refresh it when needed.', 'services/api.ts'),
+    ('API client', 'refreshAccessToken()', 'Use the saved refresh token to get a new access token.', 'services/api.ts'),
+    ('API client', 'onSessionExpired(listener)', 'Register a callback for when the saved sign-in expires.', 'services/api.ts'),
+    ('Exercises', 'useSetExercise()', 'Read or update the selected exercise through ExerciseContext.', 'hooks/exercises.ts'),
 ]
+
+# Each parameter records its name, plain type, whether it is required, and a
+# short explanation. Return types describe the value callers receive, including
+# common error behavior. These contracts are intentionally kept beside the
+# route and method lists so the website and OpenAPI JSON share one source.
+API_CONTRACTS = {
+    '/register/': ([('email', 'string', True, 'Account email address.'), ('password', 'string', True, 'New account password.'), ('username', 'string', False, 'Optional display name.'), ('weight', 'number', False, 'Body weight, when provided.'), ('height', 'number', False, 'Height, when provided.')], 'object: {message: string}; validation errors return 400.'),
+    '/verify-otp/': ([('email', 'string', True, 'Email used during registration.'), ('otp', 'string', True, 'Verification code sent by email.')], 'object: {message: string, user: User, access: string, refresh: string}.'),
+    '/resend-otp/': ([('email', 'string', True, 'Email used during registration.')], 'object: {message: string}; rate limits may return 429.'),
+    '/login/': ([('identifier', 'string', True, 'Username or email.'), ('password', 'string', True, 'Account password.')], 'object: {access: string, refresh: string}.'),
+    '/social-login/': ([('id_token', 'string', True, 'Apple identity token.')], 'object: {access: string, refresh: string}.'),
+    '/user/': ([], 'User object for the signed-in account.'),
+    '/user/update/': ([('profile fields', 'object', False, 'One or more allowed User fields to update; send only fields you want to change.')], 'object: updated User profile.'),
+    '/user/delete/': ([], 'No response body (HTTP 204).'),
+    '/logout/': ([], 'object: {message: string}; mobile clients clear tokens locally.'),
+    '/token/': ([('username', 'string', True, 'Configured Django username (email for this app).'), ('password', 'string', True, 'Account password.')], 'object: {access: string, refresh: string}.'),
+    '/token/refresh/': ([('refresh', 'string', True, 'Refresh JWT.')], 'object: {access: string, refresh?: string}.'),
+    '/token/verify/': ([('token', 'string', True, 'JWT to check.')], 'object: token-valid response; invalid tokens return 401.'),
+    '/request-password-reset/': ([('email', 'string', True, 'Account email address.')], 'object: generic {message: string}, whether or not the account exists.'),
+    '/reset-password/': ([('email', 'string', True, 'Account email address.'), ('token', 'string', True, 'One-time reset token from the email link.'), ('new_password', 'string', True, 'Replacement password.')], 'object: {message: string}; expired or invalid links return 400.'),
+    '/password-reset/': ([('email', 'string', True, 'Email query parameter.'), ('token', 'string', True, 'Reset token query parameter.')], 'HTML page containing the password-reset form.'),
+    '/exercises/': ([('search', 'string', False, 'Text to match exercise names.'), ('primaryMuscles', 'string', False, 'Filter by primary muscle.'), ('cursor', 'string', False, 'Page cursor returned by the prior response.')], 'object: {results: Exercise[], next: string|null, previous: string|null}.'),
+    '/get-specific-exercises/': ([('bodyPart', 'string', True, 'Body-part filter (legacy request-data field).')], 'Exercise[]; this legacy route expects the filter in request data.'),
+    '/saveWorkOuts': ([('workout.id', 'string', True, 'UUID of a catalog exercise.')], 'SavedWorkout object; duplicate saves return the existing record.'),
+    '/userSavedWorkouts/': ([], 'SavedWorkout[] for the signed-in user.'),
+    '/plannedWorkouts/': ([('workout', 'object', False, 'One calendar entry; alternatively provide workouts.'), ('workouts', 'object[]', False, 'Batch of 1–8 calendar entries.'), ('workouts[].exercise', 'object', True, 'Catalog or custom exercise reference.'), ('workouts[].day_of_the_week', 'string', True, 'Monday through Sunday.'), ('workouts[].time_of_day', 'string', False, 'Morning, Afternoon, Evening, or Anytime.'), ('workouts[].sets', 'integer', True, 'Number of sets, 1–100.'), ('workouts[].reps', 'integer|string', True, 'Repetitions (1–1000) or legacy text.')], 'PlannedWorkout or PlannedWorkout[]; batch creation is all-or-nothing.'),
+    '/delete-saved-workout/{saved_workout_id}/': ([('saved_workout_id', 'integer', True, 'Saved workout record ID in the URL.')], 'No response body (HTTP 204).'),
+    '/delete-planned-workout/{planned_workout_id}/': ([('planned_workout_id', 'integer', True, 'Calendar entry ID in the URL.')], 'No response body (HTTP 204).'),
+    '/user-upload-workout/': ([('name', 'string', True, 'Workout name.'), ('primaryMuscles', 'string[]', False, 'Main muscle groups.'), ('secondaryMuscles', 'string[]', False, 'Additional muscle groups.'), ('equipment', 'string', False, 'Equipment used.'), ('instructions', 'string[]', False, 'Step-by-step instructions.'), ('img_url', 'string[]', False, 'Image URLs.')], 'object: {message: string}; created custom workout is stored for the user.'),
+    '/user-upload-workouts/': ([('is_public', 'boolean', False, 'Set true to list public community workouts.'), ('cursor', 'string', False, 'Page cursor returned by the prior response.')], 'object: {results: Workout[], next: string|null, previous: string|null}.'),
+    '/delete-user-workout/{workout_id}/': ([('workout_id', 'string', True, 'Custom workout UUID in the URL.')], 'No response body (HTTP 204).'),
+    '/uploads/': ([('path', 'string', True, 'profile or exercises.'), ('file', 'file', True, 'JPEG, PNG, or WebP image up to 5 MB.')], 'object: {url: string}; storage-not-configured returns 503.'),
+    '/users/': ([('search', 'string', False, 'Username prefix to search.'), ('cursor', 'string', False, 'Page cursor returned by the prior response.')], 'object: {results: PublicUser[], next: string|null, previous: string|null}.'),
+    '/users/{user_id}/': ([('user_id', 'string', True, 'User UUID in the URL.')], 'PublicUser object; private/unavailable profiles return 404.'),
+    '/streak/': ([('activity fields', 'object', False, 'The current view accepts an empty body.')], 'object: updated streak information.'),
+    '/now_playing/update': ([('track fields', 'object', True, 'Now-playing fields accepted by the legacy activity view.')], 'object: updated now-playing status.'),
+    '/now_playing/{user_id}/': ([('user_id', 'string', True, 'User UUID in the URL.')], 'Now-playing status object.'),
+    '/report/': ([('reportObj.report_type', 'string', True, 'Report category.'), ('reportObj.reported_id', 'string', True, 'ID of reported account or content.'), ('reportObj.report_text', 'string', True, 'Reason for the report.')], 'object: {message: string}; mail-not-configured returns 503.'),
+    '/gpt-chat/': ([('query', 'string', True, 'Question for the Exercise Bot.'), ('conversation', 'object[]', False, 'Recent {role, content} messages; at most 12 are sent by the app.')], 'object: {gpt_response: string, exercises?: Exercise[], calendar_action?: CalendarAction}; request limit returns 429.'),
+    '/spotify/': ([], 'object: {configured: boolean, connected: boolean}.'),
+    '/spotify/connect/': ([], 'object: {url: string} for Spotify authorization.'),
+    '/spotify/callback/': ([('code', 'string', True, 'OAuth authorization code from Spotify.'), ('state', 'string', True, 'OAuth state value checked by the server.')], 'HTML connection result page and app return link.'),
+    '/spotify/player/': ([('action', 'string', True, 'For POST: play, pause, next, or previous.')], 'For GET: PlayerState object. For POST: no body (HTTP 204).'),
+    '/token/swap/': ([], 'No response body; always HTTP 410 Gone. Deprecated; use /spotify/connect/.', True, 'Retired token exchange. Use /spotify/connect/ and the Spotify callback.'),
+    '/spotify/token/refresh/': ([], 'No response body; always HTTP 410 Gone. Deprecated; credentials stay on the server.', True, 'Retired token refresh route. Use /spotify/connect/ and /spotify/player/.')
+}
+
+FRONTEND_CONTRACTS = {
+    'useAuth.checkToken()': ([], 'Promise<boolean>; updates isAuthenticated and isLoading.'),
+    'useVerifyToken.verifyToken(token)': ([('token','string',True,'JWT to check.')], 'Promise<boolean>; false when invalid or the request fails.'),
+    'useRegister.register(userData)': ([('userData','RegisterRequest',True,'Email, password, and optional registration fields.')], 'Promise<void>; sets otpSent when verification is needed; throws on failure.'),
+    'useRegister.verifyOTP({email, otp})': ([('email','string',True,'Registration email.'),('otp','string',True,'Email verification code.')], 'Promise<boolean>; stores session tokens and loads the profile.'),
+    'useRegister.resendOTP(email)': ([('email','string',True,'Registration email.')], 'Promise<object>; API confirmation or an error.'),
+    'useLogin.login(identifier, password)': ([('identifier','string',True,'Username or email.'),('password','string',True,'Account password.')], 'Promise<boolean>; stores tokens and profile; throws on failure.'),
+    'useLogin.appleLogin(appleObject)': ([('appleObject','{id_token: string}',True,'Apple identity response containing the identity token.')], 'Promise<boolean>; stores tokens and profile; returns false on failure.'),
+    'useUser.getUser(token?)': ([('token','string|null',False,'Optional access JWT; stored token is used by default.')], 'Promise<User>; throws if the request fails.'),
+    'useResetPassword.requestPasswordReset(email)': ([('email','string|object',True,'Account email as text, or an object containing email.')], 'Promise<string|undefined>; confirmation message.'),
+    'useResetPassword.resetPassword({email, token, new_password})': ([('email','string',True,'Account email.'),('token','string',True,'One-time reset token.'),('new_password','string',True,'New password.')], 'Promise<string|undefined>; success confirmation or throws on failure.'),
+    'useUpdateUser.updateUser(userData)': ([('userData','Partial<User>',True,'Profile fields to change.')], 'Promise<string>; confirmation message.'),
+    'useDeleteProfile.deleteProfile()': ([], 'Promise<boolean>; true on success, then clears local session; false if it fails.'),
+    'useLogout.logout()': ([], 'Promise<boolean>; true when local tokens are cleared.'),
+    'useExercises.searchExercises(search)': ([('search','string',True,'Text to search for.')], 'Promise<Exercise[]>; catalog matches.'),
+    'useMuscleExercise(bodyPart).refresh()': ([('bodyPart','string',True,'Primary muscle filter, passed when creating the hook.')], 'void; starts a fresh first-page request. Results and loading/error state are returned by the hook.'),
+    'useMuscleExercise(bodyPart).loadMoreExercises()': ([], 'void; starts the next-page request when a next cursor exists.'),
+    'useSaveWorkOuts.saveWorkouts(exercise)': ([('exercise','Exercise',True,'Catalog exercise with an id.')], 'Promise<SavedWorkout|null>; null when a save is already underway.'),
+    'useSavePlannedWorkouts.savePlannedWorkouts(workout)': ([('workout','PlannedWorkoutInput|PlannedWorkoutInput[]',True,'One or more calendar entries.')], 'Promise<PlannedWorkout|PlannedWorkout[]>; null while another save is underway.'),
+    'useUpdatePlannedWorkout.updatePlannedWorkout(id, changes)': ([('id','integer',True,'Planned entry ID.'),('changes','PlannedWorkoutChanges',True,'day_of_the_week, time_of_day, sets, reps.')], 'Promise<PlannedWorkout>; currently fails until the backend registers PATCH /plannedWorkouts/{id}/.'),
+    'useFetchedSavedWorkOuts.refresh()': ([], 'Promise<void>; updates fetchedExercises, loading, and error.'),
+    'useFetchedPlanedWorkouts.fetchPlannedWorkouts()': ([], 'Promise<PlannedWorkout[]>; current user calendar entries.'),
+    'useUploadWorkOuts.refresh()': ([], 'Promise<void>; updates userWorkouts, publicWorkouts, loading, and error state.'),
+    'useUploadWorkOuts.addWorkout(exercise)': ([('exercise','CustomWorkoutInput',True,'Custom workout fields such as name, equipment, muscles, instructions, and image URLs.')], 'Promise<string>; creation confirmation message.'),
+    'useDeleteWorkout.deleteSavedWorkout(id)': ([('id','integer',True,'Saved exercise record ID.')], 'Promise<boolean>; true after deletion.'),
+    'useDeleteWorkout.deletePlannedWorkout(id)': ([('id','integer',True,'Calendar entry ID.')], 'Promise<boolean>; true after deletion.'),
+    'useDeleteWorkout.deleteUserSavedWorkout(id)': ([('id','string',True,'Custom workout UUID.')], 'Promise<boolean>; true after deletion.'),
+    'useFilePicker.pickFile()': ([], 'Promise<SelectedFile|null>; null on cancel or invalid file; updates file/error state.'),
+    'useS3Uploader.uploadToS3(file, path)': ([('file','SelectedFile',True,'Local image URI with optional name and MIME type.'),('path',"'profile'|'exercises'",True,'Destination image category.')], 'Promise<string>; uploaded image URL; throws on failure.'),
+    'useUsers.fetchUsers()': ([], 'Promise<void>; appends next page into users; loading/error/hasMore are hook state.'),
+    'useReport.reportUser(reportObj)': ([('reportObj','{report_type: string, reported_id: string, report_text: string}',True,'Report details.')], 'Promise<string>; confirmation message.'),
+    'useChat.sendMessage(text)': ([('text','string',True,'Question for the bot; AI consent must be granted.')], 'Promise<void>; appends reply or sets error state.'),
+    'useChat.retryMessage()': ([], 'Promise<void>; retries the last failed question.'),
+    'useChat.addWorkoutToCalendar(messageId)': ([('messageId','string',True,'Assistant message ID with a proposed calendar action.')], 'Promise<void>; saves plan after the user chooses Add, updates action status.'),
+    'useChat.clearConversation()': ([], 'void; clears in-memory messages and errors.'),
+    'useSpotify.refresh()': ([], 'Promise<void>; updates connection and player state.'),
+    'useSpotify.connect()': ([], 'Promise<void>; opens Spotify authorization in the browser.'),
+    'useSpotify.disconnect()': ([], 'Promise<void>; removes the connection.'),
+    'useSpotify.control(action)': ([('action',"'play'|'pause'|'next'|'previous'",True,'Playback action.')], 'Promise<void>; refreshes player state after the request.'),
+    'apiFetch(url, options)': ([('url','string',True,'API endpoint URL.'),('options','RequestInit',False,'Fetch options; authorization is attached by the helper.')], 'Promise<Response>; refreshes expired access tokens and handles session expiry.'),
+    'readResponse(response)': ([('response','Response',True,'HTTP response from fetch.')], 'Promise<any>; parsed response data; throws a readable error for failed requests.'),
+    'fetchWithTimeout(url, options)': ([('url','string',True,'Full request URL.'),('options','RequestInit',False,'Standard fetch options.')], 'Promise<Response>; aborts after 20 seconds.'),
+    'getAuthToken()': ([], 'Promise<string|null>; current access token, refreshed token, or null.'),
+    'refreshAccessToken()': ([], 'Promise<string|null>; refreshed access token or null when refresh fails.'),
+    'onSessionExpired(listener)': ([('listener','() => void',True,'Function called after the local session is cleared.')], '() => void; call the returned function to stop listening.'),
+    'useSetExercise()': ([], 'ExerciseContext value; throws if used outside ExerciseProvider.'),
+    'useUserContext()': ([], 'UserContext value containing user, token, authentication, and update functions.'),
+    'useSpotify()': ([], 'SpotifyContext value, or null when used outside NowPlayingProvider.'),
+    'useGPTExerciseChat()': ([], 'Same return value as useChat(); this is a legacy alias.')
+}
 
 ERROR_ANALYSIS = [
     {
@@ -175,19 +284,44 @@ def openapi_document():
     paths = {}
     for group, method, path, summary, authenticated, request, response, frontend in ENDPOINTS:
         route = path.replace('{saved_workout_id}', '{saved_workout_id}').replace('{planned_workout_id}', '{planned_workout_id}').replace('{workout_id}', '{workout_id}').replace('{user_id}', '{user_id}')
+        contract = API_CONTRACTS.get(path, ([], response))
+        parameters, return_type = contract[:2]
+        if method == 'GET' and path == '/spotify/player/':
+            parameters = []
+        if method == 'GET' and path == '/plannedWorkouts/':
+            parameters = []
+        if method == 'DELETE':
+            parameters = [item for item in parameters if item[0].endswith('_id')]
         operation = {
             'summary': summary,
             'description': f'{group}. Request: {request or "none"} Response: {response} Frontend: {frontend}',
             'responses': {'200': {'description': response}, '400': {'description': 'Invalid request.'}, '401': {'description': 'Authentication required or token invalid.'}, '429': {'description': 'Rate limit exceeded.'}},
             'security': [{'BearerAuth': []}] if authenticated else [],
+            'x-parameters': [dict(name=name, type=value_type, required=required, description=description) for name, value_type, required, description in parameters],
+            'x-return-type': return_type,
         }
-        if '{' in route:
-            operation['parameters'] = [
-                {'name': part.split('}', 1)[0], 'in': 'path', 'required': True, 'schema': {'type': 'string'}}
-                for part in route.split('{')[1:]
-            ]
+        if len(contract) > 2 and contract[2]:
+            operation['deprecated'] = True
+            operation['x-deprecation-notice'] = contract[3]
+        openapi_parameters = []
+        for name, value_type, required, description in parameters:
+            if name.endswith('_id'):
+                location = 'path'
+            elif method == 'GET':
+                location = 'query'
+            else:
+                continue
+            openapi_parameters.append({'name': name, 'in': location, 'required': required or location == 'path', 'description': description, 'schema': {'type': 'string'}})
+        if openapi_parameters:
+            operation['parameters'] = openapi_parameters
         if method in ('POST', 'PUT', 'PATCH') and request and 'multipart/form-data' not in request:
-            operation['requestBody'] = {'required': True, 'content': {'application/json': {'schema': {'type': 'object', 'additionalProperties': True}, 'description': request}}}
+            body_parameters = [dict(name=name, type=value_type, required=required, description=description) for name, value_type, required, description in parameters if name not in ('cursor', 'search', 'primaryMuscles') and not name.endswith('_id')]
+            def schema_type(value_type):
+                if '|' in value_type:
+                    return {'anyOf': [{'type': part.strip()} for part in value_type.split('|')]}
+                return {'type': {'integer': 'integer', 'number': 'number', 'string': 'string', 'boolean': 'boolean', 'object': 'object', 'object[]': 'array', 'string[]': 'array', 'file': 'string'}.get(value_type, 'string')}
+            properties = {item['name']: {**schema_type(item['type']), 'description': item['description']} for item in body_parameters}
+            operation['requestBody'] = {'required': True, 'content': {'application/json': {'schema': {'type': 'object', 'properties': properties, 'required': [item['name'] for item in body_parameters if item['required']]}, 'description': request}}}
         elif method in ('POST', 'PUT', 'PATCH') and 'multipart/form-data' in request:
             operation['requestBody'] = {'required': True, 'content': {'multipart/form-data': {'schema': {'type': 'object', 'properties': {'path': {'type': 'string', 'enum': ['profile', 'exercises']}, 'file': {'type': 'string', 'format': 'binary'}}, 'required': ['path', 'file']}}}}
         paths.setdefault('/' + route.lstrip('/'), {})[method.lower()] = operation
@@ -198,7 +332,9 @@ def openapi_document():
         'security': [{'BearerAuth': []}],
         'components': {'securitySchemes': {'BearerAuth': {'type': 'http', 'scheme': 'bearer', 'bearerFormat': 'JWT'}}},
         'paths': paths,
-        'x-frontend-methods': [dict(group=group, name=name, summary=summary, source=source) for group, name, summary, source in FRONTEND_METHODS],
+        'x-frontend-methods': [dict(group=group, name=name, summary=summary, source=source,
+            parameters=[dict(name=param, type=value_type, required=required, description=description) for param, value_type, required, description in FRONTEND_CONTRACTS.get(name, ([], 'void'))[0]],
+            returns=FRONTEND_CONTRACTS.get(name, ([], 'Return type is documented in the method description.'))[1]) for group, name, summary, source in FRONTEND_METHODS],
         'x-error-analysis': ERROR_ANALYSIS,
         'x-api-release-notes': API_RELEASE_NOTES,
     }

@@ -48,6 +48,10 @@ class CoreAppTests(TestCase):
         self.assertIn('/gpt-chat/', spec['paths'])
         self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
         self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
+        self.assertTrue(all('parameters' in item and item['returns'] for item in spec['x-frontend-methods']))
+        self.assertTrue(spec['paths']['/register/']['post']['x-parameters'])
+        self.assertEqual(spec['paths']['/token/swap/']['post']['deprecated'], True)
+        self.assertIn('/spotify/connect/', spec['paths']['/token/swap/']['post']['x-deprecation-notice'])
         self.assertTrue(any('status_code=200' in item['signal'] and 'Heroku v94' in item['action'] for item in spec['x-error-analysis']))
         self.assertTrue(any(item['version'] == 'v94' and 'without a body' in item['title'] for item in spec['x-api-release-notes']))
 
