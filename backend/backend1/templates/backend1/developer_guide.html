@@ -59,26 +59,41 @@ npm start</code></pre>
 <tr><td>iOS simulator</td><td>http://localhost:8000/api</td></tr><tr><td>Android emulator</td><td>http://10.0.2.2:8000/api</td></tr><tr><td>Physical device</td><td>HTTPS address reachable from the device</td></tr></tbody></table>
 <p>Restart Metro after editing the frontend .env. Keep cloud/provider credentials on the backend. Local email uses Django's console backend; local images use the media volume when debug mode is enabled and S3 is not configured.</p></section>
 <section><h2>Image uploads with S3</h2>
-<p>The authenticated app uploads multipart data to POST /api/uploads/. Django limits images to 5 MB and 16 megapixels, accepts JPEG/PNG/WebP, re-encodes pixels to remove embedded metadata, then stores a private object under the user's profile or exercise prefix. Records retain canonical object addresses; API responses issue presigned read URLs that expire after one hour.</p>
+<p>S3 is Amazon’s file-storage service. This integration uses it to keep profile and exercise images outside the database, in a private storage area called a <b>bucket</b>. The app sends images to our server first; the server checks and cleans them before saving them to S3. The server, not the phone app, has the AWS access needed to write the files.</p>
+<h3>What happens when you upload an image</h3>
+<ol>
+<li>You choose one photo in the app. The app checks the file size and prepares it for upload. The server checks it again because a phone-side check alone cannot protect the service.</li>
+<li>The signed-in app sends <code>POST /api/uploads/</code> with two pieces: <code>path</code> set to <code>profile</code> or <code>exercises</code>, and <code>file</code> containing the image. This upload format is called <b>multipart/form-data</b>; it lets a request carry both small text fields and the actual file.</li>
+<li>The server accepts JPEG, PNG, or WebP files up to 5 MB and 16 megapixels (16 million image dots). It checks that the file is a real image, fixes its orientation, shrinks it to fit within 2048 by 2048 pixels, and saves a fresh copy. Re-saving the pixels removes hidden photo details such as location and camera information. The cleaned image must still be no larger than 5 MB.</li>
+<li>The server gives the file a new, random name and stores it under the selected folder and your account ID, for example <code>profile-images/&lt;your-user-id&gt;/&lt;random-id&gt;.jpg</code>. That storage address is an S3 <b>object key</b>: the file’s name and folder path inside the bucket. The server does not mark the file public.</li>
+<li>The server replies with a temporary signed link so the app can show the upload. The upload endpoint is limited to 20 requests per account per hour.</li>
+</ol>
+<h3>How the app saves and displays the image later</h3>
+<p>When the app attaches the uploaded image to a profile or custom workout, it sends the temporary link back with that record. The server checks that the link belongs to this bucket and to the signed-in account’s folder. It removes the temporary signature and saves only the stable bucket address with the record. This avoids saving a link that will stop working after an hour.</p>
+<p>When the app later loads a profile or workout, the server creates a fresh <b>pre-signed link</b> for the private image. This link is like a short-term pass: anyone who has it can view that image until the link expires. Links expire after one hour. The app can get a fresh link the next time it loads the record. Avoid sharing these links or putting them in logs.</p>
+<p>In local development, if no S3 bucket is configured and Django is in debug mode, images are saved in the local media folder instead. On the live server, missing S3 configuration produces a clear storage error; the app does not silently save files to Heroku’s temporary disk.</p>
+<p><b>Current limitation:</b> deleting an Exercise Plus account deletes its database records, but the current delete-account method does not remove that user’s image files from S3. Those files can remain in the bucket. The AWS permissions below reflect the upload and display features that are implemented today; file cleanup needs to be added before account deletion can remove S3 images automatically.</p>
+<p>Code: <a href="https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/backend1/uploads.py#L23" target="_blank" rel="noopener noreferrer"><code>ImageUploadView.post</code></a> receives and stores the image; <a href="https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/backend1/media.py#L35" target="_blank" rel="noopener noreferrer"><code>canonical_media</code></a> checks and saves its stable address; <a href="https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/backend1/media.py#L49" target="_blank" rel="noopener noreferrer"><code>display_media</code></a> creates its temporary display link.</p>
 <div class="diagram mermaid">
 sequenceDiagram
  actor User
  participant App as React Native
  participant API as Django API
- participant S3 as Private S3 bucket
+ participant S3 as Private AWS S3 bucket
  User->>App: Choose an image
- App->>API: POST uploads with JWT and multipart image
- API->>API: Validate, resize, re-encode, strip metadata
- API->>S3: PutObject under per-user prefix
- S3-->>API: Object stored
- API-->>App: Canonical object URL
- App->>API: Save profile or exercise record
- API->>API: Confirm uploaded object belongs to user
- App->>API: Load profile or exercise
- API->>S3: Create one-hour presigned GET URL
- API-->>App: Data with temporary image link
+ App->>API: Send file and profile/exercise path with sign-in token
+ API->>API: Check file type, size, dimensions and account
+ API->>API: Correct orientation and remove hidden photo details
+ API->>S3: Store cleaned file with a unique name
+ S3-->>API: Confirm file was stored
+ API-->>App: Return one-hour signed display link
+ App->>API: Save profile or workout with that link
+ API->>API: Check link belongs to this account; save stable bucket address
+ App->>API: Load profile or workout
+ API->>S3: Create a fresh one-hour signed display link
+ API-->>App: Return record with working image link
 </div>
-<p>Account deletion removes object versions and delete markers under both prefixes before deleting the account. The server identity needs version-list and version-delete permissions in addition to upload/read access. Treat signed links as temporary bearer links.</p></section>
+</section>
 <section><h2>Spotify connection and player</h2>
 <p>Spotify connection has two parts: you approve access once, then the app asks our server to check or control playback. The server makes Spotify requests for the signed-in account. Spotify credentials stay on the server; the app never receives them. The app sends playback controls and displays track information, but it does not carry or play the audio itself.</p>
 <h3>What happens when you connect</h3>
@@ -185,14 +200,13 @@ heroku logs --tail -a exerciseplus</code></pre>
 <p>This sends the server code to Heroku. It does not publish a new iPhone or Android app; those builds are released separately. After Heroku reports success, open the website and check the page or feature you changed.</p>
 <p><strong>If Git refuses the push:</strong> stop and do not force it. This project moved the backend into a larger folder, so the development branch may be missing newer changes already running in production. Those need to be brought into the release branch first. A forced push could replace newer server code with an older version.</p></section>
 <section><h2>AWS S3 setup and access</h2>
-<p>Create or select the intended private bucket and region, then configure AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME on the backend. boto3 uses the standard AWS credential provider chain. Prefer an attached role when available; for Heroku, use a dedicated IAM identity with credentials in protected server configuration. Never use an administrator identity or put credentials in the mobile app.</p>
-<p>Limit the identity to these key prefixes:</p><pre><code>profile-images/&lt;user-id&gt;/&lt;random-uuid&gt;.(jpg|png|webp)
-exercises-images/&lt;user-id&gt;/&lt;random-uuid&gt;.(jpg|png|webp)</code></pre>
+<p>Create or select the intended private bucket and region, then set <code>AWS_STORAGE_BUCKET_NAME</code> and <code>AWS_S3_REGION_NAME</code> on the server. <b>boto3</b> is the AWS toolkit this Python server uses; it reads AWS credentials from the server environment. On Heroku, use a dedicated IAM user (an AWS identity made for this app) and store its credentials in protected Heroku settings. Where your hosting platform supports it, an attached IAM role (permissions assigned directly to the running server) is safer because you do not need to store a long-lived secret. Never use an administrator identity or put AWS credentials in the phone app.</p>
+<p>The app stores images under these account-specific paths:</p><pre><code>profile-images/&lt;user-id&gt;/&lt;random-id&gt;.(jpg|png|webp)
+exercises-images/&lt;user-id&gt;/&lt;random-id&gt;.(jpg|png|webp)</code></pre>
 <table><thead><tr><th>S3 action</th><th>Purpose</th></tr></thead><tbody>
-<tr><td>s3:PutObject</td><td>Store validated uploads</td></tr><tr><td>s3:GetObject</td><td>Sign temporary image-read links</td></tr>
-<tr><td>s3:ListBucketVersions</td><td>Find object versions and delete markers for account deletion; constrain prefixes where supported</td></tr>
-<tr><td>s3:DeleteObject, s3:DeleteObjectVersion</td><td>Remove owned objects and versions during account deletion</td></tr></tbody></table>
-<p>Keep S3 Block Public Access enabled, avoid public bucket policies and ACLs, and use server-side encryption. Browser CORS is unnecessary because uploads pass through Django. For customer-managed KMS encryption, grant only the needed key permissions. Test authenticated upload and signed read, then confirm unsigned object access is denied. AWS credential variables, if needed, are AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and optional AWS_SESSION_TOKEN. This app reads AWS_S3_REGION_NAME; verify the real bucket region instead of assuming the example default.</p></section>
+<tr><td>s3:PutObject</td><td>Let the server save cleaned image files in the bucket</td></tr><tr><td>s3:GetObject</td><td>Let the server create temporary links that display private images</td></tr></tbody></table>
+<p>For this integration’s current upload and display flow, the server needs access to put and read objects under the image paths above. It does not need bucket-wide listing or delete permissions for those operations. Keep S3 Block Public Access on, and do not add a public bucket policy or public file ACL. The server does not send files directly from the browser, so S3 browser CORS settings are not needed.</p>
+<p>The credential settings are <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code>, with <code>AWS_SESSION_TOKEN</code> only for temporary credentials. AWS encrypts bucket data at rest by default. If you select a separate AWS KMS encryption key, the server identity also needs permission to use that key. Check the bucket’s actual region before setting <code>AWS_S3_REGION_NAME</code>.</p></section>
 <section><h2>Further reading</h2><ul><li><a href="/docs/">Backend API, frontend methods, and API release notes</a></li><li><a href="/api-reference.json">OpenAPI JSON reference</a></li></ul>
 <p>For repository notes, see docs/integrations-release.md, docs/core-release.md, and docs/app-store-readiness.md.</p></section>
 <footer>Documentation reflects the current repository implementation. Confirm target environment configuration before changing production services.</footer>

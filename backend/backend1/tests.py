@@ -44,6 +44,11 @@ class CoreAppTests(TestCase):
         self.assertContains(guide, 'What happens when you connect')
         self.assertContains(guide, 'SPOTIFY_TOKEN_ENCRYPTION_KEY')
         self.assertContains(guide, 'Spotify Premium')
+        self.assertContains(guide, 'multipart/form-data')
+        self.assertContains(guide, 'temporary signed link')
+        self.assertContains(guide, 'does not remove that user’s image files from S3')
+        self.assertContains(guide, 'ImageUploadView.post')
+        self.assertNotContains(guide, 'Account deletion removes object versions')
         document = self.client.get('/api-reference.json')
         self.assertEqual(document.status_code, 200)
         import json
