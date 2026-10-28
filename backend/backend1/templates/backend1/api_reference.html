@@ -91,6 +91,7 @@
       <p>A <b>parameter</b> is a value you send. Its <b>type</b> tells you what kind of value to use, such as text (<code>string</code>), a whole number (<code>integer</code>), true/false (<code>boolean</code>), or a list (<code>[]</code>). <b>Returns</b> describes the value you get back. “Deprecated” means an older method is still listed for clarity, but new code should use its replacement.</p>
       <p><code>GET</code> looks up information, <code>POST</code> sends or creates something, <code>PATCH</code> changes part of something, and <code>DELETE</code> removes something. Search by task name, such as “reset password” or “add workout.”</p>
       <p>On backend entries, select <b>Python · …</b> to jump to that method in Backend methods. Each method entry also links to its source code. Data models describe what the server saves; serializers describe which fields the API accepts and returns.</p>
+      <p>The Backend methods section includes the Python signature, what the method returns, the endpoint’s request fields and types, possible HTTP results, and a direct link to the implementation.</p>
     </section>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Reference section">
@@ -159,8 +160,19 @@
           if (view === 'methods') {
             card.id = `backend-method-${item.id}`;
             card.append(make('div', 'method-name', item.name), make('p', '', item.summary));
-            const endpoints = make('p', 'return-type', `Used by · ${item.endpoints.map(endpoint => `${endpoint.method} ${endpoint.path}`).join(' · ')}`);
-            card.append(endpoints);
+            card.append(make('div', 'contract-title', 'Python signature'));
+            card.append(make('div', 'method-signature', item.signature));
+            card.append(make('p', 'return-type', `Python result · ${item.python_return}`));
+            card.append(make('p', 'return-type', 'self is the view instance. request is Django REST Framework’s request object, which contains the signed-in user, URL, query values, and submitted body. The parameter table below documents the public values the app sends; these are not always separate Python function arguments.'));
+            for (const endpoint of item.endpoints) {
+              const heading = make('div', 'contract-title', `HTTP endpoint · ${endpoint.method} ${endpoint.path}`);
+              card.append(heading, make('p', '', endpoint.summary));
+              addContractTable(card, 'Request parameters', endpoint.parameters);
+              addReturn(card, endpoint.returns);
+              const statuses = Object.entries(endpoint.http_responses || {}).map(([status, response]) => `${status} · ${response.description}`).join(' | ');
+              if (statuses) card.append(make('p', 'return-type', `HTTP outcomes · ${statuses}`));
+              if (endpoint.deprecated) card.append(make('p', 'deprecated', `Deprecated · ${endpoint.deprecation_notice || 'Use the replacement endpoint.'}`));
+            }
             const source = make('a', 'python-handler', 'Open Python source ↗');
             source.href = item.url; source.target = '_blank'; source.rel = 'noopener noreferrer';
             card.append(source);

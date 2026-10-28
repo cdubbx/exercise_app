@@ -71,6 +71,10 @@ class CoreAppTests(TestCase):
         self.assertTrue(all(operation.get('x-python-handler', {}).get('url', '').startswith('https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/') for methods in spec['paths'].values() for operation in methods.values()))
         backend_methods = {item['id']: item for item in spec['x-python-methods']}
         self.assertTrue(all(operation['x-python-handler']['id'] in backend_methods for methods in spec['paths'].values() for operation in methods.values()))
+        chat_method = next(item for item in backend_methods.values() if item['name'] == 'ExerciseChatView.post')
+        self.assertEqual(chat_method['signature'], 'def post(self, request)')
+        self.assertTrue(chat_method['endpoints'][0]['parameters'])
+        self.assertIn('Response', chat_method['python_return'])
         self.assertTrue(any(item['name'] == 'PlannedWorkout' for item in spec['x-data-models']))
         self.assertTrue(any(item['name'] == 'PlannedWorkoutSerializer' for item in spec['x-serializers']))
         self.assertTrue(spec['paths']['/register/']['post']['x-parameters'])

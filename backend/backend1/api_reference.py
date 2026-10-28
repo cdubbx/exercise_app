@@ -49,6 +49,40 @@ ENDPOINTS = [
 # branch. Line anchors open the actual request handler (or URL registration for
 # framework-provided JWT handlers that are not defined in this repository).
 GITHUB_SOURCE_ROOT = 'https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/'
+# Python signatures copied from the request handlers so the methods section
+# documents the code shape as well as the HTTP contract exposed to the app.
+PYTHON_SIGNATURES = {
+    'RegisterAPIView.post': 'def post(self, request)', 'VerifyOTPAPIView.post': 'def post(self, request)',
+    'ResendOTPAPIView.post': 'def post(self, request)', 'LoginAPIView.post': 'def post(self, request)',
+    'SigninWIthApple.post': 'def post(self, request)', 'UserView.get': 'def get(self, request)',
+    'EditUserView.post': 'def post(self, request)', 'DeleteUserAccountView.delete': 'def delete(self, request)',
+    'LogoutView.post': 'def post(self, request)', 'RequestPasswordResetAPIView.post': 'def post(self, request)',
+    'ResetPasswordAPIView.post': 'def post(self, request)', 'password_reset_landing': 'def password_reset_landing(request)',
+    'ExerciseListView.get_queryset': 'def get_queryset(self)', 'GetBodyPartWorkOutView.get': 'def get(self, request)',
+    'SaveWorkOutView.post': 'def post(self, request)', 'UserSavedWorkoutsView.get': 'def get(self, request, *args, **kwargs)',
+    'UserPlannedWorkoutsView.get': 'def get(self, request)', 'UserPlannedWorkoutsView.post': 'def post(self, request)',
+    'DeleteSavedWorkoutView.delete': 'def delete(self, request, saved_workout_id)',
+    'DeletePlannedWorkoutView.delete': 'def delete(self, request, planned_workout_id)',
+    'UploadWorkOutView.post': 'def post(self, request)', 'GetUserUploadedWorkOutView.get_queryset': 'def get_queryset(self)',
+    'DeleteUserUploadedWorkoutView.delete': 'def delete(self, request, workout_id)',
+    'ImageUploadView.post': 'def post(self, request)', 'UserListView.get_queryset': 'def get_queryset(self)',
+    'UserDetailView.get': 'def get(self, request, user_id)', 'TrackStreakView.post': 'def post(self, request)',
+    'UpdateNowPlayingView.post': 'def post(self, request)', 'NowPlayingForUserView.get': 'def get(self, request, user_id)',
+    'ReportIssueView.post': 'def post(self, request)', 'ExerciseChatView.post': 'def post(self, request)',
+    'SpotifyStatusView.get': 'def get(self, request)', 'SpotifyStatusView.delete': 'def delete(self, request)',
+    'SpotifyConnectView.post': 'def post(self, request)', 'SpotifyCallbackView.get': 'def get(self, request)',
+    'SpotifyPlayerView.get': 'def get(self, request)', 'SpotifyPlayerView.post': 'def post(self, request)',
+    'LegacySpotifyTokenView.post': 'def post(self, request)',
+}
+PYTHON_RETURNS = {
+    'ExerciseListView.get_queryset': 'QuerySet[Exercise] — filtered exercises for the list view.',
+    'GetUserUploadedWorkOutView.get_queryset': 'QuerySet[UserUploadWorkedouts] — records visible to this request.',
+    'UserListView.get_queryset': 'QuerySet[User] — profiles allowed by the visibility and search filters.',
+    'password_reset_landing': 'HttpResponse — HTML password reset form.',
+    'TokenObtainPairView route (Django REST Framework SimpleJWT)': 'Response — access and refresh JWT pair, supplied by SimpleJWT.',
+    'TokenRefreshView route (Django REST Framework SimpleJWT)': 'Response — refreshed access token, supplied by SimpleJWT.',
+    'TokenVerifyView route (Django REST Framework SimpleJWT)': 'Response — token validity result, supplied by SimpleJWT.',
+}
 PYTHON_HANDLERS = {
     ('POST', '/register/'): ('backend1/views.py', 101, 'RegisterAPIView.post'),
     ('POST', '/verify-otp/'): ('backend1/views.py', 119, 'VerifyOTPAPIView.post'),
@@ -359,8 +393,17 @@ def openapi_document():
                 'id': method_id, 'name': symbol, 'file': source_path,
                 'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
                 'summary': summary, 'group': group, 'endpoints': [],
+                'signature': PYTHON_SIGNATURES.get(symbol, 'Framework-provided method; see source registration.'),
+                'python_return': PYTHON_RETURNS.get(symbol, 'rest_framework.response.Response — an HTTP response with a status code and response data.'),
             })
-            method_entry['endpoints'].append({'method': method.upper(), 'path': path})
+            method_entry['endpoints'].append({
+                'method': method.upper(), 'path': path, 'summary': summary,
+                'parameters': [dict(name=name, type=value_type, required=required, description=description) for name, value_type, required, description in parameters],
+                'returns': return_type,
+                'http_responses': operation['responses'],
+                'deprecated': operation.get('deprecated', False),
+                'deprecation_notice': operation.get('x-deprecation-notice'),
+            })
             operation['x-python-handler'] = {
                 'id': method_id, 'name': symbol,
                 'file': source_path,
