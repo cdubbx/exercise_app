@@ -75,8 +75,23 @@ class CoreAppTests(TestCase):
         self.assertEqual(spec['openapi'], '3.1.0')
         self.assertIn('/gpt-chat/', spec['paths'])
         self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
-        self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
-        self.assertTrue(all('parameters' in item and item['returns'] for item in spec['x-frontend-methods']))
+        frontend_methods = {item['id']: item for item in spec['x-frontend-methods']}
+        self.assertEqual(len(frontend_methods), 64)
+        self.assertEqual(len({item['name'] for item in frontend_methods.values()}), len(frontend_methods))
+        self.assertTrue(all(item['signature'] and item['business_logic'] and item['url'].startswith('https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercisefrontend/') for item in frontend_methods.values()))
+        self.assertTrue(all('parameters' in item and item['returns'] for item in frontend_methods.values()))
+        self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in frontend_methods.values()))
+        self.assertTrue(any(item['name'] == 'ExerciseContext.addExercises(exercise)' for item in frontend_methods.values()))
+        self.assertTrue(any(item['name'] == 'useSpotify.togglePlayer()' for item in frontend_methods.values()))
+        streak_icon = next(item for item in frontend_methods.values() if item['name'] == 'determineStreakIcon()')
+        self.assertTrue(streak_icon['unimplemented'])
+        self.assertFalse(any('useUpdatePlannedWorkout' in item['name'] for item in frontend_methods.values()))
+        chat_method = next(item for item in frontend_methods.values() if item['name'] == 'useChat.sendMessage(text)')
+        self.assertIn('12 previous messages', chat_method['business_logic'])
+        upload_method = next(item for item in frontend_methods.values() if item['name'] == 'useS3Uploader.uploadToS3(file, path)')
+        self.assertIn('multipart form data', upload_method['business_logic'])
+        spotify_method = next(item for item in frontend_methods.values() if item['name'] == 'useSpotify.control(action)')
+        self.assertIn('refreshes the current player state', spotify_method['business_logic'])
         backend_methods = {item['id']: item for item in spec['x-python-methods']}
         self.assertEqual(len(backend_methods), len(spec['x-python-methods']))
         self.assertEqual(len({item['name'] for item in spec['x-python-methods']}), len(spec['x-python-methods']))
@@ -85,6 +100,13 @@ class CoreAppTests(TestCase):
         self.assertEqual(sum(item['kind'] == 'function' for item in backend_methods.values()), 1)
         self.assertEqual(sum(item['kind'] == 'framework' for item in backend_methods.values()), 3)
         operations = [operation for methods in spec['paths'].values() for operation in methods.values()]
+        operation_ids = {
+            'api-' + method + '-' + path.strip('/').replace('/', '-').replace('{', '').replace('}', '')
+            for path, methods in spec['paths'].items() for method in methods
+        }
+        self.assertTrue(all(operation_id in operation_ids for item in frontend_methods.values() for operation_id in item['api_operations']))
+        self.assertTrue(all(method_id in frontend_methods for operation in operations for method_id in operation.get('x-frontend-methods', [])))
+        self.assertTrue(all(method_id in frontend_methods for item in frontend_methods.values() for method_id in item['calls']))
         self.assertTrue(all(operation.get('x-python-handler', {}).get('id') in backend_methods for operation in operations))
         for operation in operations:
             handler = operation['x-python-handler']

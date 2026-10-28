@@ -149,7 +149,7 @@
       if (!spec) return;
       const term = search.value.trim().toLowerCase();
       const entries = view === 'backend'
-        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({id: apiId(method,path), group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice'], python: operation['x-python-handler']})))
+        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({id: apiId(method,path), group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice'], python: operation['x-python-handler'], frontendMethods: operation['x-frontend-methods'] || []})))
         : view === 'methods' ? [...(spec['x-python-methods'] || []).map(item => ({...item, kind:'view'})), ...(spec['x-python-helpers'] || []).map(item => ({...item, kind:'helper'}))]
         : view === 'models' ? spec['x-data-models']
         : view === 'serializers' ? spec['x-serializers']
@@ -267,11 +267,42 @@
               card.append(link);
             }
             if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
+            for (const frontendId of item.frontendMethods) {
+              const clientMethod = spec['x-frontend-methods'].find(value => value.id === frontendId);
+              if (!clientMethod) continue;
+              const link = make('a', 'python-handler', `Frontend method · ${clientMethod.name} ↓`);
+              link.href = `#frontend-method-${clientMethod.id}`;
+              link.dataset.frontendMethod = clientMethod.id;
+              card.append(link);
+            }
           } else if (view === 'frontend') {
-            card.append(make('div', 'method-name', item.name), make('p', '', item.summary));
+            card.id = `frontend-method-${item.id}`;
+            card.append(make('div', 'method-name', item.name));
+            card.append(make('code', 'route', item.signature));
+            if (item.unimplemented) card.append(make('span', 'deprecated', 'Unimplemented'));
+            if (item.legacy) card.append(make('span', 'deprecated', 'Legacy alias · use useChat() for new code'));
+            card.append(make('p', '', item.summary), make('p', 'logic', item.business_logic));
             addContractTable(card, 'Parameters', item.parameters);
             addReturn(card, item.returns);
-            card.append(make('span', 'frontend', `Source · ${item.source}`));
+            const references = make('div', 'reference-links');
+            for (const operationId of item.api_operations || []) {
+              const operation = Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, value]) => ({id: apiId(method, path), method, path, value}))).find(entry => entry.id === operationId);
+              const link = make('a', '', operation ? `API contract · ${operation.method.toUpperCase()} ${operation.path} ↓` : `API contract · ${operationId} ↓`);
+              link.href = `#${operationId}`;
+              link.dataset.apiOperation = operationId;
+              references.append(link);
+            }
+            for (const methodId of item.calls || []) {
+              const calledMethod = spec['x-frontend-methods'].find(value => value.id === methodId);
+              if (!calledMethod) continue;
+              const link = make('a', '', `Uses · ${calledMethod.name} ↓`);
+              link.href = `#frontend-method-${methodId}`;
+              link.dataset.frontendMethod = methodId;
+              references.append(link);
+            }
+            if (references.childElementCount) card.append(references);
+            const source = make('a', 'python-handler', `TypeScript source · ${item.source} ↗`);
+            source.href = item.url; source.target = '_blank'; source.rel = 'noopener noreferrer'; card.append(source);
           } else if (view === 'releases') {
             card.className = 'release-card';
             const heading = make('div', 'release-header');
@@ -319,6 +350,17 @@
         requestAnimationFrame(() => document.getElementById(apiLink.dataset.apiOperation)?.scrollIntoView({behavior:'smooth', block:'start'}));
         return;
       }
+      const frontendLink = event.target.closest('[data-frontend-method]');
+      if (frontendLink) {
+        event.preventDefault();
+        view = 'frontend';
+        search.value = '';
+        history.replaceState(null, '', `#frontend-method-${frontendLink.dataset.frontendMethod}`);
+        document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === view)));
+        render();
+        requestAnimationFrame(() => document.getElementById(`frontend-method-${frontendLink.dataset.frontendMethod}`)?.scrollIntoView({behavior:'smooth', block:'start'}));
+        return;
+      }
       const serializerLink = event.target.closest('[data-serializer]');
       if (serializerLink) {
         event.preventDefault();
@@ -351,15 +393,17 @@
         const apiMethodCount = backendEntries.filter(item => item.kind === 'handler').length;
         const pageHandlerCount = backendEntries.filter(item => item.kind === 'function').length;
         const frameworkHandlerCount = backendEntries.filter(item => item.kind === 'framework').length;
-        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests, ${apiMethodCount} API view methods, ${pageHandlerCount} routed page function, ${frameworkHandlerCount} framework-provided token handlers, ${(spec['x-python-helpers'] || []).length} supporting backend methods and functions, ${(spec['x-data-models'] || []).length} data models, ${(spec['x-serializers'] || []).length} serializers, and ${methodCount} phone-app methods.`;
+        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests, ${apiMethodCount} API view methods, ${pageHandlerCount} routed page function, ${frameworkHandlerCount} framework-provided token handlers, ${(spec['x-python-helpers'] || []).length} supporting backend methods and functions, ${methodCount} frontend methods and helpers, ${(spec['x-data-models'] || []).length} data models, and ${(spec['x-serializers'] || []).length} serializers.`;
         const initialHash = location.hash.slice(1);
         if (initialHash.startsWith('backend-method-')) view = 'methods';
+        else if (initialHash.startsWith('frontend-method-')) view = 'frontend';
         else if (initialHash.startsWith('serializer-')) view = 'serializers';
         else if (initialHash === 'data-models') view = 'models';
         else if (initialHash === 'serializers') view = 'serializers';
         document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === view)));
         render();
         if (initialHash.startsWith('backend-method-')) requestAnimationFrame(() => document.getElementById(initialHash)?.scrollIntoView());
+        if (initialHash.startsWith('frontend-method-')) requestAnimationFrame(() => document.getElementById(initialHash)?.scrollIntoView());
         if (initialHash.startsWith('serializer-') || initialHash.startsWith('api-')) requestAnimationFrame(() => document.getElementById(initialHash)?.scrollIntoView());
       })
       .catch(() => { content.className = 'empty'; content.textContent = 'The reference could not be loaded. Please refresh this page.'; });
