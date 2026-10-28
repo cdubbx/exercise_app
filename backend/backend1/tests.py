@@ -31,6 +31,7 @@ class CoreAppTests(TestCase):
         self.client.force_authenticate(None)
         page = self.client.get('/docs/')
         self.assertEqual(page.status_code, 200)
+        self.assertContains(page, '/static/backend1/favicon.png')
         self.assertContains(page, 'Frontend methods')
         self.assertContains(page, 'Backend methods')
         self.assertContains(page, 'Data models')
@@ -40,6 +41,7 @@ class CoreAppTests(TestCase):
         self.assertContains(page, 'method-counts')
         guide = self.client.get('/docs/developer-guide/')
         self.assertEqual(guide.status_code, 200)
+        self.assertContains(guide, '/static/backend1/favicon.png')
         self.assertContains(guide, 'Develop with Docker')
         self.assertContains(guide, '/docs/integrations/s3/')
         self.assertContains(guide, '/docs/integrations/spotify/')
@@ -54,6 +56,7 @@ class CoreAppTests(TestCase):
         for url, phrases in integrations.items():
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
+            self.assertContains(response, '/static/backend1/favicon.png')
             for phrase in phrases:
                 self.assertContains(response, phrase)
         self.assertEqual(self.client.get('/docs/integrations/unknown/').status_code, 404)
