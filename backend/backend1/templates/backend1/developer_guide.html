@@ -20,20 +20,33 @@ footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;color:v
 @media(max-width:650px){header{padding:32px 18px}main{padding:18px 12px 40px}section,.intro{padding:16px}pre{font-size:12px}}
 </style></head>
 <body><header><div class="brand">Exercise Plus</div><h1>Developer guide</h1>
-<p>How the mobile app, Django backend, and external services fit together, with local setup and operational configuration.</p>
+<p>A plain-language guide to the app, its server, and the services it uses, with local setup and production steps.</p>
 <nav><a href="/docs/">API reference</a> · <a href="/api-reference.json">OpenAPI JSON</a></nav></header>
 <main>
 <div class="intro"><strong>Architecture at a glance</strong>
-<p>The React Native client calls Django. Django owns authentication, workout data, integration credentials, and image validation. Heroku hosts the API and configured data services; Docker Compose provides the local backend environment.</p>
+<p>The phone app talks to a server. The server checks sign-ins, saves workout information, and connects to OpenAI, Spotify, and AWS. Docker runs a local copy of the server so you can develop without changing the live app.</p>
 <div class="diagram mermaid">
 flowchart LR
-  Mobile[React Native app] -->|JWT over HTTPS| API[Django REST API]
+  Mobile[Phone app] -->|Secure internet request| API[Exercise Plus server]
   API <--> DB[(PostgreSQL hosted / SQLite local)]
   API <--> Redis[(Redis)]
   API --> OpenAI[OpenAI Responses API]
   API <-->|OAuth and player requests| Spotify[Spotify]
-  API -->|private objects and signed reads| S3[(AWS S3)]
+  API -->|Private images and timed links| S3[(AWS S3)]
 </div></div>
+<section><h2>Simple word guide</h2>
+<table><tbody>
+<tr><th>Word</th><th>What it means here</th></tr>
+<tr><td>Phone app (frontend)</td><td>The screens and buttons running on your iPhone or Android device.</td></tr>
+<tr><td>Server (backend)</td><td>The part hosted on Heroku that checks requests and saves information.</td></tr>
+<tr><td>API</td><td>The agreed way the app and server ask each other to do things.</td></tr>
+<tr><td>Method</td><td>A named task in the phone app, such as searching exercises or saving a workout.</td></tr>
+<tr><td>Request</td><td>A message the app sends to the server to look up, add, change, or remove information.</td></tr>
+<tr><td>Sign-in token</td><td>A temporary proof that you are signed in. The app handles it for you.</td></tr>
+<tr><td>Environment variable</td><td>A private server setting. Passwords and API keys go here instead of in the app's code.</td></tr>
+<tr><td>Deploy</td><td>Publish a tested server update to the live Heroku app.</td></tr>
+</tbody></table>
+<p>The <a href="/docs/">API reference</a> has the full list of backend requests and phone-app methods. Use the search box to find a task; each phone-app method also shows the file where its code lives.</p></section>
 <section><h2>Develop with Docker</h2>
 <p>Install Docker Desktop or Docker Engine with Compose. Start the backend from exercise-backend/backend:</p>
 <pre><code>cd exercise-backend/backend
@@ -152,6 +165,20 @@ heroku config:set SPOTIFY_TOKEN_ENCRYPTION_KEY='&lt;stable-fernet-key&gt;' -a ex
 heroku config:unset OPENAI_API_KEY -a exerciseplus
 heroku logs --tail -a exerciseplus</code></pre>
 <p>Heroku config output includes credentials; do not paste it into tickets or chat. Prefer the protected config UI or a safe local input method for secrets. Rotating Spotify's encryption key makes existing tokens unreadable, so users must reconnect. Rotate Django's secret key deliberately because it may invalidate signed sessions or tokens. These instructions do not deploy code or alter hosted settings.</p></section>
+<section><h2>Publish a backend update to production</h2>
+<p>First finish your changes, run the tests, and commit the work you want to release. From the main project folder, use:</p>
+<pre><code>git status
+# Run tests before publishing
+cd exercise-backend/backend
+docker compose exec backend python manage.py test backend1
+cd ../..
+# Publish only the backend folder to Heroku
+git subtree push --prefix=exercise-backend heroku master
+# Check the release and watch the server logs
+heroku releases -a exerciseplus
+heroku logs --tail -a exerciseplus</code></pre>
+<p>This sends the server code to Heroku. It does not publish a new iPhone or Android app; those builds are released separately. After Heroku reports success, open the website and check the page or feature you changed.</p>
+<p><strong>If Git refuses the push:</strong> stop and do not force it. This project moved the backend into a larger folder, so the development branch may be missing newer changes already running in production. Those need to be brought into the release branch first. A forced push could replace newer server code with an older version.</p></section>
 <section><h2>AWS S3 setup and access</h2>
 <p>Create or select the intended private bucket and region, then configure AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME on the backend. boto3 uses the standard AWS credential provider chain. Prefer an attached role when available; for Heroku, use a dedicated IAM identity with credentials in protected server configuration. Never use an administrator identity or put credentials in the mobile app.</p>
 <p>Limit the identity to these key prefixes:</p><pre><code>profile-images/&lt;user-id&gt;/&lt;random-uuid&gt;.(jpg|png|webp)

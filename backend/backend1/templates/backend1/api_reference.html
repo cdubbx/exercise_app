@@ -72,7 +72,12 @@
   <main>
     <section class="notice">
       <strong>Base URL</strong>
-      <p><code id="base-url">/api</code> · Authenticated routes use <code>Authorization: Bearer &lt;access-token&gt;</code>. The mobile client gets its host from <code>API_BASE_URL</code>; point it at this Heroku app with the <code>/api</code> suffix.</p>
+      <p><code id="base-url">/api</code> · Some requests require you to be signed in. The mobile app adds its sign-in proof automatically. Set <code>API_BASE_URL</code> to this website's address with <code>/api</code> at the end.</p>
+    </section>
+    <section class="notice" id="method-help">
+      <strong>How to use this list</strong>
+      <p id="method-counts">Loading the method list…</p>
+      <p>A backend request is something the app asks the server to do. A frontend method is a named task in the phone app. <code>GET</code> looks up information, <code>POST</code> sends or creates something, <code>PATCH</code> changes part of something, and <code>DELETE</code> removes something. Search by task name, such as “reset password” or “add workout.”</p>
     </section>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Reference section">
@@ -113,7 +118,7 @@
           const card = make('article');
           if (view === 'backend') {
             const top = make('div', 'route-top');
-            top.append(make('span', `verb ${item.method.toLowerCase()}`, item.method), make('code', 'route', item.path), make('span', 'auth', item.auth ? 'Bearer token required' : 'Public'));
+            top.append(make('span', `verb ${item.method.toLowerCase()}`, item.method), make('code', 'route', item.path), make('span', 'auth', item.auth ? 'Sign-in required' : 'No sign-in needed'));
             card.append(top, make('h3', '', item.summary));
             const [, requestText = '', responseText = '', frontendText = ''] = item.description.match(/Request: (.*?) Response: (.*?) Frontend: (.*)$/) || [];
             if (requestText && requestText !== 'none') { card.append(make('p', '', `Request · ${requestText}`)); }
@@ -158,7 +163,13 @@
     search.addEventListener('input', render);
     fetch('/api-reference.json', {headers: {Accept: 'application/json'}})
       .then(response => { if (!response.ok) throw new Error(); return response.json(); })
-      .then(data => { spec = data; render(); })
+      .then(data => {
+        spec = data;
+        const requestCount = Object.values(spec.paths).reduce((sum, methods) => sum + Object.keys(methods).length, 0);
+        const methodCount = (spec['x-frontend-methods'] || []).length;
+        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests and ${methodCount} phone-app methods. Each method shows what it does and where its code lives.`;
+        render();
+      })
       .catch(() => { content.className = 'empty'; content.textContent = 'The reference could not be loaded. Please refresh this page.'; });
   </script>
 </body>

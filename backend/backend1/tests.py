@@ -33,6 +33,8 @@ class CoreAppTests(TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, 'Frontend methods')
         self.assertContains(page, 'API release notes')
+        self.assertContains(page, 'How to use this list')
+        self.assertContains(page, 'method-counts')
         guide = self.client.get('/docs/developer-guide/')
         self.assertEqual(guide.status_code, 200)
         self.assertContains(guide, 'Develop with Docker')
