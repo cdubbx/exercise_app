@@ -44,7 +44,7 @@ class CoreAppTests(TestCase):
         self.assertContains(page, 'How to use this list')
         self.assertContains(page, 'method-counts')
         self.assertContains(page, 'Request-method legend')
-        self.assertContains(page, 'Each class appears once')
+        self.assertContains(page, 'Each handler has its own signature')
         guide = self.client.get('/docs/developer-guide/')
         self.assertEqual(guide.status_code, 200)
         self.assertContains(guide, '/favicon.png')
@@ -77,33 +77,64 @@ class CoreAppTests(TestCase):
         self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
         self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
         self.assertTrue(all('parameters' in item and item['returns'] for item in spec['x-frontend-methods']))
-        self.assertTrue(all(operation.get('x-python-handler', {}).get('url', '').startswith('https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/') for methods in spec['paths'].values() for operation in methods.values()))
-        backend_views = {item['id']: item for item in spec['x-python-methods']}
-        self.assertEqual(len(backend_views), len(spec['x-python-methods']))
+        backend_methods = {item['id']: item for item in spec['x-python-methods']}
+        self.assertEqual(len(backend_methods), len(spec['x-python-methods']))
         self.assertEqual(len({item['name'] for item in spec['x-python-methods']}), len(spec['x-python-methods']))
-        self.assertTrue(all(operation['x-python-handler']['id'] in backend_views for methods in spec['paths'].values() for operation in methods.values()))
+        self.assertEqual(len(backend_methods), 41)  # 37 view handlers, one routed function, and three SimpleJWT handlers.
+        self.assertEqual(sum(item['kind'] == 'handler' for item in backend_methods.values()), 37)
+        self.assertEqual(sum(item['kind'] == 'function' for item in backend_methods.values()), 1)
+        self.assertEqual(sum(item['kind'] == 'framework' for item in backend_methods.values()), 3)
+        operations = [operation for methods in spec['paths'].values() for operation in methods.values()]
+        self.assertTrue(all(operation.get('x-python-handler', {}).get('id') in backend_methods for operation in operations))
+        for operation in operations:
+            handler = operation['x-python-handler']
+            if handler.get('framework'):
+                self.assertEqual(handler['framework'], 'Django REST Framework SimpleJWT')
+                self.assertIsNone(handler.get('url'))
+            else:
+                self.assertTrue(handler['url'].startswith('https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/'))
         backend_helpers = {item['id']: item for item in spec['x-python-helpers']}
-        self.assertTrue(all(helper_id in backend_helpers for item in backend_views.values() for endpoint in item['endpoints'] for helper_id in endpoint['helpers']))
+        self.assertEqual(len(backend_helpers), len(spec['x-python-helpers']))
+        self.assertEqual(len({item['name'] for item in spec['x-python-helpers']}), len(spec['x-python-helpers']))
+        self.assertTrue(all(helper_id in backend_helpers for item in backend_methods.values() for endpoint in item['endpoints'] for helper_id in endpoint['helpers']))
+        self.assertTrue(all(reference_id in backend_helpers for item in backend_helpers.values() for reference_id in item.get('references', [])))
+        self.assertTrue(all(item['signature'] for item in backend_methods.values() if item['kind'] != 'framework'))
+        self.assertTrue(all(item['signature'] and item['returns'] for item in backend_helpers.values()))
 
-        verify_view = next(item for item in backend_views.values() if item['name'] == 'VerifyOTPAPIView')
-        verify_flow = verify_view['endpoints'][0]['business_logic']
+        verify_method = next(item for item in backend_methods.values() if item['name'] == 'VerifyOTPAPIView.post')
+        verify_flow = verify_method['endpoints'][0]['business_logic']
         self.assertIn('Django’s cache', verify_flow)
         self.assertIn('activates/saves the account', verify_flow)
-        self.assertEqual(verify_view['endpoints'][0]['components'], ['UserSerializer'])
+        self.assertEqual(verify_method['endpoints'][0]['components'], ['UserSerializer'])
         self.assertTrue(spec['paths']['/verify-otp/']['post']['x-parameters'])
 
-        planned_view = next(item for item in backend_views.values() if item['name'] == 'UserPlannedWorkoutsView')
-        self.assertEqual({item['method'] for item in planned_view['endpoints']}, {'GET', 'POST'})
-        self.assertIn('helper-create-planned-workout', next(item for item in planned_view['endpoints'] if item['method'] == 'POST')['helpers'])
+        planned_method = next(item for item in backend_methods.values() if item['name'] == 'UserPlannedWorkoutsView.post')
+        self.assertEqual({item['method'] for item in planned_method['endpoints']}, {'POST'})
+        self.assertIn('helper-create-planned-workout', planned_method['endpoints'][0]['helpers'])
 
-        chat_view = next(item for item in backend_views.values() if item['name'] == 'ExerciseChatView')
-        self.assertIn('catalog', chat_view['endpoints'][0]['business_logic'])
-        self.assertIn('helper-resolve-catalog-exercise', chat_view['endpoints'][0]['helpers'])
-        spotify_player = next(item for item in backend_views.values() if item['name'] == 'SpotifyPlayerView')
-        self.assertEqual({item['method'] for item in spotify_player['endpoints']}, {'GET', 'POST'})
-        image_upload = next(item for item in backend_views.values() if item['name'] == 'ImageUploadView')
+        chat_method = next(item for item in backend_methods.values() if item['name'] == 'ExerciseChatView.post')
+        self.assertIn('catalog', chat_method['endpoints'][0]['business_logic'])
+        self.assertIn('helper-resolve-catalog-exercise', chat_method['endpoints'][0]['helpers'])
+        spotify_player = next(item for item in backend_methods.values() if item['name'] == 'SpotifyPlayerView.get')
+        self.assertEqual({item['method'] for item in spotify_player['endpoints']}, {'GET'})
+        self.assertIn('method-spotify-player-run', spotify_player['endpoints'][0]['helpers'])
+        image_upload = next(item for item in backend_methods.values() if item['name'] == 'ImageUploadView.post')
         self.assertIn('re-encoding', image_upload['endpoints'][0]['business_logic'])
         self.assertIn('helper-display-media', image_upload['endpoints'][0]['helpers'])
+        streak_method = backend_helpers['method-user-update-streak']
+        self.assertIn('previous day', streak_method['logic'])
+        self.assertEqual(streak_method['returns'].split(' · ')[0], 'int')
+        self.assertIn('method-user-update-streak', next(item for item in backend_methods.values() if item['name'] == 'UserView.get')['endpoints'][0]['helpers'])
+        self.assertIn('method-user-update-streak', next(item for item in backend_methods.values() if item['name'] == 'TrackStreakView.post')['endpoints'][0]['helpers'])
+        self.assertTrue(all(item.get('signature') for item in backend_methods.values() if item['kind'] != 'framework'))
+        self.assertTrue(all(item.get('line') for item in backend_helpers.values()))
+        self.assertTrue(any(item['name'] == 'UserSerializer.create(self, validated_data)' for item in backend_helpers.values()))
+        self.assertTrue(any(item['name'] == 'UserSerializer.update(self, instance, validated_data)' for item in backend_helpers.values()))
+        self.assertIn('method-user-serializer-create', next(item for item in backend_methods.values() if item['name'] == 'RegisterAPIView.post')['endpoints'][0]['helpers'])
+        self.assertTrue(any(item['name'] == 'PlannedWorkoutSerializer.validate(self, data)' for item in backend_helpers.values()))
+        framework_handlers = [item for item in backend_methods.values() if item['kind'] == 'framework']
+        self.assertEqual({item['name'] for item in framework_handlers}, {'TokenObtainPairView.post', 'TokenRefreshView.post', 'TokenVerifyView.post'})
+        self.assertTrue(all(not item['url'] and item['endpoints'] for item in framework_handlers))
         self.assertTrue(any(item['name'] == 'PlannedWorkout' for item in spec['x-data-models']))
         self.assertTrue(any(item['name'] == 'PlannedWorkoutSerializer' for item in spec['x-serializers']))
         self.assertTrue(spec['paths']['/register/']['post']['x-parameters'])

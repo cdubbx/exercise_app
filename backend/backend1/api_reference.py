@@ -1,5 +1,9 @@
 """Published backend routes and React Native call sites for the API reference."""
 
+import ast
+from functools import lru_cache
+from pathlib import Path
+
 ENDPOINTS = [
     ('Accounts', 'POST', '/register/', 'Create an account and send an email verification code.', False, 'JSON user registration fields.', '201 account-created message; validation errors on 400.', 'useRegister.register'),
     ('Accounts', 'POST', '/verify-otp/', 'Verify the email code and activate the account.', False, 'email, otp', '200 user profile and access/refresh JWTs.', 'useRegister.verifyOTP'),
@@ -94,8 +98,8 @@ PYTHON_HANDLERS = {
     ('POST', '/spotify/token/refresh/'): ('backend1/spotify.py', 261, 'LegacySpotifyTokenView.post'),
 }
 
-# One description per routed view class. Request methods such as get/post are
-# framework entry points; these records explain the work performed inside them.
+# A short context line for each routed class. Individual method entries below
+# carry the actual implementation details.
 PYTHON_VIEW_SUMMARIES = {
     'RegisterAPIView': 'Creates a pending account and starts email verification.',
     'VerifyOTPAPIView': 'Checks the one-time email code, activates the account, and starts a signed-in session.',
@@ -140,13 +144,13 @@ PYTHON_VIEW_SUMMARIES = {
 # Per-request business logic, in execution order. API cards remain the source
 # for request field types, return types, and HTTP status details.
 PYTHON_HANDLER_DETAILS = {
-    'RegisterAPIView.post': ('Validates registration fields with UserSerializer and creates the account inactive. Generates a one-time code, stores it in cache for five minutes, and emails it. If email delivery fails, removes the pending account and cached code.', ['generate_otp', 'send_otp']),
+    'RegisterAPIView.post': ('Validates registration fields with UserSerializer and creates the account inactive. Generates a one-time code, stores it in cache for five minutes, and emails it. If email delivery fails, removes the pending account and cached code.', ['UserSerializer', 'UserSerializer.validate_password', 'UserSerializer.validate', 'UserSerializer.create', 'generate_otp', 'send_otp']),
     'VerifyOTPAPIView.post': ('Requires email and code, reads the expected code from Django’s cache, compares it with the submitted code, and finds the account. If inactive, deletes the used code and activates/saves the account. Then serializes the profile and creates access/refresh JWTs. An already-active account receives an “already activated” response.', ['UserSerializer']),
     'ResendOTPAPIView.post': ('Requires an email and looks only for an inactive matching account. If found, creates and emails a new code and caches it for five minutes. Returns the same confirmation whether or not an inactive account was found.', ['generate_otp', 'send_otp']),
     'LoginAPIView.post': ('Accepts identifier, username, or email; finds up to two case-insensitive email/username matches and rejects ambiguous matches. Checks the password and active-account flag before creating access/refresh JWTs.', []),
     'SigninWIthApple.post': ('Requires an Apple identity token, passes it to AppleAuthenticationBackend, and issues app JWTs for the returned user. Missing or rejected credentials produce an error response.', ['AppleAuthenticationBackend']),
-    'UserView.get': ('Locks the current user row inside a transaction, updates the user’s activity streak, then returns the profile through UserSerializer.', ['UserSerializer']),
-    'EditUserView.post': ('Uses UserSerializer in partial-update mode with request context. Saves validated fields and returns the updated profile; invalid fields return serializer errors.', ['UserSerializer']),
+    'UserView.get': ('Locks the current user row inside a transaction, updates the user’s activity streak, then returns the profile through UserSerializer.', ['User.update_streak', 'UserSerializer', 'MediaSerializerMixin.to_representation']),
+    'EditUserView.post': ('Uses UserSerializer in partial-update mode with request context. Validates fields and media ownership, saves accepted changes, and returns the updated profile; invalid fields return serializer errors.', ['UserSerializer', 'UserSerializer.validate_password', 'UserSerializer.validate', 'UserSerializer.update', 'MediaSerializerMixin.to_representation', 'MediaSerializerMixin.validate_image_url']),
     'DeleteUserAccountView.delete': ('Deletes request.user. Django applies the model relationships’ configured delete behavior to related records.', []),
     'LogoutView.post': ('Deletes the legacy jwt cookie and returns a confirmation. The mobile client removes its separately stored access and refresh tokens.', []),
     'TokenObtainPairView route (Django REST Framework SimpleJWT)': ('Delegates credential validation and token creation to SimpleJWT; this project does not override its request handler.', []),
@@ -155,21 +159,21 @@ PYTHON_HANDLER_DETAILS = {
     'RequestPasswordResetAPIView.post': ('Requires an email, finds the account, creates a time-limited Django reset token, builds the browser reset URL, and emails that link. The current implementation returns a validation error when the email is not found.', []),
     'ResetPasswordAPIView.post': ('Finds the account by email and checks the one-time reset token. Applies Django password validators, hashes the accepted password with set_password, and saves only the password field.', []),
     'password_reset_landing': ('Reads email and token from the URL, checks the token, and renders the reset form as valid or invalid. Disables caching and sets a no-referrer policy.', []),
-    'ExerciseListView.get_queryset': ('Starts from the exercise catalog, optionally filters by primary muscle and searches name, description, category, and primary muscles. Sorts deterministically; DRF applies cursor pagination and ExerciseSerializer.', ['ExerciseSerializer']),
-    'GetBodyPartWorkOutView.get': ('Reads bodyPart from the request body, optionally applies a muscle-overlap filter, and serializes matching catalog exercises.', ['ExerciseSerializer']),
+    'ExerciseListView.get_queryset': ('Starts from the exercise catalog, optionally filters by primary muscle and searches name, description, category, and primary muscles. Sorts deterministically; DRF applies cursor pagination and ExerciseSerializer.', ['ExerciseSerializer', 'MediaSerializerMixin.to_representation']),
+    'GetBodyPartWorkOutView.get': ('Reads bodyPart from the request body, optionally applies a muscle-overlap filter, and serializes matching catalog exercises.', ['ExerciseSerializer', 'MediaSerializerMixin.to_representation']),
     'SaveWorkOutView.post': ('Reads workout.id, requires a valid UUID, finds the catalog exercise, then uses get_or_create so the same user cannot save the same exercise twice.', []),
-    'UserSavedWorkoutsView.get': ('Filters saved-workout records by the signed-in user, fetches related exercises in the same query, and serializes the list.', ['SavedWorkoutSerializer']),
-    'UserPlannedWorkoutsView.get': ('Filters calendar entries by the signed-in user, fetches linked exercise details efficiently, and serializes the results.', ['PlannedWorkoutSerializer']),
-    'UserPlannedWorkoutsView.post': ('Accepts one workout or a batch of 1–8. Creates the entire batch inside one transaction, validates each item, and returns serialized plans; an invalid item rolls the batch back.', ['_create_planned_workout', 'PlannedWorkoutSerializer']),
+    'UserSavedWorkoutsView.get': ('Filters saved-workout records by the signed-in user, fetches related exercises in the same query, and serializes the list.', ['SavedWorkoutSerializer', 'MediaSerializerMixin.to_representation']),
+    'UserPlannedWorkoutsView.get': ('Filters calendar entries by the signed-in user, fetches linked exercise details efficiently, and serializes the results.', ['PlannedWorkoutSerializer', 'PlanRepetitionsField.to_representation', 'MediaSerializerMixin.to_representation']),
+    'UserPlannedWorkoutsView.post': ('Accepts one workout or a batch of 1–8. Creates the entire batch inside one transaction, validates each item, and returns serialized plans; an invalid item rolls the batch back.', ['_create_planned_workout', 'PlannedWorkoutSerializer.validate', 'PlanRepetitionsField.to_representation', 'MediaSerializerMixin.to_representation']),
     'DeleteSavedWorkoutView.delete': ('Looks up the saved-workout record by ID and current user together. Returns not found for another user’s record, otherwise deletes it.', []),
     'DeletePlannedWorkoutView.delete': ('Looks up the calendar record by ID and current user together. Returns not found for another user’s record, otherwise deletes it.', []),
-    'UploadWorkOutView.post': ('Validates submitted workout fields with UserUploadWorkoutsSerializer, assigns ownership to request.user, and saves the record.', ['UserUploadWorkoutsSerializer']),
-    'GetUserUploadedWorkOutView.get_queryset': ('When is_public=true, returns public uploads whose owners are not private; otherwise returns only the signed-in user’s uploads. DRF serializes and paginates the result.', ['UserUploadWorkoutsSerializer']),
+    'UploadWorkOutView.post': ('Validates submitted workout fields and image addresses with UserUploadWorkoutsSerializer, assigns ownership to request.user, and saves the record.', ['UserUploadWorkoutsSerializer', 'UserUploadWorkoutsSerializer.create', 'MediaSerializerMixin.validate_img_url']),
+    'GetUserUploadedWorkOutView.get_queryset': ('When is_public=true, returns public uploads whose owners are not private; otherwise returns only the signed-in user’s uploads. DRF serializes, signs private image links, and paginates the result.', ['UserUploadWorkoutsSerializer', 'MediaSerializerMixin.to_representation']),
     'DeleteUserUploadedWorkoutView.delete': ('Finds an uploaded workout using both its ID and request.user, then deletes it. Another user’s upload is not exposed.', []),
-    'ImageUploadView.post': ('Accepts multipart image data, checks destination, file size, format, and pixel count, corrects image orientation, strips metadata by re-encoding, and limits output dimensions. Stores the clean image privately and returns a display URL.', ['s3_client', 'media_origin', 'display_media']),
+    'ImageUploadView.post': ('Accepts multipart image data, checks destination, file size, format, and pixel count, corrects image orientation, strips metadata by re-encoding, and limits output dimensions. Stores the clean image privately and returns a temporary display URL.', ['s3_client', 'media_origin', 'display_media']),
     'UserListView.get_queryset': ('Limits results to active, searchable, public profiles; excludes the signed-in user and optionally filters usernames by prefix. DRF applies cursor pagination and PublicUserSerializer.', ['PublicUserSerializer']),
-    'UserDetailView.get': ('Finds an active profile by UUID. Hides private or non-searchable profiles from other users, then returns only public profile fields.', ['PublicUserSerializer']),
-    'TrackStreakView.post': ('Locks the current user row in a database transaction, updates the streak, and returns the refreshed user profile.', ['UserSerializer']),
+    'UserDetailView.get': ('Finds an active profile by UUID. Hides private or non-searchable profiles from other users, then returns only public profile fields.', ['PublicUserSerializer', 'MediaSerializerMixin.to_representation']),
+    'TrackStreakView.post': ('Locks the current user row in a database transaction, updates the streak, and returns the refreshed user profile.', ['User.update_streak', 'UserSerializer', 'MediaSerializerMixin.to_representation']),
     'UpdateNowPlayingView.post': ('Reads track and artist details, finds the signed-in user, and sends a track update through the app notification helper.', ['send_track_update']),
     'NowPlayingForUserView.get': ('Finds the user and loads their newest stored track snapshot. Serializes a snapshot when present; returns an empty/no-track result otherwise.', ['NowPlayingTrackSerializer']),
     'ReportIssueView.post': ('Accepts reportObj or a top-level report, trims and limits report text to 5,000 characters, checks that reporting email is configured, then sends the report email.', ['send_mail']),
@@ -178,8 +182,8 @@ PYTHON_HANDLER_DETAILS = {
     'SpotifyStatusView.delete': ('Deletes this user’s Spotify connection, including any unfinished OAuth handshake state.', []),
     'SpotifyConnectView.post': ('Checks server configuration, creates random state and a PKCE verifier, stores hashed/encrypted short-lived values for this user, and returns Spotify’s authorization URL.', ['configured', 'cipher']),
     'SpotifyCallbackView.get': ('Finds and locks the connection using the returned state, rejects missing/expired attempts, and consumes state before processing the result. Exchanges the authorization code with the saved PKCE verifier, checks required scopes, and stores encrypted tokens; then shows a success/failure page.', ['configured', 'cipher', 'token_request', 'store_tokens']),
-    'SpotifyPlayerView.get': ('Checks configuration and connection, locks the user’s connection, refreshes expiring tokens if needed, and asks Spotify for current playback. Converts the provider response into the app’s smaller track/device result.', ['configured', 'player_request']),
-    'SpotifyPlayerView.post': ('Accepts only play, pause, next, or previous. Locks the user’s connection, forwards the action to Spotify, and preserves token invalidation even when Spotify returns an error.', ['configured', 'player_request']),
+    'SpotifyPlayerView.get': ('Checks configuration and connection, locks the user’s connection, refreshes expiring tokens if needed, and asks Spotify for current playback. Converts the provider response into the app’s smaller track/device result.', ['SpotifyPlayerView.run', 'configured', 'player_request']),
+    'SpotifyPlayerView.post': ('Accepts only play, pause, next, or previous. Locks the user’s connection, forwards the action to Spotify, and preserves token invalidation even when Spotify returns an error.', ['SpotifyPlayerView.run', 'configured', 'player_request']),
     'LegacySpotifyTokenView.post': ('Returns HTTP 410 and directs clients to the account-bound Spotify connection flow. It does not exchange or expose tokens.', []),
 }
 
@@ -197,7 +201,40 @@ PYTHON_HELPERS = [
     {'id':'helper-s3-client','name':'s3_client()','file':'backend1/media.py','line':16,'group':'Images','summary':'Creates the AWS S3 client used by private image storage.','logic':'Builds a boto3 S3 client using the server’s configured AWS region and credentials.'},
     {'id':'helper-media-origin','name':'media_origin()','file':'backend1/media.py','line':21,'group':'Images','summary':'Gets the canonical address used to identify stored images.','logic':'Returns the configured S3 origin used to build stable private object addresses.'},
     {'id':'helper-display-media','name':'display_media(url)','file':'backend1/media.py','line':49,'group':'Images','summary':'Turns a private S3 object address into a temporary display link.','logic':'Creates a short-lived presigned read URL while keeping the stored object address private and stable.'},
+    {'id':'helper-media-key','name':'media_key(url)','file':'backend1/media.py','line':26,'group':'Images','summary':'Recognizes an object address that belongs to the configured S3 bucket.','logic':'Checks the URL scheme and host against the bucket’s canonical S3 origin, then returns its object key or None for an unrelated URL.'},
+    {'id':'helper-canonical-media','name':'canonical_media(url, user=None)','file':'backend1/media.py','line':35,'group':'Images','summary':'Checks that a profile or workout image address is safe to store.','logic':'Accepts empty values, validates web URLs, and for this bucket requires a key in the current user’s profile or exercise folder. Returns the stable object address; it does not issue a temporary display link.','references':['helper-media-key']},
+    {'id':'method-user-update-streak','name':'User.update_streak(self)','file':'backend1/models.py','line':37,'group':'Activity','summary':'Updates one account’s workout activity streak.','logic':'Uses the local calendar date: starts at one for first activity, does nothing if already active today, increments after activity on the previous day, or resets to one after a longer gap. Saves the new activity date and streak, then returns the streak number.','signature':'def update_streak(self) -> int','returns':'int · the updated streak count; unchanged count when already active today.'},
+    {'id':'method-spotify-player-run','name':'SpotifyPlayerView.run(self, request, action=None)','file':'backend1/spotify.py','line':228,'group':'Spotify','summary':'Runs the shared Spotify current-track or playback-action flow.','logic':'Checks server setup and the signed-in account’s connection, locks the connection row, and forwards a read or validated action to player_request. Converts Spotify playback data into the app response.','signature':'def run(self, request, action=None) -> Response','returns':'rest_framework.response.Response · playback state or an empty successful control response.'},
+    {'id':'method-user-serializer-password','name':'UserSerializer.validate_password(self, value)','file':'backend1/serializers.py','line':32,'group':'Accounts','summary':'Checks a submitted password against Django’s configured password rules.','logic':'Passes the candidate and current user instance to Django’s password validators. Returns the value unchanged when accepted; raises a serializer validation error when rejected.','signature':'def validate_password(self, value)','returns':'str · the accepted password value.'},
+    {'id':'method-user-serializer-validate','name':'UserSerializer.validate(self, data)','file':'backend1/serializers.py','line':37,'group':'Accounts','summary':'Checks profile-level rules after individual fields have been parsed.','logic':'Rejects non-positive height or weight values and converts an empty phone number to None. Returns the cleaned field dictionary.','signature':'def validate(self, data)','returns':'dict · validated profile fields.'},
+    {'id':'method-user-serializer-create','name':'UserSerializer.create(self, validated_data)','file':'backend1/serializers.py','line':45,'group':'Accounts','summary':'Creates a user while storing the password as a hash.','logic':'Removes the raw password from the field dictionary, assigns it through set_password, saves the new User, and returns that user instance.','signature':'def create(self, validated_data)','returns':'User · the newly saved account.'},
+    {'id':'method-user-serializer-update','name':'UserSerializer.update(self, instance, validated_data)','file':'backend1/serializers.py','line':52,'group':'Accounts','summary':'Updates an account and safely handles an optional password change.','logic':'If a new password is present, hashes it with set_password before saving the remaining validated profile fields through the parent serializer. Returns the updated User.','signature':'def update(self, instance, validated_data)','returns':'User · the updated account.'},
+    {'id':'method-upload-serializer-create','name':'UserUploadWorkoutsSerializer.create(self, validated_data)','file':'backend1/serializers.py','line':19,'group':'Custom workouts','summary':'Creates a custom uploaded workout record.','logic':'Delegates record creation to Django REST Framework’s ModelSerializer using the already validated fields, including the owner supplied by the view.','signature':'def create(self, validated_data)','returns':'UserUploadWorkedouts · the newly saved custom workout.'},
+    {'id':'method-saved-serializer-create','name':'SavedWorkoutSerializer.create(self, validated_data)','file':'backend1/serializers.py','line':79,'group':'Workouts','summary':'Creates a saved-workout record from a library exercise ID.','logic':'Removes the write-only exercise_id, loads the matching catalog Exercise, creates the SavedWorkout using the remaining validated values, and returns the record. Current save and planning routes use their own get_or_create logic instead of this serializer write method.','signature':'def create(self, validated_data)','returns':'SavedWorkout · the newly saved exercise record.'},
+    {'id':'method-planned-serializer-validate','name':'PlannedWorkoutSerializer.validate(self, data)','file':'backend1/serializers.py','line':106,'group':'Workouts','summary':'Ensures a planned workout points to exactly one exercise source.','logic':'Rejects a plan that has both a saved library exercise and a custom exercise, or neither. Returns the accepted field dictionary.','signature':'def validate(self, data)','returns':'dict · validated planned-workout fields.'},
+    {'id':'method-repetitions-representation','name':'PlanRepetitionsField.to_representation(self, value)','file':'backend1/serializers.py','line':86,'group':'Workouts','summary':'Returns repetition counts as numbers while preserving older text values.','logic':'Converts values that look like integers to int for consistent app responses. If an older free-text value cannot be converted, returns it unchanged.','signature':'def to_representation(self, value)','returns':'int | str · normalized number or legacy text.'},
+    {'id':'method-media-representation','name':'MediaSerializerMixin.to_representation(self, instance)','file':'backend1/media.py','line':65,'group':'Images','summary':'Converts stored private image addresses into temporary links in API responses.','logic':'Starts with the parent serializer’s response data, then signs profile and exercise image addresses for reading. The database continues to store canonical object addresses.','signature':'def to_representation(self, instance)','returns':'dict · serialized fields with temporary image URLs.'},
+    {'id':'method-media-validate-image','name':'MediaSerializerMixin.validate_image_url(self, value)','file':'backend1/media.py','line':73,'group':'Images','summary':'Validates a profile image address before saving it.','logic':'Checks the image address against the authenticated user’s S3 folder and rejects values longer than the model field supports. Returns the canonical address.','signature':'def validate_image_url(self, value)','returns':'str | None · canonical image address.' ,'references':['helper-canonical-media']},
+    {'id':'method-media-validate-images','name':'MediaSerializerMixin.validate_img_url(self, value)','file':'backend1/media.py','line':81,'group':'Images','summary':'Validates exercise image addresses before saving them.','logic':'Checks each submitted image address against the authenticated user’s S3 folder and returns the canonical addresses as a list.','signature':'def validate_img_url(self, value)','returns':'list[str] · canonical image addresses.','references':['helper-canonical-media']},
 ]
+
+PYTHON_HELPER_RETURNS = {
+    'helper-generate-otp': 'str · a numeric one-time code.',
+    'helper-send-otp': 'bool · True when email sends successfully; False if delivery fails.',
+    'helper-send-track-update': 'None · sends a message through the Channels layer.',
+    'helper-resolve-catalog-exercise': 'Exercise | None · the catalog match, or None when no match exists.',
+    'helper-create-planned-workout': 'tuple[PlannedWorkout, bool] · the existing or new plan and whether it was created.',
+    'helper-spotify-configured': 'bool · whether server settings and encryption are ready.',
+    'helper-spotify-cipher': 'Fernet · the encryptor for stored Spotify credentials.',
+    'helper-spotify-token-request': 'dict · validated Spotify token response; provider failures raise an API error.',
+    'helper-spotify-store-tokens': 'None · saves encrypted tokens and their expiry on the connection.',
+    'helper-spotify-player-request': 'dict | None · playback JSON for reads, or None for successful controls.',
+    'helper-s3-client': 'botocore.client.S3 · configured AWS client.',
+    'helper-media-origin': 'str · canonical S3 bucket origin.',
+    'helper-display-media': 'str · temporary signed image URL, or the original URL when it is not in this bucket.',
+    'helper-media-key': 'str | None · S3 object key for this bucket, or None for another address.',
+    'helper-canonical-media': 'str | None · validated canonical image address.',
+}
 
 FRONTEND_METHODS = [
     ('Authentication', 'useAuth.checkToken()', 'Check the stored access token against GET /user/.', 'hooks/auth.ts'),
@@ -433,10 +470,57 @@ API_RELEASE_NOTES = [
 ]
 
 
+@lru_cache(maxsize=16)
+def _python_source_tree(source_path):
+    source_file = Path(__file__).resolve().parent.parent / source_path
+    try:
+        return ast.parse(source_file.read_text(encoding='utf-8'))
+    except (OSError, SyntaxError):
+        return None
+
+
+@lru_cache(maxsize=128)
+def _python_source_info(source_path, symbol):
+    """Read a Python definition’s signature and line for accurate source links."""
+    if ' route (' in symbol:
+        return None
+    tree = _python_source_tree(source_path)
+    if tree is None:
+        return None
+    owner, dot, method_name = symbol.rpartition('.')
+    if dot:
+        container = next((node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == owner), None)
+        definitions = container.body if container else []
+        definition = next((node for node in definitions if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == method_name), None)
+    else:
+        definition = next((node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == symbol), None)
+    if definition is None:
+        return None
+    prefix = 'async def' if isinstance(definition, ast.AsyncFunctionDef) else 'def'
+    signature = f"{prefix} {definition.name}({ast.unparse(definition.args)})"
+    if definition.returns:
+        signature += f" -> {ast.unparse(definition.returns)}"
+    return {'line': definition.lineno, 'signature': signature}
+
+
+def _reference_id(prefix, value):
+    slug = ''.join(character.lower() if character.isalnum() else '-' for character in value)
+    while '--' in slug:
+        slug = slug.replace('--', '-')
+    return f'{prefix}-{slug.strip("-")}'
+
+
+def _python_helper_reference(item):
+    source_info = _python_source_info(item['file'], item['name'].split('(')[0]) or {}
+    line = source_info.get('line', item['line'])
+    return dict(item, **source_info, returns=item.get('returns') or PYTHON_HELPER_RETURNS.get(item['id']),
+                url=f"{GITHUB_SOURCE_ROOT}{item['file']}#L{line}")
+
+
 def openapi_document():
     """Build a lightweight OpenAPI 3.1 reference from the published route catalog."""
     paths = {}
-    python_views = {}
+    python_methods = {}
     for group, method, path, summary, authenticated, request, response, frontend in ENDPOINTS:
         route = path.replace('{saved_workout_id}', '{saved_workout_id}').replace('{planned_workout_id}', '{planned_workout_id}').replace('{workout_id}', '{workout_id}').replace('{user_id}', '{user_id}')
         contract = API_CONTRACTS.get(path, ([], response))
@@ -461,22 +545,41 @@ def openapi_document():
         source = PYTHON_HANDLERS.get((method, path))
         if source:
             source_path, line, symbol = source
-            view_name = symbol.split(' route (', 1)[0].rsplit('.', 1)[0] if ' route (' in symbol else symbol.rsplit('.', 1)[0] if '.' in symbol else symbol
-            view_id = f"view-{source_path.replace('/', '-')}-{view_name}".lower().replace('_', '-')
-            view_id = ''.join(character if character.isalnum() or character == '-' else '-' for character in view_id)
-            action = symbol.rsplit('.', 1)[-1] if '.' in symbol else 'function view'
+            is_framework = ' route (' in symbol
+            if is_framework:
+                view_name = symbol.split(' route (', 1)[0]
+                action = method.lower()
+                method_symbol = f'{view_name}.{action}'
+                method_id = _reference_id('framework-simplejwt', method_symbol)
+                signature = None
+                line = source[1]
+            else:
+                method_symbol = symbol
+                view_name, separator, action = symbol.rpartition('.')
+                if not separator:
+                    view_name, action = symbol, 'function'
+                method_id = _reference_id('python-method', f'{source_path}-{method_symbol}')
+                source_info = _python_source_info(source_path, method_symbol)
+                if source_info:
+                    line = source_info['line']
+                    signature = source_info['signature']
+                else:
+                    signature = f'{method_symbol}(...)'
             logic, helper_names = PYTHON_HANDLER_DETAILS.get(symbol, (summary, []))
             helper_ids = []
             for helper in helper_names:
                 helper_id = next((item['id'] for item in PYTHON_HELPERS if item['name'].split('(')[0].split('.')[-1] == helper.split('.')[-1]), None)
                 if helper_id and helper_id not in helper_ids:
                     helper_ids.append(helper_id)
-            component_names = [name for name in helper_names if name.endswith('Serializer')]
-            view_entry = python_views.setdefault(view_id, {
-                'id': view_id,
-                'name': view_name,
-                'file': source_path,
-                'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
+            component_names = [name for name in helper_names if name.endswith('Serializer') or name.endswith('Field')]
+            view_entry = python_methods.setdefault(method_id, {
+                'id': method_id,
+                'name': method_symbol,
+                'class_name': view_name if '.' in method_symbol else None,
+                'signature': signature,
+                'kind': 'framework' if is_framework else 'handler' if '.' in method_symbol else 'function',
+                'file': source_path if not is_framework else None,
+                'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}' if not is_framework else None,
                 'summary': PYTHON_VIEW_SUMMARIES.get(view_name, summary),
                 'group': group,
                 'endpoints': [],
@@ -496,10 +599,11 @@ def openapi_document():
                 'deprecation_notice': operation.get('x-deprecation-notice'),
             })
             operation['x-python-handler'] = {
-                'id': view_id, 'name': view_name,
+                'id': method_id, 'name': method_symbol,
                 'handler': action,
-                'file': source_path,
-                'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
+                'file': source_path if not is_framework else None,
+                'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}' if not is_framework else None,
+                'framework': 'Django REST Framework SimpleJWT' if is_framework else None,
             }
         openapi_parameters = []
         for name, value_type, required, description in parameters:
@@ -533,8 +637,8 @@ def openapi_document():
         'x-frontend-methods': [dict(group=group, name=name, summary=summary, source=source,
             parameters=[dict(name=param, type=value_type, required=required, description=description) for param, value_type, required, description in FRONTEND_CONTRACTS.get(name, ([], 'void'))[0]],
             returns=FRONTEND_CONTRACTS.get(name, ([], 'Return type is documented in the method description.'))[1]) for group, name, summary, source in FRONTEND_METHODS],
-        'x-python-methods': list(python_views.values()),
-        'x-python-helpers': [dict(item, url=f"{GITHUB_SOURCE_ROOT}{item['file']}#L{item['line']}") for item in PYTHON_HELPERS],
+        'x-python-methods': list(python_methods.values()),
+        'x-python-helpers': [_python_helper_reference(item) for item in PYTHON_HELPERS],
         'x-data-models': [
             {'name': 'User', 'summary': 'A person’s account and profile. Private authentication fields stay on the server.', 'fields': [{'name':'id','type':'UUID','description':'Stable account identifier.'},{'name':'email','type':'string','description':'Unique sign-in email.'},{'name':'username','type':'string | null','description':'Optional public display name.'},{'name':'image_url','type':'string | null','description':'Profile image address.'},{'name':'height','type':'decimal | null','description':'Optional profile measurement.'},{'name':'weight','type':'decimal | null','description':'Optional current weight.'},{'name':'goal_weight','type':'decimal | null','description':'Optional target weight.'},{'name':'phone_number','type':'string | null','description':'Optional unique phone number.'},{'name':'streak','type':'integer','description':'Current activity streak.'},{'name':'last_active','type':'date | null','description':'Most recent activity date.'},{'name':'is_private','type':'boolean','description':'Whether profile details are private.'},{'name':'is_searchable','type':'boolean','description':'Whether others can find the profile.'}], 'relationships':['One account can own uploaded, saved, and planned workouts.'], 'source': {'file':'backend1/models.py','line':13,'url':f'{GITHUB_SOURCE_ROOT}backend1/models.py#L13'}},
             {'name': 'Exercise', 'summary': 'A built-in exercise in the shared exercise library.', 'fields': [{'name':'id','type':'UUID','description':'Stable exercise identifier.'},{'name':'name','type':'string','description':'Exercise name.'},{'name':'aliases','type':'JSON | null','description':'Alternative names.'},{'name':'primaryMuscles','type':'JSON | null','description':'Main muscles worked.'},{'name':'secondaryMuscles','type':'JSON | null','description':'Other muscles worked.'},{'name':'force, level, mechanic, equipment, category','type':'string | null','description':'Exercise classification details.'},{'name':'instructions, tips','type':'JSON | null','description':'Step-by-step guidance and tips.'},{'name':'description','type':'string | null','description':'Additional exercise information.'},{'name':'img_url','type':'JSON | null','description':'Exercise image addresses.'},{'name':'date_created, date_updated','type':'datetime','description':'Record creation and last update times.'}], 'relationships':['SavedWorkout records can point to a library Exercise.'], 'source': {'file':'backend1/models.py','line':56,'url':f'{GITHUB_SOURCE_ROOT}backend1/models.py#L56'}},
