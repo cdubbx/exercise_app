@@ -61,6 +61,39 @@ npm start</code></pre>
 <tr><td>iOS simulator</td><td>http://localhost:8000/api</td></tr><tr><td>Android emulator</td><td>http://10.0.2.2:8000/api</td></tr><tr><td>Physical device</td><td>HTTPS address reachable from the device</td></tr></tbody></table>
 <p>Restart Metro after editing the frontend .env. Keep cloud/provider credentials on the backend. Local email uses Django's console backend; local images use the media volume when debug mode is enabled and S3 is not configured.</p></section>
 
+<section><h2>Testing and the automatic checks</h2>
+<p>The project uses two test frameworks. The backend uses Django's test runner with Django <code>TestCase</code> and REST Framework's <code>APIClient</code>. The mobile app uses Jest with the React Native preset. Tests create temporary test data and check what the app returns; provider calls such as Spotify, OpenAI, and S3 are usually replaced with test doubles so a test does not need real accounts or paid API access.</p>
+<p><a href="https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/.github/workflows/core-checks.yml">The GitHub Actions workflow</a> runs on every push and pull request. It has two jobs:</p>
+<ul><li><strong>Backend:</strong> installs the Python requirements, runs all <code>backend1</code> tests (including integration tests), and checks that database models do not need an uncommitted migration.</li><li><strong>Mobile app:</strong> installs the locked Node packages, runs Jest, checks TypeScript types, and lints the core screens and services.</li></ul>
+<p>If any check fails, GitHub marks that run as failed and shows the step that needs attention. These checks do not publish the app or deploy the server. The current production deploy is a separate step you run after reviewing the passing checks.</p>
+<div class="diagram mermaid">
+flowchart LR
+  Change[Make a code change] --> Push[Push branch or open pull request]
+  Push --> CI[GitHub Actions checks]
+  CI --> Backend[Backend tests and migration check]
+  CI --> Mobile[Mobile tests, type check, and lint]
+  Backend --> Result{All checks pass?}
+  Mobile --> Result
+  Result -->|No| Fix[Review failure and update code]
+  Fix --> Push
+  Result -->|Yes| Review[Review the change]
+  Review --> Deploy[Manually deploy backend to Heroku]
+</div>
+<p>Run the same checks locally before pushing. Start Docker Compose from the backend folder with <code>docker compose up --build -d</code>, then:</p>
+<pre><code># Backend: all backend1 tests, including test_integrations.py
+docker compose exec backend python manage.py test backend1
+
+# Backend: check model changes have a matching migration
+docker compose exec backend python manage.py makemigrations --check --dry-run
+
+# Mobile app: from exercisefrontend
+npm ci
+npm test -- --runInBand
+npm run typecheck
+npm run lint:core</code></pre>
+<p>The backend tests cover account creation and sign-in, workout saving and calendar planning, privacy and permissions, image validation, Exercise Bot behavior, and integration success and failure cases. The mobile tests check key app behavior such as API requests, chat, and calendar flows. A passing automated test is a useful safety check; it does not replace opening the changed screen on iOS and Android or checking a real production integration when one changes.</p>
+<p><strong>What “migration check” means:</strong> Django compares the current database models with the migration files that describe database changes. The check fails if a code change needs a new migration file. It does not change the production database.</p></section>
+
 
 
 <section><h2>Calendar planning and edits</h2>

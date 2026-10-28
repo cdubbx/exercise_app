@@ -52,6 +52,11 @@ class CoreAppTests(TestCase):
         self.assertContains(guide, '/docs/integrations/s3/')
         self.assertContains(guide, '/docs/integrations/spotify/')
         self.assertContains(guide, '/docs/integrations/exercise-bot/')
+        self.assertContains(guide, 'Testing and the automatic checks')
+        self.assertContains(guide, 'GitHub Actions workflow')
+        self.assertContains(guide, 'npm test -- --runInBand')
+        self.assertContains(guide, 'makemigrations --check --dry-run')
+        self.assertContains(guide, 'separate step you run')
         self.assertContains(guide, 'mermaid')
         self.assertNotContains(guide, 'Simple word guide')
         integrations = {
