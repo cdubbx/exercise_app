@@ -49,7 +49,7 @@ class CoreAppTests(TestCase):
         integrations = {
             '/docs/integrations/s3/': ('AWS S3 setup and access', 'multipart/form-data', 'ImageUploadView.post'),
             '/docs/integrations/spotify/': ('What happens when you connect', 'SPOTIFY_TOKEN_ENCRYPTION_KEY', 'Spotify Premium'),
-            '/docs/integrations/exercise-bot/': ('Exercise Bot and calendar proposals', 'OpenAI Responses API', '20 requests per minute'),
+            '/docs/integrations/exercise-bot/': ('What this integration does', 'OpenAI Responses API', 'prompt_cache_key', 'store: false', '20 chat requests per signed-in user per minute', 'resolve_catalog_exercise'),
         }
         for url, phrases in integrations.items():
             response = self.client.get(url)

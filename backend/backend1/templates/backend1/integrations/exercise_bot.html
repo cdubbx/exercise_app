@@ -1,22 +1,89 @@
-<section><h2>Exercise Bot and calendar proposals</h2>
-<p>The user explicitly allows chat sharing in the app. Django sends the current question and recent conversation to the OpenAI Responses API with store=false and a stable, user-scoped prompt cache key. The bot can propose a calendar workout, but it cannot save one by itself: every exercise must match the catalog, then the user reviews and taps Add to calendar.</p>
+<section><h2>What this integration does</h2>
+<p>The Exercise Bot is a chat feature for general workout planning and exercise questions. The phone app sends a question to the Exercise Plus server. The server checks the request, sends it to OpenAI’s Responses API, and returns the answer to the app. When you clearly ask to schedule a workout, the bot can prepare a calendar proposal using exercises from the app’s library.</p>
+<p>The bot cannot write directly to the calendar. The app shows the proposed day, time, exercises, sets, and reps; you review it and tap <b>Add to calendar</b>. The normal workout API then saves the plan under your account.</p></section>
+
+<section><h2>How a chat request moves through the app</h2>
+<ol>
+<li>You must be signed in, and the app requires your AI-sharing consent before sending a question.</li>
+<li>The app sends <code>POST /api/gpt-chat/</code> with your current <code>query</code> and recent conversation messages. Each history item has a <code>role</code> (<code>user</code> or <code>assistant</code>) and text <code>content</code>. The app includes up to 12 recent messages.</li>
+<li>Django checks that the question is present and no longer than 2,000 characters. It checks the conversation format and limits each history message to 2,000 characters. It then applies a limit of 20 chat requests per user per minute.</li>
+<li>The server adds its fixed coaching instructions. They ask for practical, concise advice; safe, beginner-aware training suggestions; no diagnosis or treatment; and phone-friendly Markdown without tables or HTML.</li>
+<li>The server sends the message, recent history, instructions, and a calendar-proposal tool definition to OpenAI. The API key stays in the server configuration. The phone never receives it.</li>
+<li>The server reads the generated reply. If OpenAI proposes a calendar action, Django checks the requested day, time, exercise count, and each exercise against the app’s library before returning a proposal.</li>
+<li>The app displays the reply and, when available, a reviewable workout card. You choose whether to add it. The app submits the accepted plan through the planned-workout API.</li>
+</ol>
 <div class="diagram mermaid">
 sequenceDiagram
- actor User
- participant App as React Native app
- participant API as Django API
+ actor You
+ participant App as Exercise Plus app
+ participant API as Exercise Plus server
  participant OpenAI as OpenAI Responses API
- participant DB as Workout database
- User->>App: Allow sharing and ask a question
- App->>API: POST gpt-chat with JWT and recent messages
- API->>API: Validate and apply per-user throttle
- API->>OpenAI: Instructions, conversation, cache key; store=false
- OpenAI-->>API: Reply and optional calendar proposal
- API->>DB: Resolve proposed exercises against catalog
- API-->>App: Reply and catalog-backed proposal
- User->>App: Review and confirm Add to calendar
- App->>API: POST plannedWorkouts with selected day/time/exercises
- API->>DB: Validate and save plan atomically
- API-->>App: Saved calendar workout
-</div>
-<p>The bot endpoint is limited to 20 requests per minute by its configured throttle scope. Configure OPENAI_API_KEY on the backend. OPENAI_MODEL is optional and defaults to gpt-4.1-mini.</p></section>
+ participant Library as Exercise library
+ participant Calendar as Workout calendar
+ You->>App: Ask a question or request a scheduled workout
+ App->>API: POST /api/gpt-chat with sign-in token and recent chat
+ API->>API: Check sign-in, input limits and request rate
+ API->>OpenAI: Coaching instructions, chat and proposal-tool rules
+ OpenAI-->>API: Reply and optional proposed plan
+ API->>Library: Match proposed exercise names to real exercises
+ API-->>App: Reply and only a checked proposal
+ App-->>You: Show plan with Add to calendar action
+ You->>App: Review and confirm
+ App->>Calendar: Save confirmed plan
+ Calendar-->>App: Saved workout details
+</div></section>
+
+<section><h2>What the app sends</h2>
+<p>The request uses the signed-in user’s normal Exercise Plus access token. The bot does not need your Spotify or AWS credentials. The server adds previous chat turns only to give OpenAI enough context to answer follow-up questions.</p>
+<pre><code>POST /api/gpt-chat/
+Authorization: Bearer &lt;Exercise Plus access token&gt;
+Content-Type: application/json
+
+{
+  "query": "Plan a back workout for Monday evening",
+  "conversation": [
+    {"role": "user", "content": "I prefer dumbbells"},
+    {"role": "assistant", "content": "I can suggest a dumbbell plan."}
+  ]
+}</code></pre>
+<p>The server accepts only <code>user</code> and <code>assistant</code> history roles. It passes no more than the latest 12 history items to OpenAI. The current question and each history message must be between 1 and 2,000 characters. If the app is not signed in, the request is rejected.</p></section>
+
+<section><h2>How workout proposals are checked</h2>
+<p>The server gives OpenAI a structured function called <code>propose_calendar_workout</code>. This is a request to prepare data in a known shape; it is not permission to write to your account. The proposal has one weekday, one time slot, and between 1 and 8 exercises. Each exercise needs a library name, a set count from 1 to 100, and a repetition count from 1 to 1,000. Time slots are Morning, Afternoon, Evening, or Anytime; Anytime is used when you did not specify a time.</p>
+<p>Django looks up every proposed exercise in the library, including a small set of common alternate names such as “pull-ups” for “Pullups.” If even one exercise cannot be matched, the server returns no calendar action and tells the bot to ask for a library exercise name. It does not quietly save a partial plan.</p>
+<p>A valid reply contains <code>gpt_response</code>, an empty <code>exercises</code> list retained for the current app response format, and <code>calendar_action</code> set to the checked plan (or <code>null</code> when there is no usable proposal). The app’s Add button is the point where the user confirms. Saving then goes through the planned-workout endpoint, which checks the workout again and stores it in the selected weekday/time slot.</p>
+<pre><code>{
+  "gpt_response": "I prepared this evening workout for Monday. Review it, then tap Add to calendar.",
+  "exercises": [],
+  "calendar_action": {
+    "day": "Monday",
+    "time_of_day": "Evening",
+    "workouts": [
+      {"exercise": {"id": "…", "name": "Bent Over Barbell Row"}, "sets": 3, "reps": 10}
+    ]
+  }
+}</code></pre>
+<p>A chat reply by itself is only coaching text. It does not mean anything has been placed on the calendar.</p></section>
+
+<section><h2>Prompt caching and chat storage</h2>
+<p>The server sends the same coaching instructions and tool rules before the changing conversation. OpenAI prompt caching can reuse an identical starting portion of a request when the model and cache rules allow it. Reuse can reduce the cost of repeated input and may reduce processing time; it does not reuse the answer, so each reply is generated anew. The cache needs a sufficiently long, matching prompt prefix. The minimum length depends on the selected model, so a cache hit is not guaranteed.</p>
+<p>Exercise Plus sends a stable <code>prompt_cache_key</code> derived from a one-way hash of the account’s internal ID. The same account therefore uses a consistent cache group; the raw account ID is not sent as the key. This key helps group or route requests for caching. It is not chat history, a sign-in token, or a separate privacy boundary.</p>
+<p>The server sets <code>store: false</code> on Responses API requests. This tells the Responses API not to retain the response as a stored response object. It does not, by itself, mean OpenAI has zero data retention for the account: other provider data controls and abuse-monitoring rules are separate. Prompt caching can also temporarily hold encrypted cached input data under OpenAI’s cache rules. The app sends the conversation history it has for the chat on each request, while the Exercise Plus chat endpoint does not write these messages into its own chat-history database. Review the current <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noopener noreferrer">OpenAI API data controls</a> and <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noopener noreferrer">prompt caching documentation</a> for provider-side handling.</p>
+<p>The backend logs the total input-token count and any cached-input-token count returned by OpenAI. It does not log the question or answer in that usage message.</p></section>
+
+<section><h2>Configuration and limits</h2>
+<table><thead><tr><th>Setting</th><th>Purpose</th><th>Required?</th></tr></thead><tbody>
+<tr><td><code>OPENAI_API_KEY</code></td><td>Secret key the server uses to call OpenAI. Keep it in protected server configuration; never put it in the mobile app or source control.</td><td>Yes</td></tr>
+<tr><td><code>OPENAI_MODEL</code></td><td>Selects the model used for replies. If unset, the backend uses <code>gpt-4.1-mini</code>.</td><td>No</td></tr>
+</tbody></table>
+<p>The backend allows 20 chat requests per signed-in user per minute. A limit response is HTTP 429; wait and try again. If the API key is missing or OpenAI has no available API credits, the app receives a service-unavailable response. Temporary network or provider failures also return a retryable service error. The server does not expose the provider’s secret error details to the app.</p>
+<p>OpenAI API billing is separate from a ChatGPT subscription. The API account needs an active payment method or available credits for requests to succeed.</p></section>
+
+<section><h2>Where to find the code</h2>
+<ul>
+<li><a href="https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/backend1/views.py#L565" target="_blank" rel="noopener noreferrer"><code>ExerciseChatView</code></a> checks input, calls OpenAI, validates proposals, and formats the response.</li>
+<li><a href="/docs/#backend-method-backend1-views-py-exercisechatview-post">Backend method reference · <code>ExerciseChatView.post</code></a> documents the server method.</li>
+<li><a href="https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/backend1/views.py#L36" target="_blank" rel="noopener noreferrer"><code>resolve_catalog_exercise</code></a> matches names and common alternatives to the exercise library.</li>
+<li><a href="/docs/#backend-method-backend1-views-py-userplannedworkoutsview-post">Backend method reference · <code>UserPlannedWorkoutsView.post</code></a> lists the calendar save request.</li>
+</ul>
+<p>Use the API reference for parameter types and return details for <code>POST /api/gpt-chat/</code> and <code>POST /api/plannedWorkouts/</code>.</p></section>
