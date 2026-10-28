@@ -40,6 +40,10 @@ class CoreAppTests(TestCase):
         self.assertContains(guide, 'Develop with Docker')
         self.assertContains(guide, 'AWS S3 setup and access')
         self.assertContains(guide, 'mermaid')
+        self.assertNotContains(guide, 'Simple word guide')
+        self.assertContains(guide, 'What happens when you connect')
+        self.assertContains(guide, 'SPOTIFY_TOKEN_ENCRYPTION_KEY')
+        self.assertContains(guide, 'Spotify Premium')
         document = self.client.get('/api-reference.json')
         self.assertEqual(document.status_code, 200)
         import json
