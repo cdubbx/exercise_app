@@ -45,7 +45,12 @@
     .frontend { display:inline-block; margin-top:9px; color:#555; font-size:12px; }
     .python-handler { display:inline-block; margin:9px 12px 0 0; color:#111; font-size:12px; font-weight:650; text-underline-offset:3px; }
     .method-name { font-weight:700; }
-    .method-signature { margin:8px 0 12px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:#fafafa; font-weight:600; }
+    .view-legend { background:#f5f5f5; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:18px; }
+    .view-legend h2 { font-size:17px; margin:0 0 7px; }
+    .view-legend p { margin:5px 0; color:#444; }
+    .logic { border-left:3px solid #111; padding:9px 12px; background:#f7f7f7; border-radius:0 7px 7px 0; }
+    .reference-links { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:13px; }
+    .reference-links a { font-weight:650; text-underline-offset:3px; }
     .contract { width:100%; border-collapse:collapse; margin:10px 0 14px; font-size:13px; }
     .contract th, .contract td { border-bottom:1px solid var(--line); text-align:left; vertical-align:top; padding:8px 9px; }
     .contract th { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
@@ -91,8 +96,8 @@
       <p id="method-counts">Loading the method list…</p>
       <p>A <b>parameter</b> is a value you send. Its <b>type</b> tells you what kind of value to use, such as text (<code>string</code>), a whole number (<code>integer</code>), true/false (<code>boolean</code>), or a list (<code>[]</code>). <b>Returns</b> describes the value you get back. “Deprecated” means an older method is still listed for clarity, but new code should use its replacement.</p>
       <p><code>GET</code> looks up information, <code>POST</code> sends or creates something, <code>PATCH</code> changes part of something, and <code>DELETE</code> removes something. Search by task name, such as “reset password” or “add workout.”</p>
-      <p>On backend entries, select <b>Python · …</b> to jump to that method in Backend methods. Each method entry also links to its source code. Data models describe what the server saves; serializers describe which fields the API accepts and returns.</p>
-      <p>The Backend methods section includes the Python signature, what the method returns, the endpoint’s request fields and types, possible HTTP results, and a direct link to the implementation.</p>
+      <p>On backend entries, select <b>Python view · …</b> to jump to the view class that handles the request. Each class appears once, describes what its requests do, and links to the source. Data models describe what the server saves; serializers describe how request and response data is checked and shaped.</p>
+      <p>The Backend methods section explains the request flow and calls out meaningful helpers and serializers. Use the Backend API section for each request’s field types, return type, and HTTP results.</p>
     </section>
     <div class="toolbar">
       <div class="tabs" role="group" aria-label="Reference section">
@@ -137,12 +142,15 @@
       card.append(make('div','contract-title','Returns'));
       card.append(make('p','return-type',value));
     }
+    function apiId(method, path) {
+      return `api-${method.toLowerCase()}-${path.replace(/^\/+|\/+$/g, '').replaceAll('/', '-').replace(/[{}]/g, '')}`;
+    }
     function render() {
       if (!spec) return;
       const term = search.value.trim().toLowerCase();
       const entries = view === 'backend'
-        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice'], python: operation['x-python-handler']})))
-        : view === 'methods' ? spec['x-python-methods']
+        ? Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, operation]) => ({id: apiId(method,path), group: operation.description.split('.')[0], method: method.toUpperCase(), path, summary: operation.summary, description: operation.description, auth: operation.security?.length > 0, parameters: operation['x-parameters'] || [], returns: operation['x-return-type'], deprecated: operation.deprecated, deprecationNotice: operation['x-deprecation-notice'], python: operation['x-python-handler']})))
+        : view === 'methods' ? [...(spec['x-python-methods'] || []).map(item => ({...item, kind:'view'})), ...(spec['x-python-helpers'] || []).map(item => ({...item, kind:'helper'}))]
         : view === 'models' ? spec['x-data-models']
         : view === 'serializers' ? spec['x-serializers']
         : view === 'frontend' ? spec['x-frontend-methods'] : spec['x-api-release-notes'];
@@ -150,6 +158,18 @@
       const groups = [...new Set(filtered.map(item => item.group || (view === 'methods' ? item.file : view === 'models' ? 'Database records' : view === 'serializers' ? 'API data rules' : '')))].filter(Boolean);
       content.replaceChildren();
       if (!filtered.length) { content.append(make('div', 'empty', 'No matching entries.')); return; }
+      if (view === 'methods') {
+        const legend = make('section', 'view-legend');
+        legend.append(make('h2', '', 'Request-method legend'), make('p', '', 'These are shared Django REST Framework entry points. The same method name can mean different work in different view classes; the class entries below explain that work.'));
+        const definitions = [
+          ['HTTP GET → get(self, request)', 'Handle a read request. The class decides which records to look up and what to return.'],
+          ['HTTP POST → post(self, request)', 'Handle submitted data or an action. The class decides what to validate, create, update, or send to another service.'],
+          ['HTTP DELETE → delete(self, request, …)', 'Handle a removal request. The class decides which owned record can be removed.'],
+          ['List-view hook → get_queryset(self)', 'Tell a list view which records are visible. Django REST Framework then serializes and paginates them.'],
+        ];
+        definitions.forEach(([method, meaning]) => legend.append(make('p', '', `${method} · ${meaning}`)));
+        content.append(legend);
+      }
       for (const group of groups) {
         const section = make('section');
         const title = make('div', 'section-title');
@@ -160,23 +180,42 @@
           const card = make('article');
           if (view === 'methods') {
             card.id = `backend-method-${item.id}`;
-            card.append(make('div', 'method-name', item.name), make('p', '', item.summary));
-            card.append(make('div', 'contract-title', 'Python signature'));
-            card.append(make('div', 'method-signature', item.signature));
-            card.append(make('p', 'return-type', `Python result · ${item.python_return}`));
-            card.append(make('p', 'return-type', 'self is the view instance. request is Django REST Framework’s request object, which contains the signed-in user, URL, query values, and submitted body. The parameter table below documents the public values the app sends; these are not always separate Python function arguments.'));
-            for (const endpoint of item.endpoints) {
-              const heading = make('div', 'contract-title', `HTTP endpoint · ${endpoint.method} ${endpoint.path}`);
-              card.append(heading, make('p', '', endpoint.summary));
-              addContractTable(card, 'Request parameters', endpoint.parameters);
-              addReturn(card, endpoint.returns);
-              const statuses = Object.entries(endpoint.http_responses || {}).map(([status, response]) => `${status} · ${response.description}`).join(' | ');
-              if (statuses) card.append(make('p', 'return-type', `HTTP outcomes · ${statuses}`));
-              if (endpoint.deprecated) card.append(make('p', 'deprecated', `Deprecated · ${endpoint.deprecation_notice || 'Use the replacement endpoint.'}`));
+            if (item.kind === 'helper') {
+              card.append(make('div', 'method-name', item.name), make('p', '', item.summary), make('p', 'logic', item.logic));
+              const source = make('a', 'python-handler', 'Open helper source ↗');
+              source.href = item.url; source.target = '_blank'; source.rel = 'noopener noreferrer';
+              card.append(source);
+            } else {
+              card.append(make('div', 'method-name', item.name), make('p', '', item.summary));
+              for (const endpoint of item.endpoints) {
+                const heading = make('div', 'contract-title', `${endpoint.method} ${endpoint.path}`);
+                card.append(heading, make('p', 'logic', endpoint.business_logic));
+                const references = make('div', 'reference-links');
+                for (const helperId of endpoint.helpers) {
+                  const helper = spec['x-python-helpers'].find(value => value.id === helperId);
+                  if (!helper) continue;
+                  const link = make('a', '', `Helper · ${helper.name} ↓`);
+                  link.href = `#backend-method-${helper.id}`;
+                  link.dataset.backendMethod = helper.id;
+                  references.append(link);
+                }
+                for (const component of endpoint.components) {
+                  const link = make('a', '', `Serializer · ${component} ↓`);
+                  link.href = `#serializer-${component}`;
+                  link.dataset.serializer = component;
+                  references.append(link);
+                }
+                const contractLink = make('a', '', 'Request fields and return type ↗');
+                contractLink.href = `#${endpoint.id}`;
+                contractLink.dataset.apiOperation = endpoint.id;
+                references.append(contractLink);
+                const source = make('a', '', 'Source code ↗');
+                source.href = endpoint.source_url; source.target = '_blank'; source.rel = 'noopener noreferrer';
+                references.append(source);
+                card.append(references);
+                if (endpoint.deprecated) card.append(make('p', 'deprecated', `Deprecated · ${endpoint.deprecation_notice || 'Use the replacement endpoint.'}`));
+              }
             }
-            const source = make('a', 'python-handler', 'Open Python source ↗');
-            source.href = item.url; source.target = '_blank'; source.rel = 'noopener noreferrer';
-            card.append(source);
           } else if (view === 'models') {
             card.id = `data-model-${item.name}`;
             card.append(make('div', 'method-name', item.name), make('p', '', item.summary));
@@ -193,6 +232,7 @@
             source.href = item.source.url; source.target = '_blank'; source.rel = 'noopener noreferrer'; card.append(source);
           } else
           if (view === 'backend') {
+            card.id = item.id;
             const top = make('div', 'route-top');
             top.append(make('span', `verb ${item.method.toLowerCase()}`, item.method), make('code', 'route', item.path), make('span', 'auth', item.auth ? 'Sign-in required' : 'No sign-in needed'));
             card.append(top, make('h3', '', item.summary));
@@ -204,10 +244,10 @@
             if (item.deprecationNotice) card.append(make('p','return-type',item.deprecationNotice));
             if (responseText && !item.returns) { card.append(make('p', '', `Response · ${responseText}`)); }
             if (item.python) {
-              const link = make('a','python-handler',`Python · ${item.python.name} ↓`);
+              const link = make('a','python-handler',`Python view · ${item.python.name} ↓`);
               link.href = `#backend-method-${item.python.id}`;
               link.setAttribute('data-backend-method', item.python.id);
-              link.setAttribute('aria-label', `Jump to Python method ${item.python.name} in Backend methods`);
+              link.setAttribute('aria-label', `Jump to view class ${item.python.name} in Backend methods`);
               card.append(link);
             }
             if (frontendText) card.append(make('span', 'frontend', `Client · ${frontendText}`));
@@ -252,10 +292,33 @@
       render();
     }));
     content.addEventListener('click', event => {
+      const apiLink = event.target.closest('[data-api-operation]');
+      if (apiLink) {
+        event.preventDefault();
+        view = 'backend';
+        search.value = '';
+        history.replaceState(null, '', `#${apiLink.dataset.apiOperation}`);
+        document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === view)));
+        render();
+        requestAnimationFrame(() => document.getElementById(apiLink.dataset.apiOperation)?.scrollIntoView({behavior:'smooth', block:'start'}));
+        return;
+      }
+      const serializerLink = event.target.closest('[data-serializer]');
+      if (serializerLink) {
+        event.preventDefault();
+        view = 'serializers';
+        search.value = '';
+        history.replaceState(null, '', `#serializer-${serializerLink.dataset.serializer}`);
+        document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === view)));
+        render();
+        requestAnimationFrame(() => document.getElementById(`serializer-${serializerLink.dataset.serializer}`)?.scrollIntoView({behavior:'smooth', block:'start'}));
+        return;
+      }
       const link = event.target.closest('[data-backend-method]');
       if (!link) return;
       event.preventDefault();
       view = 'methods';
+      search.value = '';
       history.replaceState(null, '', `#backend-method-${link.dataset.backendMethod}`);
       document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === view)));
       render();
@@ -268,14 +331,16 @@
         spec = data;
         const requestCount = Object.values(spec.paths).reduce((sum, methods) => sum + Object.keys(methods).length, 0);
         const methodCount = (spec['x-frontend-methods'] || []).length;
-        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests, ${(spec['x-python-methods'] || []).length} backend methods, ${(spec['x-data-models'] || []).length} data models, ${(spec['x-serializers'] || []).length} serializers, and ${methodCount} phone-app methods. Entries show fields, types, behavior, and source files.`;
+        document.getElementById('method-counts').textContent = `This reference includes ${requestCount} server requests, ${(spec['x-python-methods'] || []).length} backend view classes, ${(spec['x-python-helpers'] || []).length} shared helpers, ${(spec['x-data-models'] || []).length} data models, ${(spec['x-serializers'] || []).length} serializers, and ${methodCount} phone-app methods.`;
         const initialHash = location.hash.slice(1);
         if (initialHash.startsWith('backend-method-')) view = 'methods';
+        else if (initialHash.startsWith('serializer-')) view = 'serializers';
         else if (initialHash === 'data-models') view = 'models';
         else if (initialHash === 'serializers') view = 'serializers';
         document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === view)));
         render();
         if (initialHash.startsWith('backend-method-')) requestAnimationFrame(() => document.getElementById(initialHash)?.scrollIntoView());
+        if (initialHash.startsWith('serializer-') || initialHash.startsWith('api-')) requestAnimationFrame(() => document.getElementById(initialHash)?.scrollIntoView());
       })
       .catch(() => { content.className = 'empty'; content.textContent = 'The reference could not be loaded. Please refresh this page.'; });
   </script>

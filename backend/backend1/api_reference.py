@@ -49,40 +49,6 @@ ENDPOINTS = [
 # branch. Line anchors open the actual request handler (or URL registration for
 # framework-provided JWT handlers that are not defined in this repository).
 GITHUB_SOURCE_ROOT = 'https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/exercise-backend/backend/'
-# Python signatures copied from the request handlers so the methods section
-# documents the code shape as well as the HTTP contract exposed to the app.
-PYTHON_SIGNATURES = {
-    'RegisterAPIView.post': 'def post(self, request)', 'VerifyOTPAPIView.post': 'def post(self, request)',
-    'ResendOTPAPIView.post': 'def post(self, request)', 'LoginAPIView.post': 'def post(self, request)',
-    'SigninWIthApple.post': 'def post(self, request)', 'UserView.get': 'def get(self, request)',
-    'EditUserView.post': 'def post(self, request)', 'DeleteUserAccountView.delete': 'def delete(self, request)',
-    'LogoutView.post': 'def post(self, request)', 'RequestPasswordResetAPIView.post': 'def post(self, request)',
-    'ResetPasswordAPIView.post': 'def post(self, request)', 'password_reset_landing': 'def password_reset_landing(request)',
-    'ExerciseListView.get_queryset': 'def get_queryset(self)', 'GetBodyPartWorkOutView.get': 'def get(self, request)',
-    'SaveWorkOutView.post': 'def post(self, request)', 'UserSavedWorkoutsView.get': 'def get(self, request, *args, **kwargs)',
-    'UserPlannedWorkoutsView.get': 'def get(self, request)', 'UserPlannedWorkoutsView.post': 'def post(self, request)',
-    'DeleteSavedWorkoutView.delete': 'def delete(self, request, saved_workout_id)',
-    'DeletePlannedWorkoutView.delete': 'def delete(self, request, planned_workout_id)',
-    'UploadWorkOutView.post': 'def post(self, request)', 'GetUserUploadedWorkOutView.get_queryset': 'def get_queryset(self)',
-    'DeleteUserUploadedWorkoutView.delete': 'def delete(self, request, workout_id)',
-    'ImageUploadView.post': 'def post(self, request)', 'UserListView.get_queryset': 'def get_queryset(self)',
-    'UserDetailView.get': 'def get(self, request, user_id)', 'TrackStreakView.post': 'def post(self, request)',
-    'UpdateNowPlayingView.post': 'def post(self, request)', 'NowPlayingForUserView.get': 'def get(self, request, user_id)',
-    'ReportIssueView.post': 'def post(self, request)', 'ExerciseChatView.post': 'def post(self, request)',
-    'SpotifyStatusView.get': 'def get(self, request)', 'SpotifyStatusView.delete': 'def delete(self, request)',
-    'SpotifyConnectView.post': 'def post(self, request)', 'SpotifyCallbackView.get': 'def get(self, request)',
-    'SpotifyPlayerView.get': 'def get(self, request)', 'SpotifyPlayerView.post': 'def post(self, request)',
-    'LegacySpotifyTokenView.post': 'def post(self, request)',
-}
-PYTHON_RETURNS = {
-    'ExerciseListView.get_queryset': 'QuerySet[Exercise] — filtered exercises for the list view.',
-    'GetUserUploadedWorkOutView.get_queryset': 'QuerySet[UserUploadWorkedouts] — records visible to this request.',
-    'UserListView.get_queryset': 'QuerySet[User] — profiles allowed by the visibility and search filters.',
-    'password_reset_landing': 'HttpResponse — HTML password reset form.',
-    'TokenObtainPairView route (Django REST Framework SimpleJWT)': 'Response — access and refresh JWT pair, supplied by SimpleJWT.',
-    'TokenRefreshView route (Django REST Framework SimpleJWT)': 'Response — refreshed access token, supplied by SimpleJWT.',
-    'TokenVerifyView route (Django REST Framework SimpleJWT)': 'Response — token validity result, supplied by SimpleJWT.',
-}
 PYTHON_HANDLERS = {
     ('POST', '/register/'): ('backend1/views.py', 101, 'RegisterAPIView.post'),
     ('POST', '/verify-otp/'): ('backend1/views.py', 119, 'VerifyOTPAPIView.post'),
@@ -127,6 +93,111 @@ PYTHON_HANDLERS = {
     ('POST', '/token/swap/'): ('backend1/spotify.py', 261, 'LegacySpotifyTokenView.post'),
     ('POST', '/spotify/token/refresh/'): ('backend1/spotify.py', 261, 'LegacySpotifyTokenView.post'),
 }
+
+# One description per routed view class. Request methods such as get/post are
+# framework entry points; these records explain the work performed inside them.
+PYTHON_VIEW_SUMMARIES = {
+    'RegisterAPIView': 'Creates a pending account and starts email verification.',
+    'VerifyOTPAPIView': 'Checks the one-time email code, activates the account, and starts a signed-in session.',
+    'ResendOTPAPIView': 'Sends a replacement verification code for an inactive account.',
+    'LoginAPIView': 'Finds an unambiguous account and issues app session tokens after password verification.',
+    'SigninWIthApple': 'Validates the Apple identity through the configured authentication backend and issues app tokens.',
+    'UserView': 'Refreshes the signed-in user’s activity streak and returns the profile.',
+    'EditUserView': 'Validates and saves allowed changes to the signed-in profile.',
+    'DeleteUserAccountView': 'Deletes the signed-in account and its related records.',
+    'LogoutView': 'Clears the legacy JWT cookie; mobile apps clear their own stored tokens.',
+    'TokenObtainPairView': 'Uses SimpleJWT’s built-in username/password flow to issue a token pair.',
+    'TokenRefreshView': 'Uses SimpleJWT’s built-in refresh flow to issue a fresh access token.',
+    'TokenVerifyView': 'Uses SimpleJWT’s built-in validation flow to check a token.',
+    'RequestPasswordResetAPIView': 'Creates a password-reset link and emails it to the account holder.',
+    'ResetPasswordAPIView': 'Checks the reset link, enforces password rules, and saves a new password.',
+    'password_reset_landing': 'Renders the browser form only when the emailed reset link is valid.',
+    'ExerciseListView': 'Filters and paginates the shared exercise catalog.',
+    'GetBodyPartWorkOutView': 'Returns catalog exercises that target the requested body part.',
+    'SaveWorkOutView': 'Validates a catalog exercise ID and saves that exercise once for the user.',
+    'UserSavedWorkoutsView': 'Loads saved exercises for the signed-in user.',
+    'UserPlannedWorkoutsView': 'Lists calendar entries and creates one or several planned exercises.',
+    'DeleteSavedWorkoutView': 'Deletes a saved exercise only when it belongs to the signed-in user.',
+    'DeletePlannedWorkoutView': 'Deletes a planned calendar entry only when it belongs to the signed-in user.',
+    'UploadWorkOutView': 'Validates and saves a user-created exercise or workout.',
+    'GetUserUploadedWorkOutView': 'Lists the user’s uploads or eligible public community uploads.',
+    'DeleteUserUploadedWorkoutView': 'Deletes an uploaded workout only when it belongs to the signed-in user.',
+    'ImageUploadView': 'Checks an uploaded image and stores a cleaned copy in private storage.',
+    'UserListView': 'Searches profiles that are active, searchable, public, and not the current user.',
+    'UserDetailView': 'Returns a public profile while enforcing its privacy settings.',
+    'TrackStreakView': 'Updates the signed-in user’s activity streak safely within a database transaction.',
+    'UpdateNowPlayingView': 'Publishes the signed-in user’s current track update.',
+    'NowPlayingForUserView': 'Loads the latest available track snapshot for a user.',
+    'ReportIssueView': 'Validates a report and emails it to the configured report address.',
+    'ExerciseChatView': 'Validates chat history, calls OpenAI, and checks proposed exercises against the catalog.',
+    'SpotifyStatusView': 'Reports Spotify setup/connection state and removes a user’s connection on disconnect.',
+    'SpotifyConnectView': 'Creates short-lived PKCE state and returns Spotify’s authorization URL.',
+    'SpotifyCallbackView': 'Consumes the one-time OAuth state, exchanges the code, and stores encrypted Spotify tokens.',
+    'SpotifyPlayerView': 'Reads playback or forwards a validated playback action to Spotify.',
+    'LegacySpotifyTokenView': 'Keeps retired token routes explicit and directs clients to the current connection flow.',
+}
+
+# Per-request business logic, in execution order. API cards remain the source
+# for request field types, return types, and HTTP status details.
+PYTHON_HANDLER_DETAILS = {
+    'RegisterAPIView.post': ('Validates registration fields with UserSerializer and creates the account inactive. Generates a one-time code, stores it in cache for five minutes, and emails it. If email delivery fails, removes the pending account and cached code.', ['generate_otp', 'send_otp']),
+    'VerifyOTPAPIView.post': ('Requires email and code, reads the expected code from Django’s cache, compares it with the submitted code, and finds the account. If inactive, deletes the used code and activates/saves the account. Then serializes the profile and creates access/refresh JWTs. An already-active account receives an “already activated” response.', ['UserSerializer']),
+    'ResendOTPAPIView.post': ('Requires an email and looks only for an inactive matching account. If found, creates and emails a new code and caches it for five minutes. Returns the same confirmation whether or not an inactive account was found.', ['generate_otp', 'send_otp']),
+    'LoginAPIView.post': ('Accepts identifier, username, or email; finds up to two case-insensitive email/username matches and rejects ambiguous matches. Checks the password and active-account flag before creating access/refresh JWTs.', []),
+    'SigninWIthApple.post': ('Requires an Apple identity token, passes it to AppleAuthenticationBackend, and issues app JWTs for the returned user. Missing or rejected credentials produce an error response.', ['AppleAuthenticationBackend']),
+    'UserView.get': ('Locks the current user row inside a transaction, updates the user’s activity streak, then returns the profile through UserSerializer.', ['UserSerializer']),
+    'EditUserView.post': ('Uses UserSerializer in partial-update mode with request context. Saves validated fields and returns the updated profile; invalid fields return serializer errors.', ['UserSerializer']),
+    'DeleteUserAccountView.delete': ('Deletes request.user. Django applies the model relationships’ configured delete behavior to related records.', []),
+    'LogoutView.post': ('Deletes the legacy jwt cookie and returns a confirmation. The mobile client removes its separately stored access and refresh tokens.', []),
+    'TokenObtainPairView route (Django REST Framework SimpleJWT)': ('Delegates credential validation and token creation to SimpleJWT; this project does not override its request handler.', []),
+    'TokenRefreshView route (Django REST Framework SimpleJWT)': ('Delegates refresh-token validation and access-token creation to SimpleJWT; this project does not override its request handler.', []),
+    'TokenVerifyView route (Django REST Framework SimpleJWT)': ('Delegates token signature/expiry validation to SimpleJWT; this project does not override its request handler.', []),
+    'RequestPasswordResetAPIView.post': ('Requires an email, finds the account, creates a time-limited Django reset token, builds the browser reset URL, and emails that link. The current implementation returns a validation error when the email is not found.', []),
+    'ResetPasswordAPIView.post': ('Finds the account by email and checks the one-time reset token. Applies Django password validators, hashes the accepted password with set_password, and saves only the password field.', []),
+    'password_reset_landing': ('Reads email and token from the URL, checks the token, and renders the reset form as valid or invalid. Disables caching and sets a no-referrer policy.', []),
+    'ExerciseListView.get_queryset': ('Starts from the exercise catalog, optionally filters by primary muscle and searches name, description, category, and primary muscles. Sorts deterministically; DRF applies cursor pagination and ExerciseSerializer.', ['ExerciseSerializer']),
+    'GetBodyPartWorkOutView.get': ('Reads bodyPart from the request body, optionally applies a muscle-overlap filter, and serializes matching catalog exercises.', ['ExerciseSerializer']),
+    'SaveWorkOutView.post': ('Reads workout.id, requires a valid UUID, finds the catalog exercise, then uses get_or_create so the same user cannot save the same exercise twice.', []),
+    'UserSavedWorkoutsView.get': ('Filters saved-workout records by the signed-in user, fetches related exercises in the same query, and serializes the list.', ['SavedWorkoutSerializer']),
+    'UserPlannedWorkoutsView.get': ('Filters calendar entries by the signed-in user, fetches linked exercise details efficiently, and serializes the results.', ['PlannedWorkoutSerializer']),
+    'UserPlannedWorkoutsView.post': ('Accepts one workout or a batch of 1–8. Creates the entire batch inside one transaction, validates each item, and returns serialized plans; an invalid item rolls the batch back.', ['_create_planned_workout', 'PlannedWorkoutSerializer']),
+    'DeleteSavedWorkoutView.delete': ('Looks up the saved-workout record by ID and current user together. Returns not found for another user’s record, otherwise deletes it.', []),
+    'DeletePlannedWorkoutView.delete': ('Looks up the calendar record by ID and current user together. Returns not found for another user’s record, otherwise deletes it.', []),
+    'UploadWorkOutView.post': ('Validates submitted workout fields with UserUploadWorkoutsSerializer, assigns ownership to request.user, and saves the record.', ['UserUploadWorkoutsSerializer']),
+    'GetUserUploadedWorkOutView.get_queryset': ('When is_public=true, returns public uploads whose owners are not private; otherwise returns only the signed-in user’s uploads. DRF serializes and paginates the result.', ['UserUploadWorkoutsSerializer']),
+    'DeleteUserUploadedWorkoutView.delete': ('Finds an uploaded workout using both its ID and request.user, then deletes it. Another user’s upload is not exposed.', []),
+    'ImageUploadView.post': ('Accepts multipart image data, checks destination, file size, format, and pixel count, corrects image orientation, strips metadata by re-encoding, and limits output dimensions. Stores the clean image privately and returns a display URL.', ['s3_client', 'media_origin', 'display_media']),
+    'UserListView.get_queryset': ('Limits results to active, searchable, public profiles; excludes the signed-in user and optionally filters usernames by prefix. DRF applies cursor pagination and PublicUserSerializer.', ['PublicUserSerializer']),
+    'UserDetailView.get': ('Finds an active profile by UUID. Hides private or non-searchable profiles from other users, then returns only public profile fields.', ['PublicUserSerializer']),
+    'TrackStreakView.post': ('Locks the current user row in a database transaction, updates the streak, and returns the refreshed user profile.', ['UserSerializer']),
+    'UpdateNowPlayingView.post': ('Reads track and artist details, finds the signed-in user, and sends a track update through the app notification helper.', ['send_track_update']),
+    'NowPlayingForUserView.get': ('Finds the user and loads their newest stored track snapshot. Serializes a snapshot when present; returns an empty/no-track result otherwise.', ['NowPlayingTrackSerializer']),
+    'ReportIssueView.post': ('Accepts reportObj or a top-level report, trims and limits report text to 5,000 characters, checks that reporting email is configured, then sends the report email.', ['send_mail']),
+    'ExerciseChatView.post': ('Validates the question (1–2,000 characters) and up to 12 prior messages, checks server configuration, then sends a bounded request to OpenAI Responses. Extracts text and an optional workout tool call; resolves every proposed exercise to the catalog before returning a calendar proposal. It never writes to the calendar itself.', ['resolve_catalog_exercise']),
+    'SpotifyStatusView.get': ('Checks server configuration and whether this signed-in user has a stored access token; returns flags only, never provider credentials.', ['configured']),
+    'SpotifyStatusView.delete': ('Deletes this user’s Spotify connection, including any unfinished OAuth handshake state.', []),
+    'SpotifyConnectView.post': ('Checks server configuration, creates random state and a PKCE verifier, stores hashed/encrypted short-lived values for this user, and returns Spotify’s authorization URL.', ['configured', 'cipher']),
+    'SpotifyCallbackView.get': ('Finds and locks the connection using the returned state, rejects missing/expired attempts, and consumes state before processing the result. Exchanges the authorization code with the saved PKCE verifier, checks required scopes, and stores encrypted tokens; then shows a success/failure page.', ['configured', 'cipher', 'token_request', 'store_tokens']),
+    'SpotifyPlayerView.get': ('Checks configuration and connection, locks the user’s connection, refreshes expiring tokens if needed, and asks Spotify for current playback. Converts the provider response into the app’s smaller track/device result.', ['configured', 'player_request']),
+    'SpotifyPlayerView.post': ('Accepts only play, pause, next, or previous. Locks the user’s connection, forwards the action to Spotify, and preserves token invalidation even when Spotify returns an error.', ['configured', 'player_request']),
+    'LegacySpotifyTokenView.post': ('Returns HTTP 410 and directs clients to the account-bound Spotify connection flow. It does not exchange or expose tokens.', []),
+}
+
+PYTHON_HELPERS = [
+    {'id':'helper-generate-otp','name':'generate_otp(length=4)','file':'backend1/utils/utils.py','line':24,'group':'Accounts','summary':'Creates a short numeric email-verification code.','logic':'Uses a cryptographically secure random digit generator and returns the code as text.'},
+    {'id':'helper-send-otp','name':'send_otp(email, otp)','file':'backend1/utils/utils.py','line':10,'group':'Accounts','summary':'Sends the account verification code by email.','logic':'Builds the verification message and sends it with Django’s configured email service. Returns True on success and False when delivery raises an error.'},
+    {'id':'helper-send-track-update','name':'send_track_update(user_id, track_name, artist_name, album_image_url)','file':'backend1/utils/utils.py','line':31,'group':'Activity','summary':'Publishes a now-playing update to connected clients.','logic':'Sends a message to the spotify_updates WebSocket group using the app’s Channels layer.'},
+    {'id':'helper-resolve-catalog-exercise','name':'resolve_catalog_exercise(name)','file':'backend1/views.py','line':36,'group':'Exercise Bot','summary':'Matches a proposed exercise name to a real catalog record.','logic':'Normalizes punctuation and case, checks known aliases and common plural forms, then searches catalog names. Returns the matching Exercise or None; chat rejects the proposal if any exercise is missing.'},
+    {'id':'helper-create-planned-workout','name':'UserPlannedWorkoutsView._create_planned_workout(request, workout)','file':'backend1/views.py','line':354,'group':'Workouts','summary':'Converts one proposed workout into a calendar record.','logic':'Validates the exercise UUID, checks whether it belongs to the user’s custom uploads, otherwise finds the catalog exercise and creates its saved-workout link. Validates day, time, sets, and reps with PlannedWorkoutSerializer, then creates or reuses the matching user/day/time/exercise entry.'},
+    {'id':'helper-spotify-configured','name':'configured()','file':'backend1/spotify.py','line':32,'group':'Spotify','summary':'Checks whether required Spotify settings and encryption are usable.','logic':'Requires Spotify to be enabled, client settings and a secure callback to be present, and the token-encryption key to be valid.'},
+    {'id':'helper-spotify-cipher','name':'cipher()','file':'backend1/spotify.py','line':42,'group':'Spotify','summary':'Builds the Fernet encryptor used for stored provider credentials.','logic':'Creates the encryption object from SPOTIFY_TOKEN_ENCRYPTION_KEY; callers use it to encrypt or decrypt tokens and temporary PKCE verifier values.'},
+    {'id':'helper-spotify-token-request','name':'token_request(payload)','file':'backend1/spotify.py','line':46,'group':'Spotify','summary':'Exchanges an OAuth code or refresh token with Spotify.','logic':'Posts the OAuth payload to Spotify’s token endpoint, checks the provider response, and returns token data or a controlled validation error.'},
+    {'id':'helper-spotify-store-tokens','name':'store_tokens(connection, data)','file':'backend1/spotify.py','line':74,'group':'Spotify','summary':'Encrypts and saves Spotify token data on the user’s connection.','logic':'Encrypts access/refresh tokens, records expiry, and persists them on the account-bound SpotifyConnection record.'},
+    {'id':'helper-spotify-player-request','name':'player_request(connection, method, path)','file':'backend1/spotify.py','line':149,'group':'Spotify','summary':'Makes a playback request with token refresh and provider-error handling.','logic':'Refreshes a token near expiry, retries once after an authorization failure, clears rejected credentials, and translates no-device, permission, rate-limit, network, and provider errors into app responses.'},
+    {'id':'helper-s3-client','name':'s3_client()','file':'backend1/media.py','line':16,'group':'Images','summary':'Creates the AWS S3 client used by private image storage.','logic':'Builds a boto3 S3 client using the server’s configured AWS region and credentials.'},
+    {'id':'helper-media-origin','name':'media_origin()','file':'backend1/media.py','line':21,'group':'Images','summary':'Gets the canonical address used to identify stored images.','logic':'Returns the configured S3 origin used to build stable private object addresses.'},
+    {'id':'helper-display-media','name':'display_media(url)','file':'backend1/media.py','line':49,'group':'Images','summary':'Turns a private S3 object address into a temporary display link.','logic':'Creates a short-lived presigned read URL while keeping the stored object address private and stable.'},
+]
 
 FRONTEND_METHODS = [
     ('Authentication', 'useAuth.checkToken()', 'Check the stored access token against GET /user/.', 'hooks/auth.ts'),
@@ -365,7 +436,7 @@ API_RELEASE_NOTES = [
 def openapi_document():
     """Build a lightweight OpenAPI 3.1 reference from the published route catalog."""
     paths = {}
-    python_methods = {}
+    python_views = {}
     for group, method, path, summary, authenticated, request, response, frontend in ENDPOINTS:
         route = path.replace('{saved_workout_id}', '{saved_workout_id}').replace('{planned_workout_id}', '{planned_workout_id}').replace('{workout_id}', '{workout_id}').replace('{user_id}', '{user_id}')
         contract = API_CONTRACTS.get(path, ([], response))
@@ -384,34 +455,52 @@ def openapi_document():
             'x-parameters': [dict(name=name, type=value_type, required=required, description=description) for name, value_type, required, description in parameters],
             'x-return-type': return_type,
         }
+        if len(contract) > 2 and contract[2]:
+            operation['deprecated'] = True
+            operation['x-deprecation-notice'] = contract[3]
         source = PYTHON_HANDLERS.get((method, path))
         if source:
             source_path, line, symbol = source
-            method_id = f"{source_path.replace('/', '-')}-{symbol}".lower().replace('_', '-')
-            method_id = ''.join(character if character.isalnum() or character == '-' else '-' for character in method_id)
-            method_entry = python_methods.setdefault(method_id, {
-                'id': method_id, 'name': symbol, 'file': source_path,
+            view_name = symbol.split(' route (', 1)[0].rsplit('.', 1)[0] if ' route (' in symbol else symbol.rsplit('.', 1)[0] if '.' in symbol else symbol
+            view_id = f"view-{source_path.replace('/', '-')}-{view_name}".lower().replace('_', '-')
+            view_id = ''.join(character if character.isalnum() or character == '-' else '-' for character in view_id)
+            action = symbol.rsplit('.', 1)[-1] if '.' in symbol else 'function view'
+            logic, helper_names = PYTHON_HANDLER_DETAILS.get(symbol, (summary, []))
+            helper_ids = []
+            for helper in helper_names:
+                helper_id = next((item['id'] for item in PYTHON_HELPERS if item['name'].split('(')[0].split('.')[-1] == helper.split('.')[-1]), None)
+                if helper_id and helper_id not in helper_ids:
+                    helper_ids.append(helper_id)
+            component_names = [name for name in helper_names if name.endswith('Serializer')]
+            view_entry = python_views.setdefault(view_id, {
+                'id': view_id,
+                'name': view_name,
+                'file': source_path,
                 'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
-                'summary': summary, 'group': group, 'endpoints': [],
-                'signature': PYTHON_SIGNATURES.get(symbol, 'Framework-provided method; see source registration.'),
-                'python_return': PYTHON_RETURNS.get(symbol, 'rest_framework.response.Response — an HTTP response with a status code and response data.'),
+                'summary': PYTHON_VIEW_SUMMARIES.get(view_name, summary),
+                'group': group,
+                'endpoints': [],
             })
-            method_entry['endpoints'].append({
-                'method': method.upper(), 'path': path, 'summary': summary,
-                'parameters': [dict(name=name, type=value_type, required=required, description=description) for name, value_type, required, description in parameters],
-                'returns': return_type,
-                'http_responses': operation['responses'],
+            endpoint_id = 'api-' + method.lower() + '-' + path.strip('/').replace('/', '-').replace('{', '').replace('}', '')
+            view_entry['endpoints'].append({
+                'id': endpoint_id,
+                'method': method.upper(),
+                'handler': action,
+                'path': path,
+                'summary': summary,
+                'business_logic': logic,
+                'helpers': helper_ids,
+                'components': component_names,
+                'source_url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
                 'deprecated': operation.get('deprecated', False),
                 'deprecation_notice': operation.get('x-deprecation-notice'),
             })
             operation['x-python-handler'] = {
-                'id': method_id, 'name': symbol,
+                'id': view_id, 'name': view_name,
+                'handler': action,
                 'file': source_path,
                 'url': f'{GITHUB_SOURCE_ROOT}{source_path}#L{line}',
             }
-        if len(contract) > 2 and contract[2]:
-            operation['deprecated'] = True
-            operation['x-deprecation-notice'] = contract[3]
         openapi_parameters = []
         for name, value_type, required, description in parameters:
             if name.endswith('_id'):
@@ -444,7 +533,8 @@ def openapi_document():
         'x-frontend-methods': [dict(group=group, name=name, summary=summary, source=source,
             parameters=[dict(name=param, type=value_type, required=required, description=description) for param, value_type, required, description in FRONTEND_CONTRACTS.get(name, ([], 'void'))[0]],
             returns=FRONTEND_CONTRACTS.get(name, ([], 'Return type is documented in the method description.'))[1]) for group, name, summary, source in FRONTEND_METHODS],
-        'x-python-methods': list(python_methods.values()),
+        'x-python-methods': list(python_views.values()),
+        'x-python-helpers': [dict(item, url=f"{GITHUB_SOURCE_ROOT}{item['file']}#L{item['line']}") for item in PYTHON_HELPERS],
         'x-data-models': [
             {'name': 'User', 'summary': 'A person’s account and profile. Private authentication fields stay on the server.', 'fields': [{'name':'id','type':'UUID','description':'Stable account identifier.'},{'name':'email','type':'string','description':'Unique sign-in email.'},{'name':'username','type':'string | null','description':'Optional public display name.'},{'name':'image_url','type':'string | null','description':'Profile image address.'},{'name':'height','type':'decimal | null','description':'Optional profile measurement.'},{'name':'weight','type':'decimal | null','description':'Optional current weight.'},{'name':'goal_weight','type':'decimal | null','description':'Optional target weight.'},{'name':'phone_number','type':'string | null','description':'Optional unique phone number.'},{'name':'streak','type':'integer','description':'Current activity streak.'},{'name':'last_active','type':'date | null','description':'Most recent activity date.'},{'name':'is_private','type':'boolean','description':'Whether profile details are private.'},{'name':'is_searchable','type':'boolean','description':'Whether others can find the profile.'}], 'relationships':['One account can own uploaded, saved, and planned workouts.'], 'source': {'file':'backend1/models.py','line':13,'url':f'{GITHUB_SOURCE_ROOT}backend1/models.py#L13'}},
             {'name': 'Exercise', 'summary': 'A built-in exercise in the shared exercise library.', 'fields': [{'name':'id','type':'UUID','description':'Stable exercise identifier.'},{'name':'name','type':'string','description':'Exercise name.'},{'name':'aliases','type':'JSON | null','description':'Alternative names.'},{'name':'primaryMuscles','type':'JSON | null','description':'Main muscles worked.'},{'name':'secondaryMuscles','type':'JSON | null','description':'Other muscles worked.'},{'name':'force, level, mechanic, equipment, category','type':'string | null','description':'Exercise classification details.'},{'name':'instructions, tips','type':'JSON | null','description':'Step-by-step guidance and tips.'},{'name':'description','type':'string | null','description':'Additional exercise information.'},{'name':'img_url','type':'JSON | null','description':'Exercise image addresses.'},{'name':'date_created, date_updated','type':'datetime','description':'Record creation and last update times.'}], 'relationships':['SavedWorkout records can point to a library Exercise.'], 'source': {'file':'backend1/models.py','line':56,'url':f'{GITHUB_SOURCE_ROOT}backend1/models.py#L56'}},

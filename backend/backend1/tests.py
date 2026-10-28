@@ -43,6 +43,8 @@ class CoreAppTests(TestCase):
         self.assertContains(page, 'API release notes')
         self.assertContains(page, 'How to use this list')
         self.assertContains(page, 'method-counts')
+        self.assertContains(page, 'Request-method legend')
+        self.assertContains(page, 'Each class appears once')
         guide = self.client.get('/docs/developer-guide/')
         self.assertEqual(guide.status_code, 200)
         self.assertContains(guide, '/favicon.png')
@@ -76,12 +78,32 @@ class CoreAppTests(TestCase):
         self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
         self.assertTrue(all('parameters' in item and item['returns'] for item in spec['x-frontend-methods']))
         self.assertTrue(all(operation.get('x-python-handler', {}).get('url', '').startswith('https://github.com/cdubbx/exercise_app/blob/codex/complete-core-app/') for methods in spec['paths'].values() for operation in methods.values()))
-        backend_methods = {item['id']: item for item in spec['x-python-methods']}
-        self.assertTrue(all(operation['x-python-handler']['id'] in backend_methods for methods in spec['paths'].values() for operation in methods.values()))
-        chat_method = next(item for item in backend_methods.values() if item['name'] == 'ExerciseChatView.post')
-        self.assertEqual(chat_method['signature'], 'def post(self, request)')
-        self.assertTrue(chat_method['endpoints'][0]['parameters'])
-        self.assertIn('Response', chat_method['python_return'])
+        backend_views = {item['id']: item for item in spec['x-python-methods']}
+        self.assertEqual(len(backend_views), len(spec['x-python-methods']))
+        self.assertEqual(len({item['name'] for item in spec['x-python-methods']}), len(spec['x-python-methods']))
+        self.assertTrue(all(operation['x-python-handler']['id'] in backend_views for methods in spec['paths'].values() for operation in methods.values()))
+        backend_helpers = {item['id']: item for item in spec['x-python-helpers']}
+        self.assertTrue(all(helper_id in backend_helpers for item in backend_views.values() for endpoint in item['endpoints'] for helper_id in endpoint['helpers']))
+
+        verify_view = next(item for item in backend_views.values() if item['name'] == 'VerifyOTPAPIView')
+        verify_flow = verify_view['endpoints'][0]['business_logic']
+        self.assertIn('Django’s cache', verify_flow)
+        self.assertIn('activates/saves the account', verify_flow)
+        self.assertEqual(verify_view['endpoints'][0]['components'], ['UserSerializer'])
+        self.assertTrue(spec['paths']['/verify-otp/']['post']['x-parameters'])
+
+        planned_view = next(item for item in backend_views.values() if item['name'] == 'UserPlannedWorkoutsView')
+        self.assertEqual({item['method'] for item in planned_view['endpoints']}, {'GET', 'POST'})
+        self.assertIn('helper-create-planned-workout', next(item for item in planned_view['endpoints'] if item['method'] == 'POST')['helpers'])
+
+        chat_view = next(item for item in backend_views.values() if item['name'] == 'ExerciseChatView')
+        self.assertIn('catalog', chat_view['endpoints'][0]['business_logic'])
+        self.assertIn('helper-resolve-catalog-exercise', chat_view['endpoints'][0]['helpers'])
+        spotify_player = next(item for item in backend_views.values() if item['name'] == 'SpotifyPlayerView')
+        self.assertEqual({item['method'] for item in spotify_player['endpoints']}, {'GET', 'POST'})
+        image_upload = next(item for item in backend_views.values() if item['name'] == 'ImageUploadView')
+        self.assertIn('re-encoding', image_upload['endpoints'][0]['business_logic'])
+        self.assertIn('helper-display-media', image_upload['endpoints'][0]['helpers'])
         self.assertTrue(any(item['name'] == 'PlannedWorkout' for item in spec['x-data-models']))
         self.assertTrue(any(item['name'] == 'PlannedWorkoutSerializer' for item in spec['x-serializers']))
         self.assertTrue(spec['paths']['/register/']['post']['x-parameters'])
