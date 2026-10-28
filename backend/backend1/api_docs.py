@@ -1,9 +1,17 @@
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.generic import TemplateView
+from pathlib import Path
 
 from .api_reference import openapi_document
+
+
+def favicon(request):
+    icon = Path(__file__).resolve().parent / 'static' / 'backend1' / 'favicon.png'
+    response = FileResponse(icon.open('rb'), content_type='image/png')
+    response['Cache-Control'] = 'public, max-age=86400'
+    return response
 
 
 def documentation_home(request):
