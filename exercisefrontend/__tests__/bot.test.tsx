@@ -7,7 +7,7 @@ const mockSend = jest.fn(); const mockRetry = jest.fn(); const mockClear = jest.
 let mockChat: any;
 const mockTour = {wrap: (_id: string, child: React.ReactNode) => child};
 jest.mock('../context/ChatContext', () => ({useChat: () => mockChat}));
-jest.mock('../services/navigation', () => ({openTab: (...args: any[]) => mockBrowse(...args)}));
+jest.mock('../services/navigation', () => ({openTab: (...args: any[]) => mockBrowse(...args), closeChat: () => mockNavigate('BottomTabs')}));
 jest.mock('../utils/TutorialSystemService', () => ({useWalkThrough: () => mockTour}));
 jest.mock('react-native-safe-area-context', () => ({useSafeAreaInsets: () => ({top: 0, bottom: 0})}));
 let tree: renderer.ReactTestRenderer;
@@ -44,7 +44,7 @@ test('clear requires confirmation and response exercises open their detail page'
   press('Clear conversation'); expect(mockClear).not.toHaveBeenCalled();
   const buttons = (Alert.alert as jest.Mock).mock.calls[0][2] as any[];
   act(() => buttons.find(button => button.text === 'Clear').onPress()); expect(mockClear).toHaveBeenCalledTimes(1);
-  press('Back'); expect(mockBack).toHaveBeenCalled();
+  press('Back'); expect(mockNavigate).toHaveBeenCalledWith('BottomTabs'); expect(mockBack).not.toHaveBeenCalled();
 });
 
 test('back returns to tabs when chat has no previous route', () => {

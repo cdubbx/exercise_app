@@ -8,7 +8,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {RootStackParamList} from '../interfaces/screentypes';
 import {ChatMessage} from '../interfaces/interfaces';
 import {useChat} from '../context/ChatContext';
-import {openTab} from '../services/navigation';
+import {closeChat, openTab} from '../services/navigation';
 import {useWalkThrough} from '../utils/TutorialSystemService';
 import ChatRichText from '../components/ChatRichText';
 
@@ -38,11 +38,10 @@ const BotScreen: React.FC<Props> = ({navigation}) => {
   };
   const browseExercises = () => { Keyboard.dismiss(); openTab('Home1', {screen: 'Home'}); };
   const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('BottomTabs');
-    }
+    // BotScreen is presented above the tab navigator. Return to that known
+    // root route directly so a stale/deep-linked stack cannot dispatch GO_BACK
+    // when there is no root screen beneath the chat.
+    closeChat();
   };
   const confirmClear = () => Alert.alert('Clear conversation?', 'This clears the messages in this chat.', [
     {text: 'Cancel', style: 'cancel'},

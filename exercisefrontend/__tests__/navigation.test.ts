@@ -1,5 +1,5 @@
 import {jest, test, expect, beforeEach} from '@jest/globals';
-import {navigationRef, openChat, openTab} from '../services/navigation';
+import {navigationRef, closeChat, openChat, openTab} from '../services/navigation';
 jest.mock('@react-navigation/native', () => ({createNavigationContainerRef: () => ({isReady: jest.fn(), getCurrentRoute: jest.fn(), navigate: jest.fn(), dispatch: jest.fn(), getRootState: jest.fn(() => ({routes: []}))}), StackActions: {popTo: jest.fn((name, params) => ({type: 'POP_TO', payload: {name, params}}))}}));
 const nav = navigationRef as unknown as {isReady: jest.Mock<any>; getCurrentRoute: jest.Mock<any>; navigate: jest.Mock; dispatch: jest.Mock; getRootState: jest.Mock<any>};
 beforeEach(() => { jest.clearAllMocks(); nav.isReady.mockReturnValue(true); });
@@ -11,6 +11,14 @@ test('floating button does not create a second active chat', () => {
 });
 test('floating button opens the shared root chat from a tab', () => {
   nav.getCurrentRoute.mockReturnValue({name: 'Profile'}); openChat(); expect(nav.navigate).toHaveBeenCalledWith('BotScreen');
+});
+test('closing chat navigates directly to the tab root without dispatching GO_BACK', () => {
+  closeChat();
+  expect(nav.navigate).toHaveBeenCalledWith('BottomTabs');
+  expect(nav.dispatch).not.toHaveBeenCalled();
+});
+test('closing chat does nothing until navigation is ready', () => {
+  nav.isReady.mockReturnValue(false); closeChat(); expect(nav.navigate).not.toHaveBeenCalled();
 });
 
 test('tutorial navigation returns to tabs instead of leaving chat in front', () => {
