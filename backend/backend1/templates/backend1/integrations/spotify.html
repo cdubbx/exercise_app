@@ -37,7 +37,7 @@ sequenceDiagram
  API->>DB: Store encrypted tokens
  API-->>App: Browser page with a link back to the app
  App->>API: Read player or send a control with app sign-in token
- API->>Spotify: Refresh token if needed; read state or perform action
+ API->>Spotify: Refresh token if needed, then read state or perform action
  Spotify-->>API: Player state
  API-->>App: Track/state only
 </div></section>

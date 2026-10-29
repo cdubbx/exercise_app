@@ -28,7 +28,7 @@ sequenceDiagram
  S3-->>API: Confirm file was stored
  API-->>App: Return one-hour signed display link
  App->>API: Save profile or workout with that link
- API->>API: Check link belongs to this account; save stable bucket address
+ API->>API: Check link belongs to this account and save stable bucket address
  App->>API: Load profile or workout
  API->>S3: Create a fresh one-hour signed display link
  API-->>App: Return record with working image link
