@@ -12,7 +12,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-In another terminal, seed the exercise catalog once:
+On a new Docker database volume, startup automatically loads the checked-in exercise catalog. If your volume was created before automatic catalog seeding, load it once:
 
 ```sh
 cd exercise-backend/backend
@@ -21,7 +21,7 @@ docker compose exec backend python manage.py loaddata fixed_exercises.json
 
 Docker uses persistent volumes for the database and uploaded images. Without Docker, install `requirements.txt` in a virtual environment, run `python manage.py migrate`, load the same exercise fixture, then run `python manage.py runserver`.
 
-Development email defaults to the console: verification codes and password-reset links appear in backend logs. Configure SMTP to send real email. Redis provides a shared OTP/throttle cache when configured; otherwise development uses an in-process cache.
+Development email defaults to the console: verification codes and password-reset links appear in backend logs. To send real email locally, configure the `EMAIL_*` values in the ignored `.env` file. Redis provides a shared OTP/throttle cache when configured; otherwise development uses an in-process cache.
 
 ## Mobile app
 

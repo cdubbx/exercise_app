@@ -3,10 +3,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    # On first start, initialize the persistent dev volume from the checked-in
-    # SQLite development database (which includes the local test account).
-    # Later starts keep using the volume so developer changes are preserved.
-    command: sh -c "if [ ! -s /data/db.sqlite3 ]; then cp /app/db.sqlite3 /data/db.sqlite3; fi && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # A new volume gets the local test account and full public exercise catalog.
+    # Existing volumes are migrated in place and retain developer changes.
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -s /data/db.sqlite3 ]; then
+          cp /app/db.sqlite3 /data/db.sqlite3
+          python manage.py migrate
+          python manage.py loaddata fixed_exercises.json
+        else
+          python manage.py migrate
+        fi
+        exec python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:

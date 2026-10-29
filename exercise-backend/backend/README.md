@@ -18,7 +18,7 @@ docker compose up --build
 
 Backend will be available at `http://localhost:8000`.
 
-The first start copies `db.sqlite3` into the Docker volume before applying migrations. That database includes the local account whose email is `cwwantong@gmail.com` (the saved username is also accepted by the login screen). Use that account's existing password. Normal restarts keep the volume and preserve changes. `docker compose down -v` removes it; the next start seeds it again from `db.sqlite3`.
+The first start copies `db.sqlite3` into the Docker volume, applies migrations, and loads `fixed_exercises.json` (873 catalog exercises). Together with the 34 exercise records in the checked-in database, a fresh database starts with 907 exercises. The database also includes the local account whose email is `cwwantong@gmail.com` (the saved username is also accepted by the login screen). Use that account's existing password. Normal restarts keep the volume and preserve changes. `docker compose down -v` removes it; the next start recreates it and loads the fixture again. If you already have an older volume, run `docker compose exec backend python manage.py loaddata fixed_exercises.json` once to add the catalog.
 
 ## Common commands
 
@@ -43,7 +43,7 @@ docker compose down -v
 ```
 
 ## Environment notes
-- Your existing `.env` file is still used by Django (`python-dotenv` loads it from the project directory).
+- Your existing `.env` file supplies Django and Docker email settings (`python-dotenv` loads it from the project directory, and Compose passes the email variables into the container).
 - `DATABASE_URL` is set by Docker Compose to `sqlite:////data/db.sqlite3` so DB state survives container rebuilds.
 - `REDIS_URL` is set to `redis://redis:6379/0` for Channels when running in Docker.
 
