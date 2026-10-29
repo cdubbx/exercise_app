@@ -242,8 +242,9 @@ CACHES = (
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
             'LOCATION': REDIS_URL,
-            # Heroku Key-Value Store presents a self-signed TLS certificate.
-            'OPTIONS': {'ssl_cert_reqs': None},
+            # Heroku Key-Value Store may use a self-signed TLS certificate.
+            # Do not pass TLS settings to local redis:// connections.
+            'OPTIONS': {'ssl_cert_reqs': None} if REDIS_URL.startswith('rediss://') else {},
         }
     }
     if REDIS_URL

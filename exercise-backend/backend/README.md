@@ -1,11 +1,12 @@
 # Backend Dev With Docker
 
-This backend now supports a Docker-first dev loop so you do not need to re-initialize dependencies every run.
+This backend supports a Docker-first dev loop so you do not need to re-initialize dependencies every run.
 
 ## What this setup gives you
 - One command startup for Django + Redis
 - Live code reload from your local files
-- Persistent SQLite database in a Docker volume
+- Persistent SQLite database in a Docker volume, initialized from the local development database on first start
+- Local test account data for signing in during development
 - Same command surface for running tests and management commands
 
 ## Start
@@ -16,6 +17,8 @@ docker compose up --build
 ```
 
 Backend will be available at `http://localhost:8000`.
+
+The first start copies `db.sqlite3` into the Docker volume before applying migrations. That database includes the local account whose email is `cwwantong@gmail.com` (the saved username is also accepted by the login screen). Use that account's existing password. Normal restarts keep the volume and preserve changes. `docker compose down -v` removes it; the next start seeds it again from `db.sqlite3`.
 
 ## Common commands
 
