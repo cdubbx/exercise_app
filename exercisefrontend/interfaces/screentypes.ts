@@ -68,6 +68,7 @@ export type BottomTabParamList = {
 
 export type CalendarParamList = {
   Calendar: undefined;
+  PlannedWorkoutDetail: {workout: import('./interfaces').PlannedWorkout};
   SavedExerciseList: {exercises: any[]};
   SavedExercises: {exercise: any};
   BotScreen: undefined;

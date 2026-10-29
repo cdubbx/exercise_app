@@ -125,7 +125,9 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
         </View>}
         ListFooterComponent={dailyWorkouts.length > 0 ? <Text style={styles.footerHint}>Use ••• or hold a workout to remove it from your plan.</Text> : null}
         renderSectionHeader={({section}) => <View style={styles.timeHeading}><Text style={styles.timeTitle}>{section.title}</Text><View style={styles.timeRule} /></View>}
-        renderItem={({item}) => <TouchableOpacity accessible={false} onLongPress={() => confirmDelete(item)} style={styles.workoutCard}>
+        renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={`View ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'} details`}
+          accessibilityHint="Opens workout details" onPress={() => navigation.navigate('PlannedWorkoutDetail', {workout: item})}
+          onLongPress={() => confirmDelete(item)} style={styles.workoutCard}>
           <PlannedExercise item={item} />
           <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Options for ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'}`}
             onPress={() => confirmDelete(item)} style={styles.menuButton}><Text style={styles.menuText}>•••</Text></TouchableOpacity>

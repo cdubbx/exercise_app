@@ -23,6 +23,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import BodyPart from './screens/BodyPart';
 import ExerciseCard from './cards/ExerciseCard';
 import CalendarCard from './screens/Calendar';
+import PlannedWorkoutDetail from './screens/PlannedWorkoutDetail';
 import SavedWorkOuts from './screens/SavedWorkOuts';
 import OTPScreen from './screens/OTP';
 import {
@@ -111,6 +112,7 @@ const CalendarNavigator = () => {
       initialRouteName="Calendar"
       screenOptions={{headerShown: false}}>
       <CalendarStack.Screen name="Calendar" component={CalendarCard} />
+      <CalendarStack.Screen name="PlannedWorkoutDetail" component={PlannedWorkoutDetail} />
       <CalendarStack.Screen
         name="SavedExerciseList"
         component={SavedWorkOuts}

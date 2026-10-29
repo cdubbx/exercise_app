@@ -41,6 +41,10 @@ test('weekday selection filters workouts and the add action opens saved exercise
   await press('Add workout');
   expect(mockNavigate).toHaveBeenCalledWith('SavedExerciseList', {exercises: []});
 });
+test('pressing a planned workout opens its detail screen with the full plan', async () => {
+  await press('View Curl details');
+  expect(mockNavigate).toHaveBeenCalledWith('PlannedWorkoutDetail', {workout: plan});
+});
 test('groups multiple same-day sessions under their selected time slots', async () => {
   await act(async () => tree.unmount());
   mockFetch.mockResolvedValue([
