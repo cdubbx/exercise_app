@@ -1,9 +1,11 @@
 import {
   Animated,
+  Modal,
   PanResponder,
+  Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
-  Touchable,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -12,34 +14,10 @@ import {
   useFloatingButtonActions,
   useFloatingButtonState,
 } from '../context/FloatingButtonContext';
-import {
-  NavigationProp,
-  useNavigation,
-  useNavigationState,
-} from '@react-navigation/native';
 import {navigationRef, openChat} from '../services/navigation';
 import {useUserContext} from '../hooks/auth';
 import Svg, {Path} from 'react-native-svg';
-
-function getActiveRouteName(state: any): string | undefined {
-  if (!state || !state.routes || typeof state.index !== 'number') {
-    return undefined;
-  }
-
-  let route = state.routes[state.index];
-
-  // Walk down into nested navigators
-  while (
-    route?.state &&
-    route.state.routes &&
-    typeof route.state.index === 'number'
-  ) {
-    const nestedState = route.state;
-    route = nestedState.routes[nestedState.index];
-  }
-
-  return route?.name;
-}
+import SpotifyPlayer from './SpotifyPlayer';
 
 const FloatingButton = () => {
   const pan = useRef(new Animated.ValueXY()).current;
@@ -47,6 +25,8 @@ const FloatingButton = () => {
   const state = useFloatingButtonState();
   const {isAuthenticated} = useUserContext();
   const [routeName, setRouteName] = React.useState<string | undefined>();
+  const [showActions, setShowActions] = React.useState(false);
+  const [showMusic, setShowMusic] = React.useState(false);
   useEffect(() => {
     const updateRoute = () => setRouteName(navigationRef.getCurrentRoute()?.name);
     updateRoute();
@@ -56,6 +36,8 @@ const FloatingButton = () => {
 
   useEffect(() => {
     moveToBottomRight();
+    // Set the starting position once so later renders do not reset drag movement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const panResponder = React.useRef(
     PanResponder.create({
@@ -66,7 +48,9 @@ const FloatingButton = () => {
       },
     }),
   ).current;
-  if (!isAuthenticated || routeName === 'BotScreen' || routeName === 'SavedExercises' || routeName === 'ExerciseCard' || routeName === 'AddWorkoutScreen') return null;
+  if (!isAuthenticated || routeName === 'BotScreen' || routeName === 'SavedExercises' || routeName === 'ExerciseCard' || routeName === 'AddWorkoutScreen') {
+    return null;
+  }
   return (
     <Animated.View
       style={[
@@ -74,14 +58,15 @@ const FloatingButton = () => {
         {
           left: state?.x,
           top: state?.y,
-          opacity: routeName == 'BotScreen' ? 0 : 1,
           transform: [{translateX: pan.x}, {translateY: pan.y}],
         },
       ]}
       {...panResponder.panHandlers}>
       <TouchableOpacity
         style={styles.floatingButtonContainer}
-        onPress={openChat}>
+        accessibilityRole="button"
+        accessibilityLabel="Open Exercise Plus actions"
+        onPress={() => setShowActions(true)}>
         <Svg width={32} height={32} viewBox="0 0 98 92">
           <Path
             d="M23.1035 43.4394L30.8046 20.3359H40.7658L48.4669 43.4394L71.5704 51.1405V61.1017L48.4669 68.8029L40.7658 91.9063H30.8046L23.1035 68.8029L0 61.1017V51.1405L23.1035 43.4394Z"
@@ -93,6 +78,31 @@ const FloatingButton = () => {
           />
         </Svg>
       </TouchableOpacity>
+      <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
+        <Pressable style={styles.scrim} onPress={() => setShowActions(false)}>
+          <Pressable style={styles.actionSheet} onPress={event => event.stopPropagation()}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Exercise Plus</Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close actions" onPress={() => setShowActions(false)}><Text style={styles.close}>Close</Text></TouchableOpacity>
+            </View>
+            <TouchableOpacity accessibilityRole="button" style={styles.action} onPress={() => { setShowActions(false); openChat(); }}>
+              <Text style={styles.actionTitle}>Exercise Bot</Text><Text style={styles.actionDescription}>Ask questions and plan a workout</Text>
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" style={styles.action} onPress={() => { setShowActions(false); setShowMusic(true); }}>
+              <Text style={styles.actionTitle}>Music player</Text><Text style={styles.actionDescription}>Connect Spotify or control playback</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      <Modal visible={showMusic} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowMusic(false)}>
+        <SafeAreaView style={styles.musicSheet}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Music player</Text>
+            <TouchableOpacity accessibilityRole="button" onPress={() => setShowMusic(false)}><Text style={styles.close}>Close</Text></TouchableOpacity>
+          </View>
+          <SpotifyPlayer modal />
+        </SafeAreaView>
+      </Modal>
     </Animated.View>
   );
 };
@@ -119,4 +129,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: 999, // optional but helps ensure it’s on top
   },
+  scrim: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)'},
+  actionSheet: {backgroundColor: '#f2f2f2', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 34, gap: 12},
+  musicSheet: {flex: 1, backgroundColor: '#f2f2f2', paddingHorizontal: 20, paddingTop: 12},
+  sheetHeader: {minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12},
+  sheetTitle: {fontSize: 19, fontWeight: '600', color: 'black'},
+  close: {fontSize: 15, color: '#555'},
+  action: {backgroundColor: 'white', borderRadius: 14, padding: 16, gap: 5},
+  actionTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
+  actionDescription: {fontSize: 13, color: '#555'},
 });

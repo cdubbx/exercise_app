@@ -3,9 +3,9 @@ import Entypo from 'react-native-vector-icons/Entypo';
 import {ActivityIndicator, Alert, Image, Linking, StyleSheet, Switch, Text, TouchableOpacity, View} from 'react-native';
 import {SpotifyAction, useSpotify} from '../context/NowPlayContextSpotify';
 
-export default function SpotifyPlayer({settings = false}: {settings?: boolean}) {
+export default function SpotifyPlayer({settings = false, modal = false}: {settings?: boolean; modal?: boolean}) {
   const spotify = useSpotify();
-  if (!spotify || (!settings && (!spotify.connected || !spotify.configured || !spotify.showPlayer))) { return null; }
+  if (!spotify || (!settings && !modal && (!spotify.connected || !spotify.configured || !spotify.showPlayer))) { return null; }
   const {player, busy, error, connected, configured} = spotify;
   const openSpotify = async () => {
     try { await Linking.openURL(player?.track?.url || 'https://open.spotify.com'); }
