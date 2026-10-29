@@ -125,13 +125,21 @@ const CalendarCard: React.FC<CalendarScreenProps> = ({navigation}) => {
         </View>}
         ListFooterComponent={dailyWorkouts.length > 0 ? <Text style={styles.footerHint}>Use ••• or hold a workout to remove it from your plan.</Text> : null}
         renderSectionHeader={({section}) => <View style={styles.timeHeading}><Text style={styles.timeTitle}>{section.title}</Text><View style={styles.timeRule} /></View>}
-        renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={`View ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'} details`}
-          accessibilityHint="Opens workout details" onPress={() => navigation.navigate('PlannedWorkoutDetail', {workout: item})}
-          onLongPress={() => confirmDelete(item)} style={styles.workoutCard}>
-          <PlannedExercise item={item} />
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Options for ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'}`}
-            onPress={() => confirmDelete(item)} style={styles.menuButton}><Text style={styles.menuText}>•••</Text></TouchableOpacity>
-        </TouchableOpacity>}
+        renderItem={({item}) => <View style={styles.workoutCard}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={`View ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'} details`}
+            accessibilityHint="Opens workout details" onPress={() => navigation.navigate('PlannedWorkoutDetail', {workout: item})}
+            onLongPress={() => confirmDelete(item)} style={styles.workoutContent}>
+            <PlannedExercise item={item} />
+          </TouchableOpacity>
+          <View style={styles.workoutActions}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Edit ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'}`}
+              onPress={() => navigation.navigate('EditPlannedWorkout', {workout: item})} style={styles.actionButton}>
+              <Text style={styles.actionText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Options for ${item.saved_workout_details?.exercise?.name ?? item.exercise?.name ?? 'workout'}`}
+              onPress={() => confirmDelete(item)} style={styles.menuButton}><Text style={styles.menuText}>•••</Text></TouchableOpacity>
+          </View>
+        </View>}
       />
     </View>
   );
@@ -161,6 +169,10 @@ const styles = StyleSheet.create({
   timeRule: {height: 1, backgroundColor: '#ddd', flex: 1},
   count: {fontSize: 13, color: '#555'},
   workoutCard: {flexDirection: 'row', alignItems: 'flex-start', backgroundColor: 'white', padding: 14, borderRadius: 20, marginBottom: 12},
+  workoutContent: {flex: 1},
+  workoutActions: {alignItems: 'center', marginTop: -6, marginRight: -6},
+  actionButton: {minWidth: 44, minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6},
+  actionText: {fontSize: 13, fontWeight: '600', color: 'black'},
   menuButton: {minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: -6, marginTop: -6},
   menuText: {fontSize: 17, color: '#555'},
   messageCard: {padding: 22, backgroundColor: 'white', borderRadius: 20, gap: 12, marginBottom: 12},

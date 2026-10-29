@@ -92,6 +92,21 @@ export const useSavePlannedWorkouts = () => {
   return {savePlannedWorkouts, loading};
 };
 
+export const useUpdatePlannedWorkout = () => {
+  const [loading, setLoading] = useState(false);
+  const updatePlannedWorkout = async (id: number, changes: {
+    day_of_the_week: string;
+    time_of_day: string;
+    sets: number;
+    reps: number;
+  }) => {
+    setLoading(true);
+    try { return await request(`plannedWorkouts/${id}/`, 'PATCH', changes); }
+    finally { setLoading(false); }
+  };
+  return {updatePlannedWorkout, loading};
+};
+
 export const useFetchedSavedWorkOuts = () => {
   const [loading, setLoading] = useState(true);
   const [fetchedExercises, setFetchedExercises] = useState<any[]>([]);

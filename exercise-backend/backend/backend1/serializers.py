@@ -104,7 +104,9 @@ class PlannedWorkoutSerializer(serializers.ModelSerializer):
         validators = []  # The view handles repeated submissions idempotently.
 
     def validate(self, data):
-        if bool(data.get('saved_workout')) == bool(data.get('custom_workout')):
+        saved_workout = data.get('saved_workout', getattr(self.instance, 'saved_workout', None))
+        custom_workout = data.get('custom_workout', getattr(self.instance, 'custom_workout', None))
+        if bool(saved_workout) == bool(custom_workout):
             raise serializers.ValidationError('Choose exactly one exercise.')
         return data
 

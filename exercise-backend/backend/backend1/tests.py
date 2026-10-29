@@ -38,6 +38,7 @@ class CoreAppTests(TestCase):
         spec = json.loads(document.content)
         self.assertEqual(spec['openapi'], '3.1.0')
         self.assertIn('/gpt-chat/', spec['paths'])
+        self.assertIn('patch', spec['paths']['/plannedWorkouts/{planned_workout_id}/'])
         self.assertEqual(spec['paths']['/gpt-chat/']['post']['security'], [{'BearerAuth': []}])
         self.assertTrue(any(item['name'] == 'useChat.addWorkoutToCalendar(messageId)' for item in spec['x-frontend-methods']))
 
@@ -108,6 +109,25 @@ class CoreAppTests(TestCase):
         self.assertEqual(duplicate_evening.status_code, 200, duplicate_evening.data)
         self.assertNotEqual(morning.data['id'], evening.data['id'])
         self.assertEqual(PlannedWorkout.objects.count(), 2)
+
+    def test_owner_can_edit_planned_workout_details(self):
+        plan = self.plan().data
+        response = self.client.patch(f"/api/plannedWorkouts/{plan['id']}/", {
+            'day_of_the_week': 'Wednesday', 'time_of_day': 'Evening', 'sets': 4, 'reps': 12,
+        }, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(
+            {key: response.data[key] for key in ('day_of_the_week', 'time_of_day', 'sets', 'reps')},
+            {'day_of_the_week': 'Wednesday', 'time_of_day': 'Evening', 'sets': 4, 'reps': 12},
+        )
+
+    def test_planned_workout_edit_is_owner_scoped_and_validated(self):
+        plan = self.plan().data
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.patch(f"/api/plannedWorkouts/{plan['id']}/", {'sets': 4}, format='json').status_code, 404)
+        self.client.force_authenticate(self.user)
+        self.assertEqual(self.client.patch(f"/api/plannedWorkouts/{plan['id']}/", {'sets': 0}, format='json').status_code, 400)
+        self.assertEqual(self.client.patch(f"/api/plannedWorkouts/{plan['id']}/", {'day_of_the_week': 'Wednesday', 'time_of_day': 'Midnight'}, format='json').status_code, 400)
 
     def test_invalid_time_slot_is_rejected(self):
         self.save()

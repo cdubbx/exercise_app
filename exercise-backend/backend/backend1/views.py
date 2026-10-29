@@ -65,7 +65,7 @@ def resolve_catalog_exercise(name):
 
 import jwt
 import datetime
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.throttling import ScopedRateThrottle
 from .serializers import PublicUserSerializer
@@ -350,6 +350,25 @@ class UserPlannedWorkoutsView(APIView):
         if is_batch:
             return Response(PlannedWorkoutSerializer(plans, many=True).data, status=201 if any_created else 200)
         return Response(PlannedWorkoutSerializer(plans[0]).data, status=201 if any_created else 200)
+
+    def patch(self, request, planned_workout_id):
+        workout = get_object_or_404(
+            PlannedWorkout.objects.select_related('saved_workout__exercise', 'custom_workout'),
+            id=planned_workout_id,
+            user=request.user,
+        )
+        editable_fields = {'day_of_the_week', 'time_of_day', 'sets', 'reps'}
+        changes = {key: value for key, value in request.data.items() if key in editable_fields}
+        if not changes:
+            raise ValidationError({'detail': 'Provide at least one workout detail to update.'})
+        serializer = PlannedWorkoutSerializer(workout, data=changes, partial=True)
+        serializer.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                serializer.save()
+        except IntegrityError as exc:
+            raise ValidationError({'detail': 'This exercise is already planned for that day and time.'}) from exc
+        return Response(PlannedWorkoutSerializer(workout).data, status=status.HTTP_200_OK)
 
     def _create_planned_workout(self, request, workout):
         exercise_id = workout.get('exercise', {}).get('id')

@@ -11,6 +11,7 @@ const mockTour = {register: jest.fn(), wrap: (_id: string, child: React.ReactNod
 jest.mock('../hooks/exercises', () => ({
   useFetchedPlanedWorkouts: () => ({loading: false, fetchPlannedWorkouts: mockFetch}),
   useDeleteWorkout: () => ({deletePlannedWorkout: mockDelete}),
+  useUpdatePlannedWorkout: () => ({updatePlannedWorkout: jest.fn(), loading: false}),
 }));
 jest.mock('../utils/TutorialSystemService', () => ({useWalkThrough: () => mockTour}));
 jest.mock('../services/navigation', () => ({openTab: jest.fn()}));
@@ -44,6 +45,10 @@ test('weekday selection filters workouts and the add action opens saved exercise
 test('pressing a planned workout opens its detail screen with the full plan', async () => {
   await press('View Curl details');
   expect(mockNavigate).toHaveBeenCalledWith('PlannedWorkoutDetail', {workout: plan});
+});
+test('edit action opens the workout editor with the selected plan', async () => {
+  await press('Edit Curl');
+  expect(mockNavigate).toHaveBeenCalledWith('EditPlannedWorkout', {workout: plan});
 });
 test('groups multiple same-day sessions under their selected time slots', async () => {
   await act(async () => tree.unmount());

@@ -33,6 +33,10 @@ export default function PlannedWorkoutDetail({navigation, route}: Props) {
           <Text style={styles.eyebrow}>SCHEDULED</Text>
           <Text style={styles.schedule}>{workout.day_of_the_week} · {workout.time_of_day || 'Anytime'}</Text>
         </View>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Edit planned workout"
+          onPress={() => navigation.navigate('EditPlannedWorkout', {workout})} style={styles.editButton}>
+          <Text style={styles.editButtonText}>Edit workout</Text>
+        </TouchableOpacity>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your plan</Text>
           <View style={styles.metrics}>
@@ -70,6 +74,8 @@ const styles = StyleSheet.create({
   scheduleCard: {backgroundColor: 'white', borderRadius: 16, padding: 16, gap: 7},
   eyebrow: {fontSize: 11, fontWeight: '600', letterSpacing: 0.8, color: '#666'},
   schedule: {fontSize: 16, fontWeight: '600', color: 'black'},
+  editButton: {minHeight: 48, borderRadius: 11, backgroundColor: 'black', alignItems: 'center', justifyContent: 'center'},
+  editButtonText: {fontSize: 14, fontWeight: '600', color: 'white'},
   section: {backgroundColor: 'white', borderRadius: 16, padding: 16, gap: 14},
   sectionTitle: {fontSize: 16, fontWeight: '600', color: 'black'},
   metrics: {flexDirection: 'row', gap: 12},

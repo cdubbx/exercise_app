@@ -38,6 +38,7 @@ urlpatterns = [
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('userSavedWorkouts/', UserSavedWorkoutsView.as_view(), name= 'userSavedWorkOuts'),
     path('plannedWorkouts/', UserPlannedWorkoutsView.as_view(), name='planned_workouts'),
+    path('plannedWorkouts/<int:planned_workout_id>/', UserPlannedWorkoutsView.as_view(), name='planned_workout_detail'),
     path("now_playing/<uuid:user_id>/", NowPlayingForUserView.as_view(), name="now_playing_for_user"),
     path("now_playing/update", UpdateNowPlayingView.as_view(), name="update-now_playing"),
 ]
